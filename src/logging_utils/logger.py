@@ -12,10 +12,10 @@ logger.setLevel(logging.DEBUG)
 time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Create directory if it does not exist
-if not os.path.exists("tracking/logs"):
-    os.makedirs("tracking/logs")
+if not os.path.exists("logging/logs"):
+    os.makedirs("logging/logs")
 
-file_handler = logging.FileHandler("tracking/logs/" + str(time) + ".txt")
+file_handler = logging.FileHandler("logging/logs/" + str(time) + ".txt")
 
 # Create a formatter
 formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s")
