@@ -1,6 +1,5 @@
 series_id_encoding.json
 test_encoding.json
-plots/
 catboost_info/
 optuna.db
 
