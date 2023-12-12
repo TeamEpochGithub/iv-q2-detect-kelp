@@ -169,7 +169,7 @@ submission.csv
 .idea
 
 # Ignore data files
-
+data/
 
 # Ignore wandb files
 wandb/
