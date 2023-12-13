@@ -13,14 +13,14 @@ class ParseTIFPipeline(BaseEstimator, TransformerMixin):
     :param data_path: The path to the data
     """
 
-    def __init__(self, data_path: str) -> None:
+    def __init__(self, data_paths: list[str] = None) -> None:
 
-        if not data_path:
+        if not data_paths:
             logger.error("data_path is required")
             raise ParsePipelineError("data_path is required")
 
         # Set paths to self
-        self.data_path = data_path
+        self.data_paths = data_paths
 
     def fit(self, X, y=None):
         return self
@@ -30,22 +30,23 @@ class ParseTIFPipeline(BaseEstimator, TransformerMixin):
         return parse_raw(self.data_path)
 
 
-def parse_raw(data_path: str) -> da.array:
+def parse_raw(data_paths: list[str] = None) -> da.array:
     """
     This function parses the raw data into a dask array.
-    :param data_path: The path to the data
+    :param data_paths: The paths of all the data
     :return: dask array
     """
-    if not data_path:
-        logger.error("data_path is required to parse raw data")
-        raise ParsePipelineError("data_path is required to parse raw data")
+    if not data_paths:
+        logger.error("data_paths are required to parse raw data")
+        raise ParsePipelineError("data_paths are required to parse raw data")
 
     # Define the delayed function
     dask_imread = dask.delayed(read_image)
 
+    # Image paths are the files in the data path
+
     # Get the image paths
-    lazy_images = [dask_imread(os.path.join(data_path, image_path))
-                   for image_path in os.listdir(data_path)]
+    lazy_images = [dask_imread(image_path) for image_path in data_paths]
 
     # Check if there are images
     if not lazy_images:
