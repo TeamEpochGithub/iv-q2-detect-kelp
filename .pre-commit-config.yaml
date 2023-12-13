@@ -11,6 +11,8 @@ repos:
       - id: check-toml
       - id: check-xml
       - id: check-yaml
+      - id: mixed-line-ending
+        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -18,10 +20,6 @@ repos:
     hooks:
       - id: mypy
         args: [--disallow-any-generics, --disallow-untyped-defs]
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
-    hooks:
-      - id: prettier
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
