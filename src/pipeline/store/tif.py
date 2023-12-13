@@ -43,7 +43,7 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> None:
         raise StorePipelineError("data_paths are required to store raw data")
 
     # Check if the dask array is defined
-    if not dask_array:
+    if dask_array is None:
         logger.error("dask_array is required to store raw data")
         raise StorePipelineError("dask_array is required to store raw data")
 

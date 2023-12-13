@@ -27,7 +27,7 @@ class ParseTIFPipeline(BaseEstimator, TransformerMixin):
 
     def transform(self, X, y=None):
         logger.info("Parsing raw data from tif files")
-        return parse_raw(self.data_path)
+        return parse_raw(self.data_paths)
 
 
 def parse_raw(data_paths: list[str] = None) -> da.array:
