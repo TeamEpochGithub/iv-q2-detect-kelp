@@ -200,3 +200,6 @@ submissions/
 
 # Hydra logs
 outputs/
+
+# Ignore logs
+logging/
