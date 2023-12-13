@@ -1,4 +1,6 @@
 import dask.array as da
+import dask
+from dask import delayed
 from sklearn.base import BaseEstimator, TransformerMixin
 import tifffile as tiff
 
@@ -50,9 +52,17 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> None:
     # Check if the data paths are the same length as the dask array
     if len(data_paths) != len(dask_array):
         logger.error("data_paths and dask_array must be the same length")
-        raise StorePipelineError("data_paths and dask_array must be the same length")
+        raise StorePipelineError(
+            "data_paths and dask_array must be the same length")
 
     # Iterate over the data paths and store the data
-    for data_path, data in zip(data_paths, dask_array):
-        # Write the data
-        tiff.imwrite(data_path, data.compute())
+    # Iterate over the data paths and store the data
+    write_tasks = [delayed(write_data)(data_path, data) for data_path, data in zip(data_paths, dask_array)]
+
+    # Compute all write tasks in parallel
+    dask.compute(*write_tasks)
+
+
+def write_data(data_path, data):
+    # Write the data
+    tiff.imwrite(data_path, data)
