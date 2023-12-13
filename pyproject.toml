@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["src"]
+
+[project]
+name = "src"
+version = "0.0.1"
+authors = [
+    { name = "Emiel Witting", email = "emiel.witting@gmail.com" },
+    { name = "Hugo de Heer", email = "hugodeheer1234@gmail.com" },
+    { name = "Jasper van Selm", email = "jmvanselm@gmail.com" },
+    { name = "Jeffrey Lim", email = "jeffrey-lim@outlook.com" },
+    { name = "Tolga Kopar", email = "cahittolgakopar@gmail.com" },
+]
+description = "Team Epoch's solution to the \"Kelp Wanted: Segmenting Kelp Forests\" competition."
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.11"
