@@ -1,3 +1,5 @@
+"""Setup the logger."""
+
 import datetime
 import os
 import logging
@@ -25,12 +27,3 @@ file_handler.setFormatter(formatter)
 
 # Add the file handler to the logger
 logger.addHandler(file_handler)
-
-# Log some messages
-# logger.debug("A debug message")
-
-# logger.info("An info message")
-
-# logger.warning("A warning message")
-
-# logger.error("An error message")

@@ -7,5 +7,3 @@ This folder contains the source code for the Kelp competition.
 The `src` folder is organized as follows:
 
 - `example.py`: Script to make a submission to kaggle
-
-
