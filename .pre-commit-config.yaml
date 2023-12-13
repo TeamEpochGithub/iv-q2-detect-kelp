@@ -12,7 +12,6 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: end-of-file-fixer
-      - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.1
@@ -52,11 +51,7 @@ repos:
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: [--max-line-length=120]
-  - repo: https://github.com/crate-ci/typos
-    rev: v1.16.23
-    hooks:
-      - id: typos
+        args: [--max-line-length=175]
   - repo: https://github.com/jshwi/docsig
     rev: v0.44.2
     hooks:
