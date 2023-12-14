@@ -1,1 +1,1 @@
-# This directory contains files related to the feature processing pipeline
+# This directory contains files related to the feature pipeline

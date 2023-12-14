@@ -1,5 +1,7 @@
 import os
+from typing import Any
 import warnings
+import numpy as np
 import rasterio
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
@@ -21,15 +23,26 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
 
         if not data_paths:
             logger.error("data_paths are required")
-            raise CacheTIFPipeline("data_path is required")
+            raise CachePipelineError("data_path is required")
 
         # Set paths to self
         self.data_paths = data_paths
 
-    def fit(self, X, y=None):
+    def fit(self, X: Any, y: Any = None) -> Any:
+        """
+        :param X: The data to fit
+        :param y: The target variable
+        :return: The fitted pipeline
+        """
         return self
 
-    def transform(self, X, y=None):
+    def transform(self, X: Any, y: Any = None) -> da.Array:
+        """
+        Transform the data.
+        :param X: The data to transform
+        :param y: The target variable
+        :return: The transformed data
+        """
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
             return store_raw(self.data_paths, X)
@@ -40,6 +53,7 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> da.Array:
     This function stores the raw data to disk.
     :param data_paths: The paths of all the data
     :param dask_array: The dask array to store
+    :return: dask array
     """
 
     # Check if the data paths are defined
@@ -81,7 +95,7 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> da.Array:
     return dask_array
 
 
-def write_data(data_path: str, data: any = None) -> None:
+def write_data(data_path: str, data: da.Array | np.ndarray[Any, Any]) -> None:
     """
     Function to write the data to disk, wrapper for rasterio.open to use in dask
     :param data_path: The path to write the data to
@@ -101,7 +115,7 @@ def write_data(data_path: str, data: any = None) -> None:
         dst.write(data)
 
 
-def parse_raw(data_paths: list[str] = None) -> da.array:
+def parse_raw(data_paths: list[str] = []) -> da.Array:
     """
     This function parses the raw data into a dask array.
     :param data_paths: The paths of all the data
@@ -126,7 +140,7 @@ def parse_raw(data_paths: list[str] = None) -> da.array:
     return da.stack(images, axis=0)
 
 
-def read_image(image_path: str) -> da.array:
+def read_image(image_path: str) -> da.Array:
     """
     Read the image from the image path.
     :param image_path: The path to the image

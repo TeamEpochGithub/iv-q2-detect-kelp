@@ -3,7 +3,10 @@ import plotly.graph_objects as go
 
 
 def _get_colors(n_colors: int = 16) -> list[str]:
-    """Reture color list for visualizing categorical column."""
+    """Reture color list for visualizing categorical column.
+    :param n_colors: The number of colors to return
+    :return: The list of colors
+    """
     colors = plotly.colors.sample_colorscale(
         "Bluered", [i / 15 for i in range(16)])
 

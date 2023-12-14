@@ -1,14 +1,14 @@
 import pickle
 from pathlib import Path
-from typing import List
+from typing import Any
 
 import polars as pl
 import plotly.graph_objects as go
 import plotly.express as px
 import dash_bootstrap_components as dbc
 from dash import Dash, html, dcc, callback, Output, Input
-from consumption import create_consumption
-from utils.colors import _get_colors
+from dashboard.consumption import create_consumption
+from dashboard.utils.colors import _get_colors
 
 # Paths
 RAW_DATA_PATH = Path("../data/raw")
@@ -38,7 +38,7 @@ station_latlon_county_map = (
 )
 
 
-def _cal_wth_local_mean(df_wth: pl.DataFrame, gp_keys: List[str]) -> pl.DataFrame:
+def _cal_wth_local_mean(df_wth: pl.DataFrame, gp_keys: list[str]) -> pl.DataFrame:
     """Calculate county-level local weather stats.
 
     Only mean is derived now.
@@ -226,8 +226,12 @@ heatmap = go.Heatmap(
     [Input("county-dropdown", "value"),
      Input("target-radio", "value")]
 )
-def update_target(slc_county, slc_target_type):
-    """Update target sequences."""
+def update_target(slc_county: Any, slc_target_type: Any) -> Any:
+    """Update target sequences.
+    :param slc_county: The selected county
+    :param slc_target_type: The selected target type
+    :return: The target sequences
+    """
     if slc_county == "All":
         slc_county_list = county_opts_map[county_list[0]]
     else:
@@ -259,7 +263,13 @@ def update_target(slc_county, slc_target_type):
     [Input("county-dropdown", "value"),
      Input("fwth-feat-dropdown", "value")]
 )
-def update_weather(slc_county, slc_fwth_feat):
+def update_weather(slc_county: Any, slc_fwth_feat: Any) -> Any:
+    """
+    Update weather sequences.
+    :param slc_county: The selected county
+    :param slc_fwth_feat: The selected forecast weather feature
+    :return: The weather sequences
+    """
     if slc_county == "All":
         slc_county_list = county_opts_map[county_list[0]]
     else:
@@ -275,7 +285,7 @@ def update_weather(slc_county, slc_fwth_feat):
 
     wth = (
         train
-        .filter((pl.col("county_name").is_in(slc_county_name)))
+        .filter(pl.col("county_name").is_in(slc_county_name))
         .select(["datetime", slc_fwth_feat_name])
         .unique()
         .sort("datetime")
@@ -292,7 +302,12 @@ def update_weather(slc_county, slc_fwth_feat):
     Output("map", "figure"),
     Input("county-dropdown", "value")
 )
-def update_map(slc_county):
+def update_map(slc_county: Any) -> Any:
+    """
+    Update map.
+    :param slc_county: The selected county
+    :return: The map
+    """
     slc_county_list = county_opts_map[slc_county]
     slc_county_name = ["-".join(c.split("-")[1:]) for c in slc_county_list]
 
@@ -339,7 +354,12 @@ def update_map(slc_county):
     Output("heatmap", "figure"),
     Input("heatmap-columns-dropdown", "value")
 )
-def update_heatmap(heatmap_columns):
+def update_heatmap(heatmap_columns: Any) -> go.Figure:
+    """
+    Update heatmap.
+    :param heatmap_columns: The columns to use for the heatmap
+    :return: The heatmap
+    """
     corr = train[heatmap_columns].to_pandas()._get_numeric_data().corr()
 
     heatmap = go.Heatmap(

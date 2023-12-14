@@ -1,3 +1,4 @@
+from typing import Any
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.transformation.divider import Divider
@@ -5,7 +6,7 @@ from src.pipeline.model.feature.transformation.error import TransformationPipeli
 from src.logging_utils.logger import logger
 
 
-def get_transformations(transformation_steps: list[dict]) -> Pipeline:
+def get_transformations(transformation_steps: list[dict[str, Any]]) -> Pipeline:
     """
     This function creates the transformation pipeline.
     :param transformation_steps: list of transformation steps
@@ -22,10 +23,10 @@ def get_transformations(transformation_steps: list[dict]) -> Pipeline:
     return Pipeline(steps)
 
 
-def match(transformation_step: dict) -> tuple[str, any]:
+def match(transformation_step: dict[str, Any]) -> tuple[str, Any]:
     """
     This function matches the transformation steps to the correct function.
-    :param transformation_steps: list of transformation steps
+    :param transformation_step: transformation step
     :return: transformation pipeline
     """
 

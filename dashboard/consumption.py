@@ -1,3 +1,4 @@
+from typing import Any
 import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Output, Input
 import pandas as pd
@@ -5,6 +6,11 @@ import plotly.express as px
 
 
 def create_consumption(train: pd.DataFrame) -> dbc.Row:
+    """
+    Create consumption graph using train data.
+    :param train: The train data
+    :return: The consumption graph
+    """
 
     # Get groups for train
     grouped = train.groupby(['prediction_unit_id'])
@@ -41,7 +47,7 @@ def create_consumption(train: pd.DataFrame) -> dbc.Row:
         [Input("series-dropdown", "value"),
          Input("con-sample", "value")]
     )
-    def update_target(series_id, sample):
+    def update_target(series_id: Any, sample: Any) -> Any:
         """ Create consumption graph using train data."""
         series = grouped.get_group(series_id)
         series = series.query("is_consumption == 1")

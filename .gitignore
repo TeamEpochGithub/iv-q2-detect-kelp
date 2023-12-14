@@ -74,11 +74,11 @@ instance/
 .scrapy
 
 # Sphinx documentation
+docs/_autosummary/
 docs/_build/
 
 # PyBuilder
 .pybuilder/
-target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
@@ -162,25 +162,17 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
-
-submission.csv
-.idea
+.idea/
 
 # Ignore data files
 data/
 
-# Ignore wandb files
+# Ignore logs
+logging/
 wandb/
 
 # Ignore zip files
 *.zip
-
-# Ignore submission files
-submission.csv
-
-# Ignore default config file
-default_config.json
 
 # VSCode settings
 .vscode/

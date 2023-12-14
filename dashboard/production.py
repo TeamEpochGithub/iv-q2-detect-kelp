@@ -1,3 +1,4 @@
+from typing import Any
 import dash_bootstrap_components as dbc
 from dash import html, dcc, callback, Output, Input
 import pandas as pd
@@ -6,6 +7,11 @@ from polars import col
 
 
 def create_production(train: pd.DataFrame) -> dbc.Row:
+    """
+    Create production graph using train data.
+    :param train: The train data
+    :return: The production graph
+    """
 
     # Get groups for train
     grouped = train.groupby(['prediction_unit_id'])
@@ -39,7 +45,7 @@ def create_production(train: pd.DataFrame) -> dbc.Row:
         Output("production", "figure"),
         Input("prod-series-dropdown", "value")
     )
-    def update_target(series_id):
+    def update_target(series_id: Any) -> Any:
         """ Create consumption graph using train data."""
         series = grouped.get_group(series_id).filter(col("is_consumption") == 0)
         fig = px.line(series, x="datetime", y="target")
