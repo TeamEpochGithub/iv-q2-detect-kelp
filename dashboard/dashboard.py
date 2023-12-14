@@ -1,24 +1,11 @@
-import json
-import math
 import pickle
-import warnings
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 
-import plotly
-import numpy as np
-import pandas as pd
 import polars as pl
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly
 import plotly.graph_objects as go
 import plotly.express as px
 import dash_bootstrap_components as dbc
-from matplotlib.gridspec import GridSpec
-from plotly.subplots import make_subplots
-from plotly.offline import init_notebook_mode
-from pyngrok import ngrok
 from dash import Dash, html, dcc, callback, Output, Input
 from consumption import create_consumption
 from utils.colors import _get_colors

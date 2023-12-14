@@ -1,7 +1,6 @@
 import dash_bootstrap_components as dbc
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import html, dcc, callback, Output, Input
 import pandas as pd
-import plotly.graph_objects as go
 import plotly.express as px
 from polars import col
 
@@ -13,7 +12,7 @@ def create_production(train: pd.DataFrame) -> dbc.Row:
 
     # Get list of groups
     groups = [{'label': str(name), 'value': name} for name in grouped.groups.keys()]
-    
+
     production = dbc.Row([
         html.H1("Production"),
         dbc.Col([

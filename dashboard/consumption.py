@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import html, dcc, callback, Output, Input
 import pandas as pd
 import plotly.express as px
 
@@ -11,7 +11,7 @@ def create_consumption(train: pd.DataFrame) -> dbc.Row:
 
     # Get list of groups
     groups = [{'label': str(name), 'value': name} for name in grouped.groups.keys()]
-    
+
     consumption = dbc.Row([
         html.H1("Consumption"),
         dbc.Col([

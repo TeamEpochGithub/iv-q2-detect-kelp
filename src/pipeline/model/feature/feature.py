@@ -144,8 +144,6 @@ if __name__ == "__main__":
     print(time.time() - orig_time)
 
     # images = feature_pipeline.parse_raw()
-
-    images = images[:1000].compute()
     print(time.time() - orig_time)
 
     print(images.shape)

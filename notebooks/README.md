@@ -1,6 +1,6 @@
 # Notebooks
 
-This folder contains all notebooks related to the competition 
+This folder contains all notebooks related to the competition
 
 
 ## Structure

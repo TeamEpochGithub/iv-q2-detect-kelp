@@ -1,4 +1,3 @@
-import os
 import dask
 import rasterio
 from sklearn.base import BaseEstimator, TransformerMixin
