@@ -1,4 +1,4 @@
-class ParsePipelineError(Exception):
+class CachePipelineError(Exception):
     # Define the error message
     def __init__(self, message):
         self.message = message

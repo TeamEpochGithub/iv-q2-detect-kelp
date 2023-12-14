@@ -7,10 +7,11 @@ from distributed import Client
 from src.logging_utils.logger import logger
 import os
 from sklearn.pipeline import Pipeline
+from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.transformation.get_transformations import get_transformations
-from src.pipeline.parse.tif import ParseTIFPipeline
-from src.pipeline.store.tif import StoreTIFPipeline
+from dask.diagnostics import ProgressBar
+from joblib import hash
 
 
 class FeaturePipeline():
@@ -23,7 +24,7 @@ class FeaturePipeline():
     :param column_steps: list of column steps
     """
 
-    def __init__(self, raw_data_path: str, processed_path=None, features_path: str = None, transformation_steps: list[dict] = None, column_steps: list[dict] = None):
+    def __init__(self, raw_data_path: str, processed_path=None, transformation_steps: list[dict] = None, column_steps: list[dict] = None):
 
         if not raw_data_path:
             logger.error("raw_data_path is required")
@@ -32,7 +33,6 @@ class FeaturePipeline():
         # Set paths to self
         self.raw_data_path = raw_data_path
         self.processed_path = processed_path
-        self.features_path = features_path
         self.transformation_steps = transformation_steps
         self.column_steps = column_steps
         self.steps = steps
@@ -49,24 +49,30 @@ class FeaturePipeline():
         raw_data_paths = self.get_raw_data_paths()
 
         # Create the raw data parser
-        parser = ('raw_data_parser', ParseTIFPipeline(raw_data_paths))
+        parser = ('raw_data_parser', CacheTIFPipeline(raw_data_paths))
         steps.append(parser)
 
         # Create the transformation pipeline
+        transformation_hash = "raw"
         if self.transformation_steps:
             transformation_pipeline = get_transformations(
                 self.transformation_steps)
             if transformation_pipeline:
                 transformations = ('transformations', transformation_pipeline)
                 steps.append(transformations)
+
+                # Get the hash of the transformation pipeline
+                transformation_hash = hash(transformation_pipeline)
+                logger.debug(
+                    f"Transformation pipeline hash: {transformation_hash}")
         else:
             logger.info("No transformation steps were provided")
 
         # Create processed paths
-        processed_paths = self.get_processed_data_paths()
+        processed_paths = self.get_processed_data_paths(transformation_hash)
 
         # Add the store pipeline
-        store = ('store_processed', StoreTIFPipeline(processed_paths))
+        store = ('store_processed', CacheTIFPipeline(processed_paths))
         steps.append(store)
 
         if self.column_steps:
@@ -75,7 +81,7 @@ class FeaturePipeline():
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
 
-        pipeline = Pipeline(steps=steps)
+        pipeline = Pipeline(steps=steps, memory=self.processed_path)
 
         return pipeline
 
@@ -96,7 +102,7 @@ class FeaturePipeline():
 
         return raw_data_paths
 
-    def get_processed_data_paths(self) -> list[str]:
+    def get_processed_data_paths(self, hash: str = "test") -> list[str]:
         """
         This function returns the processed data paths.
         :return: list of processed data paths
@@ -104,16 +110,18 @@ class FeaturePipeline():
         # Get the names of each file
         names = os.listdir(self.raw_data_path)
 
+        processed_path = self.processed_path + "/" + hash
+
         # If processed path does not exist, create it
-        if not os.path.exists(self.processed_path):
-            os.makedirs(self.processed_path)
+        if not os.path.exists(processed_path):
+            os.makedirs(processed_path)
 
         # Create the processed data paths
         processed_data_paths = names
 
         # Iterate over the processed data paths and create the full path
         for i, name in enumerate(names):
-            processed_data_paths[i] = os.path.join(self.processed_path, name)
+            processed_data_paths[i] = os.path.join(processed_path, name)
 
         # Sort the processed data paths
         processed_data_paths.sort()
@@ -124,7 +132,7 @@ class FeaturePipeline():
 if __name__ == "__main__":
     # Example test
     raw_data_path = "data/raw/train_satellite"
-    processed_path = "data/processed/test"
+    processed_path = "data/processed"
     features_path = "data/features"
     steps = []
 
@@ -135,15 +143,14 @@ if __name__ == "__main__":
     feature_pipeline = FeaturePipeline(
         raw_data_path, processed_path, features_path, steps)
 
+    ProgressBar().register()
+
     from sklearn.pipeline import Pipeline
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
     orig_time = time.time()
     images = pipeline.fit_transform(None)
-    print(time.time() - orig_time)
-
-    # images = feature_pipeline.parse_raw()
     print(time.time() - orig_time)
 
     print(images.shape)
