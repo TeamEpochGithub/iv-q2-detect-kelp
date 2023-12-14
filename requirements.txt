@@ -170,3 +170,4 @@ sphinxawesome-theme==5.0.0
 myst-parser==2.0.0
 sphinx-autodoc-typehints==1.25.2
 -e ./
+pygit2~=1.13.3

@@ -5,8 +5,10 @@ import sys
 from types import ModuleType
 from typing import Any
 
+from pygit2 import Repository  # type: ignore[import-untyped, import-not-found]
+
 # TODO Replace this with GitHub URL later
-REPO_URL: str = "https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/blob/main/"
+REPO_URL: str = f"https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/blob/{Repository('.').head.shorthand}/"
 
 sys.path.insert(0, os.path.abspath('../..'))
 
@@ -17,8 +19,7 @@ author: str = 'Team Epoch'
 source_suffix: dict[str, str] = {'.rst': 'restructuredtext'}
 root_doc: str = 'index'
 
-extensions: list[str] = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'myst_parser',
-                         'sphinx.ext.linkcode', 'sphinx.ext.viewcode',  # TODO Remove 'sphinx.ext.viewcode' once we publish our code on GitHub
+extensions: list[str] = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx.ext.linkcode', 'myst_parser',
                          'sphinxawesome_theme.highlighting', "sphinx_autodoc_typehints"]
 autosummary_generate: bool = True
 autodoc_typehints: str = "signature"
@@ -28,8 +29,6 @@ autodoc_default_options: dict[str, bool | str] = {
     'undoc-members': True,
     'member-order': 'bysource',
 }
-
-viewcode_line_numbers: bool = True
 
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
