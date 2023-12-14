@@ -1,13 +1,14 @@
 import os
+import warnings
 import rasterio
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
 from src.logging_utils.logger import logger
 import dask.array as da
-import tifffile as tiff
 from src.pipeline.caching.error import CachePipelineError
 import dask
 from dask import delayed
+from rasterio.errors import NotGeoreferencedWarning
 
 
 class CacheTIFPipeline(BaseEstimator, TransformerMixin):
@@ -29,7 +30,9 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X, y=None):
-        return store_raw(self.data_paths, X)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
+            return store_raw(self.data_paths, X)
 
 
 def store_raw(data_paths: list[str], dask_array: da.Array) -> da.Array:
@@ -64,11 +67,11 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> da.Array:
             "data_paths and dask_array must be the same length")
 
     # Iterate over the data paths and store the data
-    # Iterate over the data paths and store the data
     logger.info("Storing data to disk")
+    delayed_write_data = delayed(write_data)
     write_tasks = []
     for data_path, data in tqdm(zip(data_paths, dask_array), desc="Creating write tasks"):
-        write_tasks.append(delayed(write_data)(data_path, data))
+        write_tasks.append(delayed_write_data(data_path, data))
 
     dask.compute(*write_tasks)
 
@@ -78,9 +81,24 @@ def store_raw(data_paths: list[str], dask_array: da.Array) -> da.Array:
     return dask_array
 
 
-def write_data(data_path, data):
-    # Write the data
-    tiff.imwrite(data_path, data)
+def write_data(data_path: str, data: any = None) -> None:
+    """
+    Function to write the data to disk, wrapper for rasterio.open to use in dask
+    :param data_path: The path to write the data to
+    :param data: The data to write
+    """
+    # Define the metadata for the raster file
+    metadata = {
+        'driver': 'GTiff',
+        'height': data.shape[1],
+        'width': data.shape[2],
+        'count': data.shape[0],
+        'dtype': str(data.dtype),
+    }
+
+    # Write the data to the raster file
+    with rasterio.open(data_path, 'w', **metadata) as dst:
+        dst.write(data)
 
 
 def parse_raw(data_paths: list[str] = None) -> da.array:
@@ -96,22 +114,14 @@ def parse_raw(data_paths: list[str] = None) -> da.array:
     # Define the delayed function
     dask_imread = dask.delayed(read_image)
 
-    # Image paths are the files in the data path
-
-    # Get the image paths
-    lazy_images = [dask_imread(image_path) for image_path in data_paths]
-
-    # Check if there are images
-    if not lazy_images:
-        logger.error("No images found in data_path")
-        raise CachePipelineError("No images found in data_path")
-
     # Get the sample
-    sample = lazy_images[0].compute()
+    sample = read_image(data_paths[0])
 
-    # Create the dask array
-    images = [da.from_delayed(
-        lazy_image, dtype=sample.dtype, shape=sample.shape) for lazy_image in lazy_images]
+    images = []
+    for data_path in tqdm(data_paths, desc="Creating read tasks"):
+        lazy_image = dask_imread(data_path)
+        image = da.from_delayed(lazy_image, dtype=sample.dtype, shape=sample.shape)
+        images.append(image)
 
     return da.stack(images, axis=0)
 
@@ -125,6 +135,8 @@ def read_image(image_path: str) -> da.array:
     if not image_path:
         logger.error("image_path is required to read image")
         raise CachePipelineError("image_path is required to read image")
-
-    with rasterio.open(image_path) as src:
-        return src.read()
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
+        with rasterio.open(image_path) as src:
+            image_data = src.read()
+            return image_data

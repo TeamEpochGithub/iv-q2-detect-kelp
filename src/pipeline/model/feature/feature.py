@@ -10,8 +10,8 @@ from sklearn.pipeline import Pipeline
 from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.transformation.get_transformations import get_transformations
-from dask.diagnostics import ProgressBar
 from joblib import hash
+from rasterio.plot import show
 
 
 class FeaturePipeline():
@@ -35,7 +35,6 @@ class FeaturePipeline():
         self.processed_path = processed_path
         self.transformation_steps = transformation_steps
         self.column_steps = column_steps
-        self.steps = steps
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -81,7 +80,7 @@ class FeaturePipeline():
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
 
-        pipeline = Pipeline(steps=steps, memory=self.processed_path)
+        pipeline = Pipeline(steps=steps, memory=self.processed_path + '/' + transformation_hash + '/pipeline_cache')
 
         return pipeline
 
@@ -134,24 +133,25 @@ if __name__ == "__main__":
     raw_data_path = "data/raw/train_satellite"
     processed_path = "data/processed"
     features_path = "data/features"
-    steps = []
+    transform_steps = [{'type': 'divider', 'divider': 65500}]
+    columns = []
 
     client = Client()
     import time
     orig_time = time.time()
     # Create the feature pipeline
     feature_pipeline = FeaturePipeline(
-        raw_data_path, processed_path, features_path, steps)
+        raw_data_path, processed_path, transformation_steps=transform_steps, column_steps=columns)
 
-    ProgressBar().register()
-
-    from sklearn.pipeline import Pipeline
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
     orig_time = time.time()
     images = pipeline.fit_transform(None)
     print(time.time() - orig_time)
+
+    # Display the first image
+    show(images[0].compute()[2:5])
 
     print(images.shape)
 
