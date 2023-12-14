@@ -166,3 +166,7 @@ plotly~=5.18.0
 polars~=0.19.19
 dash~=2.14.2
 pyngrok~=7.0.3
+sphinxawesome-theme==5.0.0
+myst-parser==2.0.0
+sphinx-autodoc-typehints==1.25.2
+-e ./
