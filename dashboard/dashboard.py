@@ -1,30 +1,57 @@
-import base64
-
-import cv2
 import dash
 import dash_bootstrap_components as dbc
-import numpy as np
-import plotly.graph_objects as go
+import pandas as pd
 from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from dash_bootstrap_templates import load_figure_template
+
+from layouts import default_layout
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 load_figure_template("Darkly")
 
+layouts = {
+    'Default': default_layout
+}
+
+
+def load_tile_ids() -> list[str]:
+    """Load the tile IDs from the metadata file, sorted"""
+    df = pd.read_csv('./data/raw/metadata_fTq0l2T.csv')
+    ids = df['tile_id'][df['in_train']==True].tolist()
+    ids.sort()
+    return ids
+
 
 # Replace this with your actual layout configuration
 def create_layout():
+    ids = load_tile_ids()
+
     layout = html.Div([
-        html.H1("Computer Vision Segmentation Dashboard"),
+        html.H1("Kelp Detection Dashboard"),
+
+        # Description
+        html.P("Select a configuration and one or more images to display."),
+
+        # layout selection dropdown
+        dcc.Dropdown(
+            id='layout-dropdown',
+            options=[{'label': k, 'value': k} for k in layouts.keys()],
+            value='Default',
+            style={'color': 'black'}
+        ),
 
         # Image selection and display
         dcc.Dropdown(
             id='image-dropdown',
-            options=[{'label': str(i), 'value': i} for i in range(1, 11)],  # Replace with your image IDs
-            value=[1],
-            multi=True
+            options=[{'label': id, 'value': id} for id in ids],  # Replace with your image IDs
+            value=[ids[0]],
+            multi=True,
+            style={'color': 'black'}
         ),
+
+        # button to refresh with bootstrap styling
+        dbc.Button("Refresh", id='refresh-button', color="primary", className="mr-1"),
 
         # Image display blocks based on configuration
         html.Div(id='image-display')
@@ -33,48 +60,24 @@ def create_layout():
     return layout
 
 
-def display_fig(img: np.ndarray, title: str):
-    fig = go.Figure()
-    fig.add_trace(go.Image(z=img))
-    fig.update_layout(title=title)
-
-    # Adjusting margins
-    fig.update_layout(margin=dict(l=0, r=0, t=40, b=0))
-
-    # Remove gridlines
-    fig.update_xaxes(showgrid=False)
-    fig.update_yaxes(showgrid=False)
-
-    return dcc.Graph(figure=fig)
-
 app.layout = create_layout()
 
 
 # Callbacks to update the content dynamically
 @app.callback(
     Output('image-display', 'children'),
-    [Input('image-dropdown', 'value')]
+    [State('image-dropdown', 'value'),
+     Input('layout-dropdown', 'value'),
+     Input('refresh-button', 'n_clicks')]
 )
-def update_content(selected_images):
-
+def update_content(selected_images, selected_layout, n_clicks):
     # Replace this with your image display logic
     image_display_content = []
     for image_id in selected_images:
-        img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        processed = img / 2
-        segmentation = img > 0.5
+        image_div = layouts[selected_layout](image_id)
 
-        # Plot each image with go imshow with title
-        figs = [
-            display_fig(img, "Original"),
-            display_fig(processed, "Processed"),
-            display_fig(segmentation, "Segmentation")
-        ]
-
-        # Arrange components in a div
-        image_div = html.Div(figs, style={'display': 'flex'})
-        # Add a title to the div
-        full_div = html.Div([html.H3(f'Image {image_id}'), image_div])
+        # Add a centered title to the div
+        full_div = html.Div([html.H3(f'Image {image_id}')] + [image_div])
         image_display_content.append(full_div)
 
     return image_display_content
