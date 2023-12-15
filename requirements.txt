@@ -189,3 +189,4 @@ Werkzeug==3.0.1
 widgetsnbextension==4.0.9
 zipp==3.17.0
 -e ./
+pygit2~=1.13.3
