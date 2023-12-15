@@ -1,4 +1,4 @@
-exclude: ^(dashboard/|docs/|external/|venv/)
+exclude: ^(docs/|external/|venv/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -11,15 +11,14 @@ repos:
       - id: check-toml
       - id: check-xml
       - id: check-yaml
-      - id: mixed-line-ending
-        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.7.1
     hooks:
       - id: mypy
-        args: [--disallow-any-generics, --disallow-untyped-defs]
+        args: [--disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]
+        language: system
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
