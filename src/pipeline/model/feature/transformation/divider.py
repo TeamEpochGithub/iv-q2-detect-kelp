@@ -1,5 +1,6 @@
 from typing import Any
 import dask.array as da
+import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
 
@@ -28,15 +29,15 @@ class Divider(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        return dask_division(X, self.divider)
+        return division(X, self.divider)
 
 
-def dask_division(dask_array: da.Array, divider: int = 1) -> da.Array:
+def division(array: da.Array | np.ndarray, divider: int = 1) -> da.Array | np.ndarray:
     """
-    This function divides the dask array by a number.
-    :param dask_array: The dask array to divide
+    This function divides the array by a number.
+    :param array: The  array to divide
     :param divider: The number to divide by
-    :return: The divided dask array
+    :return: The divided array
     """
 
-    return dask_array / divider
+    return array / divider

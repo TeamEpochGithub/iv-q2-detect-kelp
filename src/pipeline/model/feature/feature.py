@@ -3,6 +3,7 @@
 # The pipeline object is used to transform the test data in the same way as the training data.
 
 # Import libraries
+import glob
 from typing import Any
 from distributed import Client
 from src.logging_utils.logger import logger
@@ -48,8 +49,11 @@ class FeaturePipeline():
         # Get the raw data paths
         raw_data_paths = self.get_raw_data_paths()
 
+        # Get ids
+        ids = self.get_ids()
+
         # Create the raw data parser
-        parser = ('raw_data_parser', CacheTIFPipeline(raw_data_paths))
+        parser = ('raw_data_parser', CacheTIFPipeline(ids, self.raw_data_path))
         steps.append(parser)
 
         # Create the transformation pipeline
@@ -72,16 +76,19 @@ class FeaturePipeline():
         processed_paths = self.get_processed_data_paths(transformation_hash)
 
         # Add the store pipeline
-        store = ('store_processed', CacheTIFPipeline(processed_paths))
+        store = ('store_processed', CacheTIFPipeline(
+            ids, self.processed_path + '/' + transformation_hash))
         steps.append(store)
 
         if self.column_steps:
-            column_pipeline = get_columns(self.column_steps)
+            column_pipeline = get_columns(
+                self.column_steps, self.processed_path + '/' + transformation_hash, processed_paths)
             if column_pipeline:
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
         if not self.processed_path:
-            logger.info("No processed path was provided, returning pipeline without caching")
+            logger.info(
+                "No processed path was provided, returning pipeline without caching")
             return Pipeline(steps)
         else:
             pipeline = Pipeline(steps=steps, memory=self.processed_path +
@@ -112,30 +119,29 @@ class FeaturePipeline():
         :param hash: hash of the transformation pipeline
         :return: list of processed data paths
         """
-        # Get the names of each file
-        names = os.listdir(self.raw_data_path)
+        # Get the names of each file in the raw data path that ends with .tif
+        list_of_tif = [file for file in os.listdir(
+            self.raw_data_path) if file.endswith(".tif")]
 
-        # Create the processed path
-        if not self.processed_path:
-            processed_path = "data/processed" + "/" + hash
-        else:
-            processed_path = self.processed_path + "/" + hash
+        paths = [self.processed_path + '/' +
+                 hash + '/' + tif for tif in list_of_tif]
+        paths.sort()
+        return paths
 
-        # If processed path does not exist, create it
-        if not os.path.exists(processed_path):
-            os.makedirs(processed_path)
+    def get_ids(self) -> list[str]:
+        """
+        This function returns the ids of the images.
+        :return: list of ids
+        """
 
-        # Create the processed data paths
-        processed_data_paths = names
+        # Use glob to get the paths of the images
+        paths = glob.glob(f"{self.raw_data_path}/*.tif")
 
-        # Iterate over the processed data paths and create the full path
-        for i, name in enumerate(names):
-            processed_data_paths[i] = os.path.join(processed_path, name)
+        # Get the ids from the paths
+        ids = [path.split('\\')[-1].split('.')[0].split('_')[0]
+               for path in paths]
 
-        # Sort the processed data paths
-        processed_data_paths.sort()
-
-        return processed_data_paths
+        return ids
 
 
 if __name__ == "__main__":
@@ -144,7 +150,7 @@ if __name__ == "__main__":
     processed_path = "data/processed"
     features_path = "data/features"
     transform_steps = [{'type': 'divider', 'divider': 65500}]
-    columns: list[dict[str, Any]] = []
+    columns = []
 
     client = Client()
     import time
@@ -161,6 +167,6 @@ if __name__ == "__main__":
     print(time.time() - orig_time)
 
     # Display the first image
-    show(images[0].compute()[2:5])
+    show(images[0].compute().transpose((2, 0, 1))[2:5])
 
     print(images.shape)

@@ -1,12 +1,12 @@
-class TransformationPipelineError(Exception):
+class ColumnPipelineError(Exception):
     """
-    TransformationPipelineError is an error that occurs when the transformation pipeline fails.
+    ColumnPipelineError is an error that occurs when the column pipeline fails.
     :param message: The error message
     """
 
     def __init__(self, message: str) -> None:
         """
-        TransformationPipelineError is an error that occurs when the transformation pipeline fails.
+        ColumnPipelineError is an error that occurs when the column pipeline fails.
         :param message: The error message
         """
         self.message = message

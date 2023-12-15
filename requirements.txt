@@ -148,3 +148,5 @@ myst-parser==2.0.0
 sphinx-autodoc-typehints==1.25.2
 -e ./
 pygit2~=1.13.3
+dask_image==2023.8.1
+zarr==2.16.1
