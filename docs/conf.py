@@ -1,53 +1,91 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
-# -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
+import importlib
+import inspect
 import os
 import sys
+from types import ModuleType
+from typing import Any
+
+from pygit2 import Repository  # type: ignore[import-untyped, import-not-found]
+
+# TODO Replace this with GitHub URL later
+REPO_URL: str = f"https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/blob/{Repository('.').head.shorthand}/"
+
 sys.path.insert(0, os.path.abspath('../..'))
 
-project = 'Detect Kelp'
-copyright = '2024, Team Epoch'
-author = 'Team Epoch'
+project: str = 'Detect Kelp'
+copyright: str = '2024, Team Epoch.'
+author: str = 'Team Epoch'
 
-# -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
+source_suffix: dict[str, str] = {'.rst': 'restructuredtext'}
+root_doc: str = 'index'
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx.ext.autosummary',
-              'sphinxawesome_theme.highlighting', "sphinx_autodoc_typehints", 'myst_parser']
-autosummary_generate = True
-autodoc_typehints = "signature"
+extensions: list[str] = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.coverage', 'sphinx.ext.napoleon', 'sphinx.ext.linkcode', 'myst_parser',
+                         'sphinxawesome_theme.highlighting', "sphinx_autodoc_typehints"]
+autosummary_generate: bool = True
+autodoc_typehints: str = "signature"
 
-autodoc_default_options = {
-    'members':           True,
-    'undoc-members':     True,
-    'member-order':      'bysource',
+autodoc_default_options: dict[str, bool | str] = {
+    'members': True,
+    'undoc-members': True,
+    'member-order': 'bysource',
 }
 
-source_suffix = '.rst'
-master_doc = 'index'
-pygments_style = 'sphinx'
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
+    """Determine the URL corresponding to the Python object.
+
+    This is used by sphinx.ext.linkcode to generate links to our source code.
+
+    The code for getting the line numbers is copied from https://github.com/python-websockets/websockets/blob/main/docs/conf.py.
+
+    :param domain: domain of the object
+    :param info: information about the object
+    :return: URL to the object or None if it is not Python code
+    """
+    if domain != 'py':
+        return None
+    if not info['module']:
+        return None
+
+    module: ModuleType = importlib.import_module(info["module"])
+    if "." in info["fullname"]:
+        obj_name, attr_name = info["fullname"].split(".")
+        obj: Any = getattr(module, obj_name)
+        try:
+            # Object is a method of a class
+            obj = getattr(obj, attr_name)
+        except AttributeError:
+            # Object is an attribute of a class
+            return None
+    else:
+        obj = getattr(module, info["fullname"])
+
+    try:
+        lines: tuple[list[str], int] = inspect.getsourcelines(obj)
+    except TypeError:
+        # E.g. object is a typing.Union
+        return None
+
+    start: int = lines[1]
+    end: int = lines[1] + len(lines[0]) - 1
+
+    filename: str = info['module'].replace('.', '/')
+    return f"{REPO_URL}{filename}.py#L{start}-L{end}"
 
 
+pygments_style: str = 'sphinx'
 
-# -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
+templates_path: list[str] = ['_templates']
+exclude_patterns: list[str] = ['_build', 'Thumbs.db', '.DS_Store']
 
-html_theme = 'sphinxawesome_theme'
-html_theme_options = {
+html_theme: str = 'sphinxawesome_theme'
+html_theme_options: dict[str, str] = {
     "logo_light": "./_static/images/logo/Epoch_Icon_Dark.png",
     "logo_dark": "./_static/images/logo/Epoch_Icon_Light.png"
 }
-html_favicon = "./_static/images/logo/Epoch_Icon_Light.png"
-html_static_path = ['_static']
-html_use_smartypants = True
-html_show_sourcelink = True
-html_show_sphinx = True
-html_show_copyright = True
+html_favicon: str = "./_static/images/logo/Epoch_Icon_Light.png"
+html_static_path: list[str] = ['_static']
+html_use_smartypants: bool = True
+html_show_sourcelink: bool = True
+html_show_sphinx: bool = True
+html_show_copyright: bool = True
