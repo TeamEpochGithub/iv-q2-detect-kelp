@@ -6,13 +6,14 @@ from dash.dependencies import Input, Output, State
 from dash.html import Div
 from dash_bootstrap_templates import load_figure_template
 
-from dashboard.layouts import default_layout
+from dashboard.layouts import default_layout, features_layout
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 load_figure_template("Darkly")
 
 layouts = {
-    'Default': default_layout
+    'Default': default_layout,
+    'Features': features_layout,
 }
 
 
