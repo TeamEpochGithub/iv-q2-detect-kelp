@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Self
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+import numpy.typing as npt
 
 
 class Divider(BaseEstimator, TransformerMixin):
@@ -12,7 +13,7 @@ class Divider(BaseEstimator, TransformerMixin):
     def __init__(self, divider: int = 1) -> None:
         self.divider = divider
 
-    def fit(self, X: Any, y: Any = None) -> Any:
+    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
         """
         Fit the transformer.
         :param X: The data to fit
@@ -21,7 +22,7 @@ class Divider(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: Any, y: Any = None) -> Any:
+    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
         """
         Transform the data.
         :param X: The data to transform

@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Self
 from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 import dask.array as da
 from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
+import numpy.typing as npt
 
 
 class CacheColumnPipeline(BaseEstimator, TransformerMixin):
@@ -25,7 +26,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         # Set the column to self
         self.column = column
 
-    def fit(self, X: Any, y: Any = None) -> Any:
+    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
         """
         :param X: The data to fit
         :param y: The target variable
@@ -33,7 +34,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: Any, y: Any = None) -> da.Array:
+    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
         """
         Transform the data.
         :param X: The data to transform

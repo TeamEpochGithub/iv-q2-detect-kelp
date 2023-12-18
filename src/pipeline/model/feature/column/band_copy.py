@@ -1,11 +1,10 @@
 import time
-from typing import Any
-
+from typing import Self
 import dask
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from src.logging_utils.logger import logger
-
+import numpy.typing as npt
 from src.pipeline.caching.column import CacheColumnPipeline
 
 
@@ -42,7 +41,8 @@ class BandCopyPipeline():
                 self.processed_path, column=-1))
             steps.append(cache)
 
-        pipeline_path = self.processed_path + "/pipeline/" if self.processed_path else None
+        pipeline_path = self.processed_path + \
+            "/pipeline/" if self.processed_path else None
         return Pipeline(steps=steps, memory=pipeline_path)
 
 
@@ -59,7 +59,7 @@ class BandCopy(BaseEstimator, TransformerMixin):
         """
         self.band = band
 
-    def fit(self, X: Any, y: Any = None) -> Any:
+    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
         """
         Fit the transformer.
         :param X: The data to fit
@@ -68,7 +68,7 @@ class BandCopy(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: Any, y: Any = None) -> Any:
+    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
         """
         Transform the data.
         :param X: The data to transform
