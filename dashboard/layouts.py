@@ -121,17 +121,9 @@ def features_layout(image_id: str) -> html.Div:
     land_closeness = 1 / (1 + land_dist*0.1)
 
     # rescale so that ir_water_normed is between 0 and 1 in the water
-    normed_min = np.min(ir_water_normed[land_dist > 5])
-    normed_max = np.max(ir_water_normed[land_dist > 5])
+    normed_min = np.min(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
+    normed_max = np.max(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
     ir_water_normed2 = (ir_water_normed - normed_min) / (normed_max - normed_min)
-
-    # SNR with negative SR threshold
-    # sr = ir[:, :, (0, 2)].sum(axis=-1)
-    # sigmoid_a = 30
-    # sigmoid_b = 0.2
-    # sr_sigmoid = 1 / (1 + np.exp(sigmoid_a * (sr - sigmoid_b)))
-    # sr_sigmoid_3 = np.stack([sr_sigmoid, sr_sigmoid, sr_sigmoid], axis=-1)
-    # snr_feat = sr_sigmoid_3 * ir * 25.5
 
     # use catboost predictions as a feature, for simplicity, train it on the same image,
     # uses the three channels in ir_water_normed and land_closeness
@@ -164,7 +156,7 @@ def features_layout(image_id: str) -> html.Div:
     # Compute dice coefficient
     y_pred_round = y_pred > 0.5
     intersection = np.sum(y_pred_round & y)
-    union = np.sum(y_pred_round | y)
+    union = np.sum(y_pred_round) + np.sum(y)
     if union == 0:
         dice = 1
     else:
