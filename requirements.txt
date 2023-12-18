@@ -195,3 +195,6 @@ zipp==3.17.0
 pygit2~=1.13.3
 dask_image==2023.8.1
 zarr==2.16.1
+imagecodecs==2023.9.18
+bokeh==3.3.2
+catboost==1.2.2
