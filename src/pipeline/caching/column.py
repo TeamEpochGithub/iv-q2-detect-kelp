@@ -4,7 +4,6 @@ from src.logging_utils.logger import logger
 import dask.array as da
 from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
-import numpy.typing as npt
 
 
 class CacheColumnPipeline(BaseEstimator, TransformerMixin):
@@ -26,7 +25,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         # Set the column to self
         self.column = column
 
-    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """
         :param X: The data to fit
         :param y: The target variable
@@ -34,7 +33,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
         """
         Transform the data.
         :param X: The data to transform

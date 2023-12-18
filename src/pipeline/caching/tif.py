@@ -2,7 +2,7 @@ from typing import Self
 from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 from src.pipeline.caching.util.error import CachePipelineError
-import numpy.typing as npt
+import dask.array as da
 from src.pipeline.caching.util.store_raw import store_raw
 
 
@@ -21,7 +21,7 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         # Set paths to self
         self.data_path = data_path
 
-    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """
         :param X: The data to fit
         :param y: The target variable
@@ -29,7 +29,7 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
         """
         Transform the data.
         :param X: The data to transform

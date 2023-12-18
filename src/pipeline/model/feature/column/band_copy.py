@@ -4,8 +4,8 @@ import dask
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from src.logging_utils.logger import logger
-import numpy.typing as npt
 from src.pipeline.caching.column import CacheColumnPipeline
+import dask.array as da
 
 
 class BandCopyPipeline():
@@ -59,7 +59,7 @@ class BandCopy(BaseEstimator, TransformerMixin):
         """
         self.band = band
 
-    def fit(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> Self:
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """
         Fit the transformer.
         :param X: The data to fit
@@ -68,7 +68,7 @@ class BandCopy(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: npt.ArrayLike, y: npt.ArrayLike | None = None) -> npt.ArrayLike:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
         """
         Transform the data.
         :param X: The data to transform
