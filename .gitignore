@@ -192,3 +192,6 @@ submissions/
 
 # Hydra logs
 outputs/
+
+#Leakage images
+plots/images/leakage/[0-9]*
