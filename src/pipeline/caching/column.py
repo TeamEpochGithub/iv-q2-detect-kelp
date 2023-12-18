@@ -12,7 +12,8 @@ from src.pipeline.caching.util.store_raw import store_raw
 class CacheColumnPipeline(BaseEstimator, TransformerMixin):
     """
     The caching pipeline is responsible for loading and storing the data to disk.
-    :param data_paths: The paths to the data
+    :param data_path: The path to the data
+    :param column: The column to store
     """
 
     def __init__(self, data_path: str, column: int = -1) -> None:

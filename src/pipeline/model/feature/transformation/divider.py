@@ -32,7 +32,7 @@ class Divider(BaseEstimator, TransformerMixin):
         return division(X, self.divider).astype(np.float32)
 
 
-def division(array: da.Array | np.ndarray, divider: int = 1) -> da.Array | np.ndarray:
+def division(array: da.Array, divider: int = 1) -> da.Array:
     """
     This function divides the array by a number.
     :param array: The  array to divide

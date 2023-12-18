@@ -13,15 +13,18 @@ class BandCopyPipeline():
     """
     This class creates a band copy pipeline.
     :param band: The band to copy
+    :param processed_path: path to the processed data
     """
 
-    def __init__(self, band: int, processed_path: str) -> None:
+    def __init__(self, band: int, processed_path: str | None = None) -> None:
         """
         This class creates a band copy pipeline.
         :param band: The band to copy
+        :param processed_path: path to the processed data
         """
         self.band = band
-        self.processed_path = processed_path + '/band_copy_' + str(band)
+        if processed_path:
+            self.processed_path = processed_path + '/band_copy_' + str(band)
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -34,11 +37,13 @@ class BandCopyPipeline():
         steps.append(('band_copy', BandCopy(self.band)))
 
         # Create the cache column pipeline
-        cache = ('cache', CacheColumnPipeline(
-            self.processed_path, column=-1))
-        steps.append(cache)
+        if self.processed_path:
+            cache = ('cache', CacheColumnPipeline(
+                self.processed_path, column=-1))
+            steps.append(cache)
 
-        return Pipeline(steps=steps, memory=self.processed_path + "/pipeline/")
+        pipeline_path = self.processed_path + "/pipeline/" if self.processed_path else None
+        return Pipeline(steps=steps, memory=pipeline_path)
 
 
 class BandCopy(BaseEstimator, TransformerMixin):

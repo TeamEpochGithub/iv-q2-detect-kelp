@@ -12,7 +12,7 @@ from dask_image.imread import imread
 def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     """
     This function stores the raw data to disk.
-    :param data_paths: The paths of all the data
+    :param data_path: The path of all the data
     :param dask_array: The dask array to store
     :return: dask array
     """
@@ -50,8 +50,3 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
 
     # Return the dask array
     return dask_array
-
-
-def save_file(filename, arr):
-    # Save array to numpy file
-    np.save(filename, arr)

@@ -10,7 +10,7 @@ from src.pipeline.caching.util.store_raw import store_raw
 class CacheTIFPipeline(BaseEstimator, TransformerMixin):
     """
     The caching pipeline is responsible for loading and storing the data to disk.
-    :param data_paths: The paths to the data
+    :param data_path: The path to the data
     """
 
     def __init__(self, data_path: str) -> None:

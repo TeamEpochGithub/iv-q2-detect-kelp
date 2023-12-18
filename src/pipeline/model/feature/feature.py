@@ -64,13 +64,19 @@ class FeaturePipeline():
             logger.info("No transformation steps were provided")
 
         # Add the store pipeline
-        store = ('store_processed', CacheTIFPipeline(
-            self.processed_path + '/' + transformation_hash))
-        steps.append(store)
+        if self.processed_path:
+            store = ('store_processed', CacheTIFPipeline(
+                self.processed_path + '/' + transformation_hash))
+            steps.append(store)
 
         if self.column_steps:
+            if self.processed_path:
+                column_path = self.processed_path + '/' + transformation_hash
+            else:
+                column_path = None
+
             column_pipeline = get_columns(
-                self.column_steps, self.processed_path + '/' + transformation_hash)
+                self.column_steps, column_path)
             if column_pipeline:
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
