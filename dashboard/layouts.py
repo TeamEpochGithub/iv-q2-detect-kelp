@@ -84,8 +84,13 @@ def default_layout(image_id: str) -> html.Div:
 
 
 def features_layout(image_id: str) -> html.Div:
-    """Create the default layout for the dashboard, with RGB, IR, Clouds, Elevation, Kelp and Kelp overlay,
-    and manual features.
+    """Shows SWIR/NIR/RED, two features: land closeness and IR water normed, and a prediction from catboost.
+    Land closeness is the inverse of the distance to land.
+    There is a strange artefact, namely in empty images there always seems to be land in the top left corner.
+    IR water normed is the SWIR/NIR/RED channels minus the median of the IR channels in the water of that image.
+    The catboost predictions is a very naive test to see if these features are useful.
+    It will train a per-pixel classification model on the first image it sees, and reuses the saved model for the rest.
+
     :param image_id: ID of the image to display
     :return: the layout as html element"""
 
@@ -120,10 +125,10 @@ def features_layout(image_id: str) -> html.Div:
     land_dist = scipy.ndimage.distance_transform_edt(~land_mask)
     land_closeness = 1 / (1 + land_dist*0.1)
 
-    # rescale so that ir_water_normed is between 0 and 1 in the water
+    # rescale so that ir_water_normed is between 0 and 1 in the water, for visualization purposes
     normed_min = np.min(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
     normed_max = np.max(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
-    ir_water_normed2 = (ir_water_normed - normed_min) / (normed_max - normed_min)
+    ir_water_normed_for_viz = (ir_water_normed - normed_min) / (normed_max - normed_min)
 
     # use catboost predictions as a feature, for simplicity, train it on the same image,
     # uses the three channels in ir_water_normed and land_closeness
@@ -167,7 +172,7 @@ def features_layout(image_id: str) -> html.Div:
         make_fig(ir, "SWIR/NIR/Red"),
         make_fig(land_closeness, "Land Closeness"),
         make_fig(overlay, "Kelp Overlay"),
-        make_fig(ir_water_normed2, "ir_water_normed"),
+        make_fig(ir_water_normed_for_viz, "ir_water_normed"),
         make_fig(y_pred, f"Catboost prediction (dice={dice:.2f})"),
     ]
 
