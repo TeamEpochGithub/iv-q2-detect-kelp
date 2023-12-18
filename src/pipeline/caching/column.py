@@ -15,14 +15,14 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
     :param data_paths: The paths to the data
     """
 
-    def __init__(self, data_paths: list[str], column: int = -1) -> None:
+    def __init__(self, data_path: str, column: int = -1) -> None:
 
-        if not data_paths:
+        if not data_path:
             logger.error("data_paths are required")
             raise CachePipelineError("data_path is required")
 
         # Set paths to self
-        self.data_paths = data_paths
+        self.data_path = data_path
 
         # Set the column to self
         self.column = column
@@ -47,8 +47,8 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
 
             # Load or store the data column
             logger.info("Loading or storing column")
-            column = store_raw(self.data_paths, X[:, self.column])
+            column = store_raw(self.data_path, X[:, self.column])
 
-            # Return the column with the original data
-            X[:, self.column] = column.squeeze()
-            return X
+            # Create the new array
+            X_new = da.concatenate([X[:, :self.column], column[:, None]], axis=1)
+            return X_new

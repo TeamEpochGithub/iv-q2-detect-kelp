@@ -1,22 +1,15 @@
 import glob
 import time
-import warnings
 import numpy as np
 
-from tqdm import tqdm
 from src.logging_utils.logger import logger
 import dask.array as da
-import dask
 from src.pipeline.caching.util.error import CachePipelineError
-from src.pipeline.caching.util.parse_raw import parse_raw
 import os
-import skimage.io
-from dask.delayed import delayed
-import imageio.v3 as iio
 from dask_image.imread import imread
 
 
-def store_raw(ids, data_path: str, dask_array: da.Array) -> da.Array:
+def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     """
     This function stores the raw data to disk.
     :param data_paths: The paths of all the data
@@ -34,10 +27,10 @@ def store_raw(ids, data_path: str, dask_array: da.Array) -> da.Array:
         # Check if path has any tif files
         if glob.glob(f"{data_path}/*.tif"):
             logger.info("Data already exists on disk")
-            return imread(f"{data_path}/*.tif")
+            return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
         elif glob.glob(f"{data_path}/*.npy"):
             logger.info("Data already exists on disk")
-            return da.from_npy_stack(data_path)
+            return da.from_npy_stack(data_path).astype(np.float32)
 
     # Check if the dask array is defined
     if dask_array is None:
@@ -48,15 +41,12 @@ def store_raw(ids, data_path: str, dask_array: da.Array) -> da.Array:
     logger.info("Storing data to disk")
     start_time = time.time()
 
-    # Create data_paths
-    data_paths = [f"{data_path}/{id}.npy" for id in ids]
-
     # Iterate over the dask array and store each image
-    dask.array.to_npy_stack(data_path, dask_array)
+    da.to_npy_stack(data_path, dask_array.astype(np.float32))
 
     end_time = time.time()
-    logger.info(f"Storing data to disk took {end_time - start_time} seconds")
-    logger.info("Finished storing data to disk")
+    logger.info(
+        f"Finished storing data to disk in: {end_time - start_time} seconds")
 
     # Return the dask array
     return dask_array

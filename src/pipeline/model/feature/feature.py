@@ -3,18 +3,15 @@
 # The pipeline object is used to transform the test data in the same way as the training data.
 
 # Import libraries
-import glob
 from typing import Any
 from distributed import Client
 from src.logging_utils.logger import logger
-import os
 from sklearn.pipeline import Pipeline
 from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.error import FeaturePipelineError
 from src.pipeline.model.feature.transformation.get_transformations import get_transformations
 from joblib import hash
-from rasterio.plot import show
 
 
 class FeaturePipeline():
@@ -46,14 +43,8 @@ class FeaturePipeline():
 
         steps = []
 
-        # Get the raw data paths
-        raw_data_paths = self.get_raw_data_paths()
-
-        # Get ids
-        ids = self.get_ids()
-
         # Create the raw data parser
-        parser = ('raw_data_parser', CacheTIFPipeline(ids, self.raw_data_path))
+        parser = ('raw_data_parser', CacheTIFPipeline(self.raw_data_path))
         steps.append(parser)
 
         # Create the transformation pipeline
@@ -72,17 +63,14 @@ class FeaturePipeline():
         else:
             logger.info("No transformation steps were provided")
 
-        # Create processed paths
-        processed_paths = self.get_processed_data_paths(transformation_hash)
-
         # Add the store pipeline
         store = ('store_processed', CacheTIFPipeline(
-            ids, self.processed_path + '/' + transformation_hash))
+            self.processed_path + '/' + transformation_hash))
         steps.append(store)
 
         if self.column_steps:
             column_pipeline = get_columns(
-                self.column_steps, self.processed_path + '/' + transformation_hash, processed_paths)
+                self.column_steps, self.processed_path + '/' + transformation_hash)
             if column_pipeline:
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
@@ -96,53 +84,6 @@ class FeaturePipeline():
 
         return pipeline
 
-    def get_raw_data_paths(self) -> list[str]:
-        """
-        This function returns the raw data paths.
-        :return: list of raw data paths
-        """
-        # Get the raw data paths
-        raw_data_paths = os.listdir(self.raw_data_path)
-
-        # Iterate over the raw data paths and create the full path
-        for i, raw_data_path in enumerate(raw_data_paths):
-            raw_data_paths[i] = os.path.join(self.raw_data_path, raw_data_path)
-
-        # Sort the raw data paths
-        raw_data_paths.sort()
-
-        return raw_data_paths
-
-    def get_processed_data_paths(self, hash: str = "test") -> list[str]:
-        """
-        This function returns the processed data paths.
-        :param hash: hash of the transformation pipeline
-        :return: list of processed data paths
-        """
-        # Get the names of each file in the raw data path that ends with .tif
-        list_of_tif = [file for file in os.listdir(
-            self.raw_data_path) if file.endswith(".tif")]
-
-        paths = [self.processed_path + '/' +
-                 hash + '/' + tif for tif in list_of_tif]
-        paths.sort()
-        return paths
-
-    def get_ids(self) -> list[str]:
-        """
-        This function returns the ids of the images.
-        :return: list of ids
-        """
-
-        # Use glob to get the paths of the images
-        paths = glob.glob(f"{self.raw_data_path}/*.tif")
-
-        # Get the ids from the paths
-        ids = [path.split('\\')[-1].split('.')[0].split('_')[0]
-               for path in paths]
-
-        return ids
-
 
 if __name__ == "__main__":
     # Example test
@@ -150,7 +91,8 @@ if __name__ == "__main__":
     processed_path = "data/processed"
     features_path = "data/features"
     transform_steps = [{'type': 'divider', 'divider': 65500}]
-    columns = []
+    columns = [{'type': 'band_copy', 'band': 0},
+               {'type': 'band_copy', 'band': 2}]
 
     client = Client()
     import time
@@ -158,7 +100,6 @@ if __name__ == "__main__":
     # Create the feature pipeline
     feature_pipeline = FeaturePipeline(
         raw_data_path, processed_path, transformation_steps=transform_steps, column_steps=columns)
-
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
@@ -167,6 +108,14 @@ if __name__ == "__main__":
     print(time.time() - orig_time)
 
     # Display the first image
-    show(images[0].compute().transpose((2, 0, 1))[2:5])
+    image1 = images[0].compute()
+
+    # Display all bands of the first image in multiple plots on the same figure
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(15, 15))
+    for i in range(9):
+        plt.subplot(1, 9, i+1)
+        plt.imshow(image1[i])
+    plt.show()
 
     print(images.shape)

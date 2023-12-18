@@ -13,7 +13,7 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
     :param data_paths: The paths to the data
     """
 
-    def __init__(self, ids, data_path: str) -> None:
+    def __init__(self, data_path: str) -> None:
 
         if not data_path:
             logger.error("data_path is required")
@@ -21,7 +21,6 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
 
         # Set paths to self
         self.data_path = data_path
-        self.ids = ids
 
     def fit(self, X: Any, y: Any = None) -> Any:
         """
@@ -38,4 +37,4 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        return store_raw(self.ids, self.data_path, X)
+        return store_raw(self.data_path, X)

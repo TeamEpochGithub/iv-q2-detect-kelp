@@ -29,7 +29,7 @@ class Divider(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        return division(X, self.divider)
+        return division(X, self.divider).astype(np.float32)
 
 
 def division(array: da.Array | np.ndarray, divider: int = 1) -> da.Array | np.ndarray:

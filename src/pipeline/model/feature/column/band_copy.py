@@ -15,17 +15,13 @@ class BandCopyPipeline():
     :param band: The band to copy
     """
 
-    def __init__(self, band: int, processed_path: str, processed_paths: list[str]) -> None:
+    def __init__(self, band: int, processed_path: str) -> None:
         """
         This class creates a band copy pipeline.
         :param band: The band to copy
         """
         self.band = band
         self.processed_path = processed_path + '/band_copy_' + str(band)
-
-        # Slice processed paths so that ../processed/image.tif becomes processed/band_copy_1/image.tif
-        self.column_paths = [self.processed_path + '/' +
-                             processed.split('/')[-1] for processed in processed_paths]
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -39,7 +35,7 @@ class BandCopyPipeline():
 
         # Create the cache column pipeline
         cache = ('cache', CacheColumnPipeline(
-            self.column_paths, column=-1))
+            self.processed_path, column=-1))
         steps.append(cache)
 
         return Pipeline(steps=steps, memory=self.processed_path + "/pipeline/")
@@ -76,6 +72,10 @@ class BandCopy(BaseEstimator, TransformerMixin):
         """
         # Take band and add it to the end
         copy_of_band = X[:, self.band].copy()
+
+        # Set copy to dtype float32
+        copy_of_band = copy_of_band.astype("float32")
+
         start_time = time.time()
         X = dask.array.concatenate([X, copy_of_band[:, None]], axis=1)
         logger.debug(f"dask concat time: {time.time() - start_time}s")
