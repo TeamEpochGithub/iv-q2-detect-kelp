@@ -1,4 +1,4 @@
-exclude: ^(dashboard/|external/|venv/)
+exclude: ^(docs/|external/|venv/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -11,8 +11,6 @@ repos:
       - id: check-toml
       - id: check-xml
       - id: check-yaml
-      - id: mixed-line-ending
-        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/pre-commit/mirrors-mypy
