@@ -1,17 +1,14 @@
 from typing import Any
-import warnings
 from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 import dask.array as da
 from src.pipeline.caching.util.error import CachePipelineError
-from rasterio.errors import NotGeoreferencedWarning
-
 from src.pipeline.caching.util.store_raw import store_raw
 
 
 class CacheColumnPipeline(BaseEstimator, TransformerMixin):
     """
-    The caching pipeline is responsible for loading and storing the data to disk.
+    The caching column pipeline is responsible for loading and storing individual columns to disk.
     :param data_path: The path to the data
     :param column: The column to store
     """
@@ -43,13 +40,10 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=NotGeoreferencedWarning)
+        # Load or store the data column
+        logger.info("Loading or storing column")
+        column = store_raw(self.data_path, X[:, self.column])
 
-            # Load or store the data column
-            logger.info("Loading or storing column")
-            column = store_raw(self.data_path, X[:, self.column])
-
-            # Create the new array
-            X_new = da.concatenate([X[:, :self.column], column[:, None]], axis=1)
-            return X_new
+        # Create the new array
+        X_new = da.concatenate([X[:, :self.column], column[:, None]], axis=1)
+        return X_new

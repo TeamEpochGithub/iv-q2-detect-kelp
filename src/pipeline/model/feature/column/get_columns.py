@@ -13,7 +13,7 @@ def get_columns(column_steps: list[dict[str, Any]], processed_path: str | None =
     :param processed_path: path to the processed data
     :return: column pipeline
     """
-    # TODO: Create the column pipeline
+    # Match the column steps to the correct function
     steps = [match(column_step, processed_path=processed_path)
              for column_step in column_steps]
 

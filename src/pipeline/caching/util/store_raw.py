@@ -45,7 +45,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     da.to_npy_stack(data_path, dask_array.astype(np.float32))
 
     end_time = time.time()
-    logger.info(
+    logger.debug(
         f"Finished storing data to disk in: {end_time - start_time} seconds")
 
     # Return the dask array
