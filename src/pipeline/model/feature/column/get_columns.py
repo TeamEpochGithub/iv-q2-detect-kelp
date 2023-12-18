@@ -6,7 +6,7 @@ from src.pipeline.model.feature.column.band_copy import BandCopyPipeline
 from src.pipeline.model.feature.column.error import ColumnPipelineError
 
 
-def get_columns(column_steps: list[dict[str, Any]], processed_path: str | None = None) -> Pipeline:
+def get_columns(column_steps: list[dict[str, Any]], processed_path: str | None = None) -> Pipeline | None:
     """
     This function creates the column pipeline.
     :param column_steps: list of column steps
