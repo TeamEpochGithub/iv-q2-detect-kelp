@@ -11,13 +11,6 @@ class TransformationPipelineError(Exception):
         """
         self.message = message
 
-    def __str__(self) -> str:
-        """
-        Stringify the error.
-        :return: The error message
-        """
-        return self.message
-
     def __repr__(self) -> str:
         """
         Represent the error.
