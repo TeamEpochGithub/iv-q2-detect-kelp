@@ -193,5 +193,8 @@ submissions/
 # Hydra logs
 outputs/
 
+# Ignore logs
+logging/
+
 #Leakage images
 plots/images/leakage/[0-9]*

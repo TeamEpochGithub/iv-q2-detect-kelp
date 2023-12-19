@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Create a file handler using date and time to create a unique filename
-time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+time = datetime.datetime.now().strftime("%S-%M-%H_%d-%m-%Y")
 
 # Create directory if it does not exist
 if not os.path.exists("logging/logs"):
