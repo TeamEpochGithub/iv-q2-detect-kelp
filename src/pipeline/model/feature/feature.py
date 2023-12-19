@@ -6,14 +6,12 @@
 from typing import Any
 from distributed import Client
 from src.logging_utils.logger import logger
-import os
 from sklearn.pipeline import Pipeline
 from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.error import FeaturePipelineError
 from src.pipeline.model.feature.transformation.get_transformations import get_transformations
 from joblib import hash
-from rasterio.plot import show
 
 
 class FeaturePipeline():
@@ -45,11 +43,8 @@ class FeaturePipeline():
 
         steps = []
 
-        # Get the raw data paths
-        raw_data_paths = self.get_raw_data_paths()
-
         # Create the raw data parser
-        parser = ('raw_data_parser', CacheTIFPipeline(raw_data_paths))
+        parser = ('raw_data_parser', CacheTIFPipeline(self.raw_data_path))
         steps.append(parser)
 
         # Create the transformation pipeline
@@ -68,74 +63,32 @@ class FeaturePipeline():
         else:
             logger.info("No transformation steps were provided")
 
-        # Create processed paths
-        processed_paths = self.get_processed_data_paths(transformation_hash)
-
         # Add the store pipeline
-        store = ('store_processed', CacheTIFPipeline(processed_paths))
-        steps.append(store)
+        if self.processed_path:
+            store = ('store_processed', CacheTIFPipeline(
+                self.processed_path + '/' + transformation_hash))
+            steps.append(store)
 
         if self.column_steps:
-            column_pipeline = get_columns(self.column_steps)
+            if self.processed_path:
+                column_path = self.processed_path + '/' + transformation_hash
+            else:
+                column_path = None
+
+            column_pipeline = get_columns(
+                self.column_steps, column_path)
             if column_pipeline:
                 columns = ('columns', column_pipeline)
                 steps.append(columns)
         if not self.processed_path:
-            logger.info("No processed path was provided, returning pipeline without caching")
+            logger.info(
+                "No processed path was provided, returning pipeline without caching")
             return Pipeline(steps)
         else:
             pipeline = Pipeline(steps=steps, memory=self.processed_path +
                                 '/' + transformation_hash + '/pipeline_cache')
 
         return pipeline
-
-    def get_raw_data_paths(self) -> list[str]:
-        """
-        This function returns the raw data paths.
-        :return: list of raw data paths
-        """
-        # Get the raw data paths
-        raw_data_paths = os.listdir(self.raw_data_path)
-
-        # Iterate over the raw data paths and create the full path
-        for i, raw_data_path in enumerate(raw_data_paths):
-            raw_data_paths[i] = os.path.join(self.raw_data_path, raw_data_path)
-
-        # Sort the raw data paths
-        raw_data_paths.sort()
-
-        return raw_data_paths
-
-    def get_processed_data_paths(self, hash: str = "test") -> list[str]:
-        """
-        This function returns the processed data paths.
-        :param hash: hash of the transformation pipeline
-        :return: list of processed data paths
-        """
-        # Get the names of each file
-        names = os.listdir(self.raw_data_path)
-
-        # Create the processed path
-        if not self.processed_path:
-            processed_path = "data/processed" + "/" + hash
-        else:
-            processed_path = self.processed_path + "/" + hash
-
-        # If processed path does not exist, create it
-        if not os.path.exists(processed_path):
-            os.makedirs(processed_path)
-
-        # Create the processed data paths
-        processed_data_paths = names
-
-        # Iterate over the processed data paths and create the full path
-        for i, name in enumerate(names):
-            processed_data_paths[i] = os.path.join(processed_path, name)
-
-        # Sort the processed data paths
-        processed_data_paths.sort()
-
-        return processed_data_paths
 
 
 if __name__ == "__main__":
@@ -144,7 +97,8 @@ if __name__ == "__main__":
     processed_path = "data/processed"
     features_path = "data/features"
     transform_steps = [{'type': 'divider', 'divider': 65500}]
-    columns: list[dict[str, Any]] = []
+    columns = [{'type': 'band_copy', 'band': 0},
+               {'type': 'band_copy', 'band': 2}]
 
     client = Client()
     import time
@@ -152,7 +106,6 @@ if __name__ == "__main__":
     # Create the feature pipeline
     feature_pipeline = FeaturePipeline(
         raw_data_path, processed_path, transformation_steps=transform_steps, column_steps=columns)
-
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
@@ -161,6 +114,14 @@ if __name__ == "__main__":
     print(time.time() - orig_time)
 
     # Display the first image
-    show(images[0].compute()[2:5])
+    image1 = images[0].compute()
+
+    # Display all bands of the first image in multiple plots on the same figure
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(15, 15))
+    for i in range(9):
+        plt.subplot(1, 9, i+1)
+        plt.imshow(image1[i])
+    plt.show()
 
     print(images.shape)

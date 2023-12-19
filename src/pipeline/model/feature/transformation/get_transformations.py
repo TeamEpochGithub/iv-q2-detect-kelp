@@ -6,7 +6,7 @@ from src.pipeline.model.feature.transformation.error import TransformationPipeli
 from src.logging_utils.logger import logger
 
 
-def get_transformations(transformation_steps: list[dict[str, Any]]) -> Pipeline:
+def get_transformations(transformation_steps: list[dict[str, Any]]) -> Pipeline | None:
     """
     This function creates the transformation pipeline.
     :param transformation_steps: list of transformation steps
