@@ -6,14 +6,14 @@ from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
 
 
-class CacheColumnPipeline(BaseEstimator, TransformerMixin):
+class CacheColumnBlock(BaseEstimator, TransformerMixin):
     """
-    The caching column pipeline is responsible for loading and storing individual columns to disk.
+    The caching column block is responsible for loading and storing individual columns to disk.
     :param data_path: The path to the data
     :param column: The column to store
     """
 
-    def __init__(self, data_path: str, column: int = -1) -> None:
+    def __init__(self, data_path: str | None = None, column: int = -1) -> None:
 
         if not data_path:
             logger.error("data_paths are required")
@@ -29,7 +29,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         """
         :param X: The data to fit
         :param y: The target variable
-        :return: The fitted pipeline
+        :return: The fitted block
         """
         return self
 
@@ -47,3 +47,19 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         # Create the new array
         X_new = da.concatenate([X[:, :self.column], column[:, None]], axis=1)
         return X_new
+    
+    def get_data_path(self) -> str:
+        """
+        Get the data path.
+
+        :return: The data path
+        """
+        return self.data_path
+    
+    def set_path(self, data_path: str) -> None:
+        """
+        Override the data path.
+
+        :param data_path: The new data path
+        """
+        self.data_path = data_path

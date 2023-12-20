@@ -19,6 +19,7 @@ class ColumnBlockPipeline():
         """
         self.column_block = column_block
         self.cache_block = cache_block
+        self.path = None
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -31,6 +32,8 @@ class ColumnBlockPipeline():
         if self.column_block:
             steps.append((str(self.column_block), self.column_block))
         if self.cache_block:
+            if self.path:
+                self.cache_block.set_path(self.path + "/" + str(self.column_block))
             steps.append((str(self.cache_block), self.cache_block))
             memory = self.cache_block.get_data_path() + "/pipeline"
 
@@ -45,6 +48,13 @@ class ColumnBlockPipeline():
         """
         return f"ColumnBlockPipeline_{str(self.column_block)}"
 
+    def set_path(self, path: str) -> None:
+        """
+        Set the path
+
+        :param path: path
+        """
+        self.path = path
 
 if __name__ == "__main__":
     

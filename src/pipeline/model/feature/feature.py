@@ -7,11 +7,11 @@ from typing import Any
 from distributed import Client
 from src.logging_utils.logger import logger
 from sklearn.pipeline import Pipeline
-from src.pipeline.caching.tif import CacheTIFPipeline
-from src.pipeline.model.feature.column.get_columns import get_columns
+from src.pipeline.caching.tif import CacheTIFBlock
+from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.error import FeaturePipelineError
-from src.pipeline.model.feature.transformation.get_transformations import get_transformations
 from joblib import hash
+from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 
 
 class FeaturePipeline():
@@ -23,7 +23,7 @@ class FeaturePipeline():
     :param column_steps: list of column steps
     """
 
-    def __init__(self, raw_data_path: str, processed_path: str | None = None, transformation_steps: list[dict[str, Any]] = [], column_steps: list[dict[str, Any]] = []):
+    def __init__(self, raw_data_path: str, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None) -> None:
 
         if not raw_data_path:
             logger.error("raw_data_path is required")
@@ -32,8 +32,8 @@ class FeaturePipeline():
         # Set paths to self
         self.raw_data_path = raw_data_path
         self.processed_path = processed_path
-        self.transformation_steps = transformation_steps
-        self.column_steps = column_steps
+        self.transformation_pipeline = transformation_pipeline
+        self.column_pipeline = column_pipeline
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -44,51 +44,41 @@ class FeaturePipeline():
         steps = []
 
         # Create the raw data parser
-        parser = ('raw_data_parser', CacheTIFPipeline(self.raw_data_path))
+        parser = ('raw_data_parser', CacheTIFBlock(self.raw_data_path))
         steps.append(parser)
+
 
         # Create the transformation pipeline
         transformation_hash = "raw"
-        if self.transformation_steps:
-            transformation_pipeline = get_transformations(
-                self.transformation_steps)
-            if transformation_pipeline:
-                transformations = ('transformations', transformation_pipeline)
-                steps.append(transformations)
-
-                # Get the hash of the transformation pipeline
-                transformation_hash = hash(transformation_pipeline)
-                logger.debug(
-                    f"Transformation pipeline hash: {transformation_hash}")
+        if self.transformation_pipeline:
+            transformation_hash = hash(self.transformation_pipeline)
+            transformation = (str(self.transformation_pipeline),
+                              self.transformation_pipeline.get_pipeline())
+            steps.append(transformation)
         else:
-            logger.info("No transformation steps were provided")
+            logger.debug("No transformation steps were provided")
+
+        # Full path
+        path = self.processed_path + '/' + transformation_hash
 
         # Add the store pipeline
         if self.processed_path:
-            store = ('store_processed', CacheTIFPipeline(
-                self.processed_path + '/' + transformation_hash))
+            store = ('store_processed', CacheTIFBlock(path))
             steps.append(store)
 
-        if self.column_steps:
-            if self.processed_path:
-                column_path = self.processed_path + '/' + transformation_hash
-            else:
-                column_path = None
-
-            column_pipeline = get_columns(
-                self.column_steps, column_path)
-            if column_pipeline:
-                columns = ('columns', column_pipeline)
-                steps.append(columns)
-        if not self.processed_path:
-            logger.info(
-                "No processed path was provided, returning pipeline without caching")
-            return Pipeline(steps)
+        # Create the column pipeline
+        if self.column_pipeline:
+            column_pipeline.set_path(path)
+            column = (str(self.column_pipeline),
+                      self.column_pipeline.get_pipeline())
+            steps.append(column)
         else:
-            pipeline = Pipeline(steps=steps, memory=self.processed_path +
-                                '/' + transformation_hash + '/pipeline_cache')
+            logger.debug("No column steps were provided")
 
-        return pipeline
+        mem = self.processed_path + '/' + transformation_hash + \
+            '/pipeline_cache' if self.processed_path else None
+
+        return Pipeline(steps=steps, memory=mem)
 
 
 if __name__ == "__main__":
@@ -96,16 +86,31 @@ if __name__ == "__main__":
     raw_data_path = "data/raw/train_satellite"
     processed_path = "data/processed"
     features_path = "data/features"
-    transform_steps = [{'type': 'divider', 'divider': 65500}]
-    columns = [{'type': 'band_copy', 'band': 0},
-               {'type': 'band_copy', 'band': 2}]
+
+    # Create the transformation pipeline
+    from src.pipeline.model.feature.transformation.divider import Divider
+    divider = Divider(2)
+
+    transformation_pipeline = TransformationPipeline([divider])
+
+    # Create the column pipeline
+    from src.pipeline.model.feature.column.band_copy import BandCopy
+    from src.pipeline.caching.column import CacheColumnBlock
+    from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
+    band_copy_pipeline = BandCopy(1)
+
+    from src.pipeline.caching.column import CacheColumnBlock
+    cache = CacheColumnBlock(
+        "data/test", column=-1)
+    column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
+    column_pipeline = ColumnPipeline([column_block_pipeline])
 
     client = Client()
     import time
     orig_time = time.time()
     # Create the feature pipeline
-    feature_pipeline = FeaturePipeline(
-        raw_data_path, processed_path, transformation_steps=transform_steps, column_steps=columns)
+    feature_pipeline = FeaturePipeline(raw_data_path=raw_data_path, processed_path=processed_path,
+                                       transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
@@ -119,8 +124,8 @@ if __name__ == "__main__":
     # Display all bands of the first image in multiple plots on the same figure
     import matplotlib.pyplot as plt
     plt.figure(figsize=(15, 15))
-    for i in range(9):
-        plt.subplot(1, 9, i+1)
+    for i in range(8):
+        plt.subplot(1, 8, i+1)
         plt.imshow(image1[i])
     plt.show()
 

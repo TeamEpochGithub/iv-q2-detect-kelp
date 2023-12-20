@@ -6,7 +6,7 @@ import dask.array as da
 from src.pipeline.caching.util.store_raw import store_raw
 
 
-class CacheTIFPipeline(BaseEstimator, TransformerMixin):
+class CacheTIFBlock(BaseEstimator, TransformerMixin):
     """
     The caching pipeline is responsible for loading and storing the data to disk.
     :param data_path: The path to the data
@@ -37,3 +37,14 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         :return: The transformed data
         """
         return store_raw(self.data_path, X)
+
+    def __hash__(self):
+        # Get the hash of the class name
+        hash_value = hash(self.__class__.__name__)
+
+        # Combine the hash with the hashes of the other attributes
+        for attr in self.__dict__:
+            if attr != 'data_path':
+                hash_value ^= hash(self.__dict__[attr])
+
+        return hash_value

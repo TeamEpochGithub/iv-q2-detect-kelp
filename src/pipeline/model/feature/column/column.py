@@ -16,6 +16,7 @@ class ColumnPipeline():
         :param columns: list of columns
         """
         self.columns = columns
+        self.path = None
 
     def get_pipeline(self) -> Pipeline:
         """
@@ -26,6 +27,8 @@ class ColumnPipeline():
         steps = []
 
         for column in self.columns:
+            if self.path:
+                column.set_path(self.path)
             steps.append((str(column), column.get_pipeline()))
 
         if steps:
@@ -38,6 +41,14 @@ class ColumnPipeline():
         :return: String representation of the ColumnPipeline
         """
         return "ColumnPipeline"
+    
+    def set_path(self, path: str) -> None:
+        """
+        Set the path
+
+        :param path: path
+        """
+        self.path = path
 
 
 if __name__ == "__main__":
