@@ -36,7 +36,7 @@ class Divider(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        return (X / self.divider).astype(np.float32), y
+        return (X / self.divider).astype(np.float32)
 
     def __str__(self) -> str:
         """
