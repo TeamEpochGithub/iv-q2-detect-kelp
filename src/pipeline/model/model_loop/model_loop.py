@@ -42,7 +42,7 @@ class ModelLoopPipeline():
 if __name__ == "__main__":
     # This is meant to be an example of how to set up the model loop pipeline
     # Do not remove this code
-    
+
     # make a nn.Module model
     Client()
     import torch.nn as nn
@@ -74,8 +74,8 @@ if __name__ == "__main__":
     criterion = DiceLoss()
 
     # make a model fit block
-    from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelFitBlock
-    model_fit_block = ModelFitBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
+    from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
     model_str = str(model_fit_block)
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])

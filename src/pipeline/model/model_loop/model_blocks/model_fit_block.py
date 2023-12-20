@@ -13,7 +13,7 @@ from collections.abc import Iterable
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
 
-class ModelFitBlock(BaseEstimator, TransformerMixin):
+class ModelBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
     :param model: Model to train.
     :param optimizer: Optimizer.
@@ -29,7 +29,7 @@ class ModelFitBlock(BaseEstimator, TransformerMixin):
     def __init__(self, model: nn.Module, optimizer: Any, scheduler: Any, criterion: Any,
                  epochs: int = 10, batch_size: int = 32, patience: int = 5,) -> None:
         """
-        Initialize the ModelFitBlock.
+        Initialize the ModelBlock.
 
         :param model: Model to train.
         :param optimizer: Optimizer.

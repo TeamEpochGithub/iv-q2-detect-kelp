@@ -1,6 +1,6 @@
 from sklearn.pipeline import Pipeline
 
-from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelFitBlock
+from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 
 
 class ModelBlocksPipeline():
@@ -8,7 +8,7 @@ class ModelBlocksPipeline():
     This class is used to create the model blocks pipeline.
     :param model_blocks: list of model blocks
     """
-    def __init__(self, model_blocks: list[ModelFitBlock]) -> None:
+    def __init__(self, model_blocks: list[ModelBlock]) -> None:
         """
         initialize the ModelBlocksPipeline
         :param model_blocks: list of model blocks
