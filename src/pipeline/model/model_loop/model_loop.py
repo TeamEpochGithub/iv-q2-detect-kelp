@@ -40,6 +40,9 @@ class ModelLoopPipeline():
 
 
 if __name__ == "__main__":
+    # This is meant to be an example of how to set up the model loop pipeline
+    # Do not remove this code
+    
     # make a nn.Module model
     Client()
     import torch.nn as nn
