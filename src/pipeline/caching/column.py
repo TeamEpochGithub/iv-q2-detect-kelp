@@ -15,10 +15,6 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
 
     def __init__(self, data_path: str | None = None, column: int = -1) -> None:
 
-        if not data_path:
-            logger.error("data_paths are required")
-            raise CachePipelineError("data_path is required")
-
         # Set paths to self
         self.data_path = data_path
 
@@ -40,12 +36,19 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
+
+        # Check if the data path is set
+        if not self.data_path:
+            logger.error("data_paths are required")
+            raise CachePipelineError("data_path is required")
+
         # Load or store the data column
         logger.info("Loading or storing column")
         column = store_raw(self.data_path, X[:, self.column])
 
         # Create the new array
         X_new = da.concatenate([X[:, :self.column], column[:, None]], axis=1)
+        X_new = X_new.rechunk()
         return X_new
     
     def get_data_path(self) -> str:

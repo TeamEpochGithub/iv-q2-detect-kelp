@@ -4,8 +4,11 @@ from dask_image.imread import imread
 from distributed import Client
 import numpy as np
 from sklearn.model_selection import train_test_split
+from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
+from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
 from src.pipeline.model.feature.feature import FeaturePipeline
+from src.pipeline.model.feature.transformation.divider import Divider
 
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 from src.pipeline.model.model import ModelPipeline
@@ -19,20 +22,14 @@ if __name__ == '__main__':
     client = Client()
 
     # Paths
-    raw_data_path = "data/raw/train_satellite"
     processed_path = "data/processed"
-    features_path = "data/features"
 
     # Create the transformation pipeline
-    from src.pipeline.model.feature.transformation.divider import Divider
     divider = Divider(2)
 
     transformation_pipeline = TransformationPipeline([divider])
 
     # Create the column pipeline
-    from src.pipeline.model.feature.column.band_copy import BandCopy
-    from src.pipeline.caching.column import CacheColumnBlock
-    from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
     band_copy_pipeline = BandCopy(1)
 
     from src.pipeline.caching.column import CacheColumnBlock
@@ -44,7 +41,7 @@ if __name__ == '__main__':
     import time
     orig_time = time.time()
     # Create the feature pipeline
-    fp = FeaturePipeline(raw_data_path=raw_data_path, processed_path=processed_path,
+    fp = FeaturePipeline(processed_path=processed_path,
                                        transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     feature_pipeline = fp.get_pipeline()
 
@@ -62,9 +59,15 @@ if __name__ == '__main__':
     # Get model pipeline
     model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
 
+    # Read in the raw data
+    raw_data_path = "data/raw/train_satellite"
+    raw_target_path = "data/raw/train_kelp"
+    X = imread(f"{raw_data_path}/*.tif").transpose(0,3,1,2)
+    y = imread(f"{raw_target_path}/*.tif")
+
     # Create an array of indices # TODO split comes from config file
     split = 0.2
-    x = feature_pipeline.fit_transform(None)
+    x = feature_pipeline.fit_transform(X)
     indices = np.arange(x.shape[0])
 
     # Split indices into train and test
@@ -77,8 +80,7 @@ if __name__ == '__main__':
 
     # Fit the model pipeline
     mp = model_pipeline.get_pipeline()
-    mp.fit(None, None, **fit_args)
 
     # Transform the model pipeline
-    x = mp.fit_transform(None)
+    x = mp.fit_transform(X, y)
     print(x.shape)

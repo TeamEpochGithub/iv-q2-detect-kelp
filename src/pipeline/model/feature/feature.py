@@ -23,14 +23,16 @@ class FeaturePipeline():
     :param column_steps: list of column steps
     """
 
-    def __init__(self, raw_data_path: str, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None) -> None:
+    def __init__(self, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None) -> None:
+        """
+        Initialize the class.
 
-        if not raw_data_path:
-            logger.error("raw_data_path is required")
-            raise FeaturePipelineError("raw_data_path is required")
+        :param processed_path: path to the processed data
+        :param transformation_pipeline: the transformation pipeline
+        :param column_pipeline: the column pipeline
+        """
 
-        # Set paths to self
-        self.raw_data_path = raw_data_path
+        # Set the parameters
         self.processed_path = processed_path
         self.transformation_pipeline = transformation_pipeline
         self.column_pipeline = column_pipeline
@@ -42,11 +44,6 @@ class FeaturePipeline():
         """
 
         steps = []
-
-        # Create the raw data parser
-        parser = ('raw_data_parser', CacheTIFBlock(self.raw_data_path))
-        steps.append(parser)
-
 
         # Create the transformation pipeline
         transformation_hash = "raw"
@@ -109,13 +106,15 @@ if __name__ == "__main__":
     import time
     orig_time = time.time()
     # Create the feature pipeline
-    feature_pipeline = FeaturePipeline(raw_data_path=raw_data_path, processed_path=processed_path,
+    feature_pipeline = FeaturePipeline(processed_path=processed_path,
                                        transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     pipeline = feature_pipeline.get_pipeline()
 
     # Parse the raw data
     orig_time = time.time()
-    images = pipeline.fit_transform(None)
+    from dask_image.imread import imread
+    x = imread(f"{raw_data_path}/*.tif").transpose(0,3,1,2)
+    images = pipeline.fit_transform(x)
     print(time.time() - orig_time)
 
     # Display the first image

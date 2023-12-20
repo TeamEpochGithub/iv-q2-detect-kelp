@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Test the divider
     divider = Divider(2)
     X = da.from_array(np.array([1, 2, 3, 4, 5]))
-    X, y = divider.transform(X)
+    X = divider.transform(X)
     print(str(divider))
     # Print class of divider
     print(divider.__class__.__name__)
