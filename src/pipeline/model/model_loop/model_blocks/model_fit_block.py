@@ -174,11 +174,11 @@ class ModelFitBlock(BaseEstimator, TransformerMixin):
         """
         return str(self.model)
 
-    def transform(self, X: da.Array, y: da.Array) -> tuple[list[torch.Tensor], da.Array]:
+    def transform(self, X: da.Array, y: da.Array) -> list[torch.Tensor]:
         """
         transform method for sklearn pipeline
         :param X: Input features.
         :param y: Labels.
         :return: Predictions and labels.
         """
-        return self.predict(X), y
+        return self.predict(X)
