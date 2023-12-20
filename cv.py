@@ -50,14 +50,8 @@ if __name__ == '__main__':
     raw_target_path = 'data/raw/train_kelp'     # TODO remove
     y = imread(f"{raw_target_path}/*.tif")  # TODO remove
 
-    # Get model loop pipeline TODO
-    mlp = ModelLoopPipeline(None, None)
-
     # Get post processing pipeline TODO
     ppp = PostProcessingPipeline()
-
-    # Get model pipeline
-    model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
 
     # Read in the raw data
     raw_data_path = "data/raw/train_satellite"
@@ -80,6 +74,12 @@ if __name__ == '__main__':
         print(f"Test indices: {test_indices}")
 
         fit_args = {}
+
+        # Get model loop pipeline TODO
+        mlp = ModelLoopPipeline(None, None)
+
+        # Get model pipeline
+        model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
 
         mp = model_pipeline.get_pipeline()
         x = mp.fit_transform(X, y)
