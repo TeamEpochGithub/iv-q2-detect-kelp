@@ -1,27 +1,70 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
 from dask_image.imread import imread
+
+from distributed import Client
 import numpy as np
 from sklearn.model_selection import train_test_split
+from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.feature import FeaturePipeline
 
-if __name__ == '__main__':
-    # Temporary args before config file is implemented TODO remove
-    split = 0.2
-    raw_feature_path = 'data/raw/train_satellite'
-    raw_target_path = 'data/raw/train_kelp'
-    processed_path = 'data/processed'
-    transformation_steps = []
-    column_steps = []
+from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
+from src.pipeline.model.model import ModelPipeline
+from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
+from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 
-    # Get feature pipeline
-    fp = FeaturePipeline(raw_feature_path, processed_path,
-                         transformation_steps=transformation_steps, column_steps=column_steps)
+
+if __name__ == '__main__':
+
+    # Initialize dask client
+    client = Client()
+
+    # Paths
+    raw_data_path = "data/raw/train_satellite"
+    processed_path = "data/processed"
+    features_path = "data/features"
+
+    # Create the transformation pipeline
+    from src.pipeline.model.feature.transformation.divider import Divider
+    divider = Divider(2)
+
+    transformation_pipeline = TransformationPipeline([divider])
+
+    # Create the column pipeline
+    from src.pipeline.model.feature.column.band_copy import BandCopy
+    from src.pipeline.caching.column import CacheColumnBlock
+    from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
+    band_copy_pipeline = BandCopy(1)
+
+    from src.pipeline.caching.column import CacheColumnBlock
+    cache = CacheColumnBlock(
+        "data/test", column=-1)
+    column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
+    column_pipeline = ColumnPipeline([column_block_pipeline])
+
+    import time
+    orig_time = time.time()
+    # Create the feature pipeline
+    fp = FeaturePipeline(raw_data_path=raw_data_path, processed_path=processed_path,
+                                       transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     feature_pipeline = fp.get_pipeline()
-    x = feature_pipeline.fit_transform(None)
 
     # Get target pipeline TODO
-    y = imread(f"{raw_target_path}/*.tif")
-    # Create an array of indices
+    tp = None
+    raw_target_path = 'data/raw/train_kelp'     # TODO remove
+    y = imread(f"{raw_target_path}/*.tif")  # TODO remove
+
+    # Get model loop pipeline TODO
+    mlp = ModelLoopPipeline(None, None)
+
+    # Get post processing pipeline TODO
+    ppp = PostProcessingPipeline()
+
+    # Get model pipeline
+    model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
+
+    # Create an array of indices # TODO split comes from config file
+    split = 0.2
+    x = feature_pipeline.fit_transform(None)
     indices = np.arange(x.shape[0])
 
     # Split indices into train and test
@@ -30,12 +73,12 @@ if __name__ == '__main__':
     print(f"Train indices: {train_indices}")
     print(f"Test indices: {test_indices}")
 
-    # Create a KFold object
-    # kf = KFold(n_splits=5)
+    fit_args = {}
 
-    # # Split indices into train and test for each fold
-    # for train_indices, test_indices in kf.split(indices):
-    #     print(f"Train indices: {train_indices}")
-    #     print(f"Test indices: {test_indices}")
+    # Fit the model pipeline
+    mp = model_pipeline.get_pipeline()
+    mp.fit(None, None, **fit_args)
 
-
+    # Transform the model pipeline
+    x = mp.fit_transform(None)
+    print(x.shape)

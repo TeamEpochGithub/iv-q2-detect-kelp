@@ -68,7 +68,7 @@ class FeaturePipeline():
 
         # Create the column pipeline
         if self.column_pipeline:
-            column_pipeline.set_path(path)
+            self.column_pipeline.set_path(path)
             column = (str(self.column_pipeline),
                       self.column_pipeline.get_pipeline())
             steps.append(column)

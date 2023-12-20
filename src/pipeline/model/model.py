@@ -1,0 +1,49 @@
+from sklearn.pipeline import Pipeline
+
+from src.pipeline.model.feature.feature import FeaturePipeline
+from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
+from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
+from src.pipeline.model.target.target import TargetPipeline
+
+
+class ModelPipeline():
+    """
+    ModelPipeline is the class used to create the model pipeline.
+
+    :param feature_pipeline: The feature pipeline
+    :param target_pipeline: The target pipeline
+    :param model_loop_pipeline: The model loop pipeline
+    :param post_processing_pipeline: The post processing pipeline
+    """
+    def __init__(self, feature_pipeline: FeaturePipeline, target_pipeline: TargetPipeline, model_loop_pipeline: ModelLoopPipeline, post_processing_pipeline: PostProcessingPipeline):
+        self.feature_pipeline = feature_pipeline
+        self.target_pipeline = target_pipeline
+        self.model_loop_pipeline = model_loop_pipeline
+        self.post_processing_pipeline = post_processing_pipeline
+
+    def get_pipeline(self) -> Pipeline:
+
+        steps = []
+
+        if self.feature_pipeline:
+            steps.append(
+                ('feature_pipeline', self.feature_pipeline.get_pipeline()))
+        if self.target_pipeline:
+            steps.append(
+                ('target_pipeline', self.target_pipeline.get_pipeline()))
+        if self.model_loop_pipeline:
+            steps.append(
+                ('model_loop_pipeline', self.model_loop_pipeline.get_pipeline()))
+        if self.post_processing_pipeline:
+            steps.append(('post_processing_pipeline',
+                         self.post_processing_pipeline.get_pipeline()))
+
+        return Pipeline(steps)
+    
+    def __str__(self) -> str:
+        """
+        String representation of the class.
+
+        :return: String representation of the class
+        """
+        return "ModelPipeline"
