@@ -139,7 +139,8 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     self.model.load_state_dict(best_model)
                     # trained_epochs = (epoch - early_stopping_counter + 1)
                     break
-
+        # save the model in the tm folder
+        torch.save(self.model.state_dict(), 'tm/model.pt')
         return self
 
     def predict(self, X: da.Array, to_mem_length: int = 3000) -> list[torch.Tensor]:
