@@ -123,7 +123,7 @@ def features_layout(image_id: str) -> html.Div:
     # distance to land with scipy distance transform
     land_mask = x[:, :, 6] > 0
     land_dist = scipy.ndimage.distance_transform_edt(~land_mask)
-    land_closeness = 1 / (1 + land_dist*0.1)
+    land_closeness = 1 / (1 + land_dist * 0.1)
 
     # rescale so that ir_water_normed is between 0 and 1 in the water, for visualization purposes
     normed_min = np.min(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
