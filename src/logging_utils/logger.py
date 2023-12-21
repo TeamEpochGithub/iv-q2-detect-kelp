@@ -5,13 +5,13 @@ import os
 import logging
 
 # Create a logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("logger")
 
 # Set the logging level
 logger.setLevel(logging.DEBUG)
 
 # Create a file handler using date and time to create a unique filename
-time = datetime.datetime.now().strftime("%S-%M-%H_%d-%m-%Y")
+time = datetime.datetime.now().strftime("%d-%m-%Y_%H;%M")
 
 # Create directory if it does not exist
 if not os.path.exists("logging/logs"):
