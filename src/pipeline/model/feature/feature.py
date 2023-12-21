@@ -4,14 +4,16 @@
 
 # Import libraries
 from typing import Any
+
 from distributed import Client
-from src.logging_utils.logger import logger
+from joblib import hash
 from sklearn.pipeline import Pipeline
+
+from src.logging_utils.logger import logger
 from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.error import FeaturePipelineError
 from src.pipeline.model.feature.transformation.get_transformations import get_transformations
-from joblib import hash
 
 
 class FeaturePipeline():
@@ -85,8 +87,7 @@ class FeaturePipeline():
                 "No processed path was provided, returning pipeline without caching")
             return Pipeline(steps)
         else:
-            pipeline = Pipeline(steps=steps, memory=self.processed_path +
-                                '/' + transformation_hash + '/pipeline_cache')
+            pipeline = Pipeline(steps=steps, memory=self.processed_path + '/' + transformation_hash + '/pipeline_cache')
 
         return pipeline
 
@@ -102,6 +103,7 @@ if __name__ == "__main__":
 
     client = Client()
     import time
+
     orig_time = time.time()
     # Create the feature pipeline
     feature_pipeline = FeaturePipeline(
@@ -118,9 +120,10 @@ if __name__ == "__main__":
 
     # Display all bands of the first image in multiple plots on the same figure
     import matplotlib.pyplot as plt
+
     plt.figure(figsize=(15, 15))
     for i in range(9):
-        plt.subplot(1, 9, i+1)
+        plt.subplot(1, 9, i + 1)
         plt.imshow(image1[i])
     plt.show()
 
