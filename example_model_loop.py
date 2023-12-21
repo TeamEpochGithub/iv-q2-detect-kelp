@@ -9,7 +9,6 @@ from src.utils.flatten_dict import flatten_dict
 from dask_image.imread import imread
 from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 import torch.nn as nn
-from unet import UNet2D
 
 from dask import config as cfg
 
@@ -51,7 +50,7 @@ if __name__ == "__main__":
 
     # make a model fit block
 
-    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=10, batch_size=32, patience=10)
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=2, batch_size=32, patience=10)
     model_str = str(model_fit_block)
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
