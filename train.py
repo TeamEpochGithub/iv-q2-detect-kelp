@@ -122,8 +122,6 @@ if __name__ == '__main__':
     logger.debug(f"Test indices: {test_indices}")
 
     # fit_args: dict[tuple[str, Any]] = {}
-    # Print section separator
-    print_section_separator("Training")
 
     # Transform the model pipeline
     x = model_pipeline.fit_transform(X, y)

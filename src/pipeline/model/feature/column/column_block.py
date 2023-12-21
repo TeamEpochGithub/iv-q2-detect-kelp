@@ -2,8 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from src.pipeline.caching.column import CacheColumnBlock
 
-
-class ColumnBlockPipeline():
+class ColumnBlockPipeline(Pipeline):
     """
     ColumnBlockPipeline
 
@@ -21,42 +20,27 @@ class ColumnBlockPipeline():
         self.column_block = column_block
         self.cache_block = cache_block
         self.path = ""
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self) -> Pipeline:
+    def _get_steps(self):
         """
-        Get the column block pipeline
+        Get the column block pipeline steps
 
-        :return: Pipeline object
+        :return: list of steps
         """
         steps = []
-        memory = None
-
         if self.column_block:
             steps.append((str(self.column_block), self.column_block))
         if self.cache_block:
             if self.path:
-                self.cache_block.set_path(
-                    self.path + "/" + str(self.column_block))
                 steps.append((str(self.cache_block), self.cache_block))
-                data_path = self.cache_block.get_data_path()
-                if data_path:
-                    memory = data_path + "/pipeline"
-
-        if steps:
-            return Pipeline(steps, memory=memory)
-
-    def __str__(self) -> str:
-        """
-        String representation of the ColumnBlockPipeline
-
-        :return: String representation of the ColumnBlockPipeline
-        """
-        return f"ColumnBlockPipeline_{str(self.column_block)}"
+        return steps
 
     def set_path(self, path: str) -> None:
-        """
-        Set the path
+        """Set the path
 
         :param path: path
         """
         self.path = path
+        # Update the steps in the pipeline after changing the path
+        self.steps = self._get_steps()

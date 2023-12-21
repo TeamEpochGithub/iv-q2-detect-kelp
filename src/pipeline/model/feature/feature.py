@@ -68,7 +68,7 @@ class FeaturePipeline():
             if path:
                 self.column_pipeline.set_path(path)
             column = (str(self.column_pipeline),
-                      self.column_pipeline.get_pipeline())
+                      self.column_pipeline)
             steps.append(column)
         else:
             logger.debug("No column steps were provided")

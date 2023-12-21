@@ -57,7 +57,7 @@ class ModelPipeline():
             steps.append(('post_processing_pipeline',
                          self.post_processing_pipeline.get_pipeline()))
 
-        return Pipeline(steps, verbose=True)
+        return Pipeline(steps)
 
     def __str__(self) -> str:
         """String representation of the class.
