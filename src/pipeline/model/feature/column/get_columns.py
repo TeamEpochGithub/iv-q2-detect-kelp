@@ -1,5 +1,4 @@
 """Module for the function to create the column pipeline."""
-from pathlib import Path
 from typing import Any
 
 from sklearn.pipeline import Pipeline
@@ -8,7 +7,7 @@ from src.pipeline.model.feature.column.band_copy import BandCopyPipeline
 from src.pipeline.model.feature.column.error import ColumnPipelineError
 
 
-def get_columns(column_steps: list[dict[str, Any]], processed_path: Path | None = None) -> Pipeline | None:
+def get_columns(column_steps: list[dict[str, Any]], processed_path: str | None = None) -> Pipeline | None:
     """Create the column pipeline.
 
     :param column_steps: list of column steps
@@ -23,13 +22,13 @@ def get_columns(column_steps: list[dict[str, Any]], processed_path: Path | None 
         return None
 
     if processed_path:
-        pipeline_path = (processed_path / "column_pipeline").as_posix()
+        pipeline_path = processed_path + "/column_pipeline"
     else:
         pipeline_path = None
     return Pipeline(steps, memory=pipeline_path)
 
 
-def match(column_step: dict[str, Any], processed_path: Path | None = None) -> tuple[str, Any]:
+def match(column_step: dict[str, Any], processed_path: str | None = None) -> tuple[str, Any]:
     """Match the column steps to the correct function.
 
     :param column_step: column step

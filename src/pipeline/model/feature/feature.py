@@ -5,7 +5,6 @@ The pipeline object is used to transform the test data in the same way as the tr
 """
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
 from distributed import Client
@@ -31,8 +30,8 @@ class FeaturePipeline:
     :param column_steps: list of column steps
     """
 
-    raw_data_path: Path
-    processed_path: Path | None = None
+    raw_data_path: str
+    processed_path: str | None = None
     transformation_steps: list[dict[str, Any]] = field(default_factory=list)
     column_steps: list[dict[str, Any]] = field(default_factory=list)
 
@@ -70,13 +69,13 @@ class FeaturePipeline:
         if self.processed_path:
             store = (
                 "store_processed",
-                CacheTIFPipeline(self.processed_path / transformation_hash),
+                CacheTIFPipeline(self.processed_path + "/" + transformation_hash),
             )
             steps.append(store)
 
         if self.column_steps:
             if self.processed_path:
-                column_path = self.processed_path / transformation_hash
+                column_path = self.processed_path + "/" + transformation_hash
             else:
                 column_path = None
 
@@ -90,15 +89,15 @@ class FeaturePipeline:
 
         return Pipeline(
             steps=steps,
-            memory=(self.processed_path / transformation_hash / "pipeline_cache").as_posix(),
+            memory=self.processed_path + "/" + transformation_hash + "/pipeline_cache",
         )
 
 
 if __name__ == "__main__":
     # Example test
-    raw_data_path = Path("data/raw/train_satellite")
-    processed_path = Path("data/processed")
-    features_path = Path("data/features")
+    raw_data_path = "data/raw/train_satellite"
+    processed_path = "data/processed"
+    features_path = "data/features"
     transform_steps = [{"type": "divider", "divider": 65500}]
     columns = [{"type": "band_copy", "band": 0}, {"type": "band_copy", "band": 2}]
 

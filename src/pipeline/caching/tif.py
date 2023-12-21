@@ -1,6 +1,5 @@
 """A pipeline step that caches a TIF image to disk."""
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Self
 
 import dask.array as da
@@ -17,7 +16,7 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
     :param data_path: The path to the data
     """
 
-    data_path: Path
+    data_path: str
 
     def __post_init__(self) -> None:
         """Check if the data path is defined."""
@@ -40,4 +39,4 @@ class CacheTIFPipeline(BaseEstimator, TransformerMixin):
         :param y: The target variable. Unused, but required for compatibility with Scikit-Learn Pipelines.
         :return: The transformed data.
         """
-        return store_raw(self.data_path.as_posix(), X)
+        return store_raw(self.data_path, X)

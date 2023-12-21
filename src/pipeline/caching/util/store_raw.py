@@ -1,7 +1,7 @@
 """Module for storing raw data to disk."""
-
+import glob
+import os
 import time
-from pathlib import Path
 
 import dask.array as da
 import numpy as np
@@ -23,12 +23,12 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
         raise CachePipelineError("data_paths is required to store raw data")
 
     # Check if the data exists on disk
-    if Path(data_path).exists():
+    if os.path.exists(data_path):
         # Check if path has any tif files
-        if Path(data_path).glob("*.tif"):
+        if glob.glob(f"{data_path}/*.tif"):
             logger.info("Data already exists on disk")
             return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
-        if Path(data_path).glob("*.npy"):
+        if glob.glob(f"{data_path}*.npy"):
             logger.info("Data already exists on disk")
             return da.from_npy_stack(data_path).astype(np.float32)
 

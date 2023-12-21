@@ -48,5 +48,4 @@ repos:
     rev: v1.7.1
     hooks:
       - id: mypy
-        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped ]
-        language: system
+        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=venv/Scripts/python.exe]

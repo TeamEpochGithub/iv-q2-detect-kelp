@@ -1,6 +1,5 @@
 """A pipeline step that caches a column to disk."""
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Self
 
 import dask.array as da
@@ -19,7 +18,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
     :param column: The column to store
     """
 
-    data_path: Path
+    data_path: str
     column: int = -1
 
     def __post_init__(self) -> None:
@@ -45,7 +44,7 @@ class CacheColumnPipeline(BaseEstimator, TransformerMixin):
         """
         # Load or store the data column
         logger.info("Loading or storing column")
-        column = store_raw(self.data_path.as_posix(), X[:, self.column])
+        column = store_raw(self.data_path, X[:, self.column])
 
         # Create the new array
         return da.concatenate([X[:, : self.column], column[:, None]], axis=1)

@@ -1,7 +1,6 @@
 """Pipeline step that copies a band."""
 
 import time
-from pathlib import Path
 from typing import Self
 
 import dask
@@ -20,7 +19,7 @@ class BandCopyPipeline:
     :param processed_path: path to the processed data
     """
 
-    def __init__(self, band: int, processed_path: Path | None = None) -> None:
+    def __init__(self, band: int, processed_path: str | None = None) -> None:
         """Create a band copy pipeline.
 
         :param band: The band to copy
@@ -28,24 +27,21 @@ class BandCopyPipeline:
         """
         self.band = band
         if processed_path:
-            self.processed_path = processed_path / ("band_copy_" + str(band))
+            self.processed_path = processed_path + "/band_copy_" + str(band)
 
     def get_pipeline(self) -> Pipeline:
         """Create the band copy pipeline.
 
         :return: The band copy pipeline
         """
-        steps = []
-
-        # Create the band copy pipeline
-        steps.append(("band_copy", BandCopy(self.band)))
+        steps = [("band_copy", BandCopy(self.band))]
 
         # Create the cache column pipeline
         if self.processed_path:
             cache = ("cache", CacheColumnPipeline(self.processed_path, column=-1))
             steps.append(cache)
 
-        pipeline_path = (self.processed_path / "pipeline").as_posix() if self.processed_path else None
+        pipeline_path = self.processed_path + "/pipeline" if self.processed_path else None
         return Pipeline(steps=steps, memory=pipeline_path)
 
 

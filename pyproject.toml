@@ -67,7 +67,7 @@ ignore = [
     "N803",  # Argument name should be lowercase
     "N806",  # Variable in function should be lowercase
     # flake8-use-pathlib (PTH)
-    "PTH",  # Use pathlib instead of os.path
+    "PTH",  # Use pathlib instead of os.path. Dask does not seem to like pathlib.
     # flake8-quotes (Q)
     "Q000",  # Single quotes found but double quotes preferred
     # flake8-simplify (SIM)
