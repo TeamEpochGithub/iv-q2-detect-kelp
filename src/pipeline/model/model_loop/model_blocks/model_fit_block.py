@@ -94,7 +94,8 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         print('Starting training')
         for epoch in range(self.epochs):
             self.model.train()
-            print(epoch)
+            train_losses = []
+            val_losses = []
             with tqdm(trainloader, unit="batch", disable=False) as tepoch:
                 for data in tepoch:
                     X_batch, y_batch = data
@@ -109,8 +110,9 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     loss.backward()
                     optimizer.step()
                     # print tqdm
+                    train_losses.append(loss.item())
                     tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=loss.item())
+                    tepoch.set_postfix(loss=sum(train_losses) / len(train_losses))
 
             # validation on testloader
             self.model.eval()
@@ -124,9 +126,9 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                         y_pred = self.model(X_batch).squeeze(1)
                         val_loss = criterion(y_pred, y_batch)
                         # print tqdm
+                        val_losses.append(val_loss.item())
                         tepoch.set_description(f"Epoch {epoch}")
-                        tepoch.set_postfix(
-                            loss=val_loss.item())
+                        tepoch.set_postfix(loss=sum(val_losses) / len(val_losses))
             # store the best model so far based on validation loss
             if val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
@@ -140,7 +142,8 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     # trained_epochs = (epoch - early_stopping_counter + 1)
                     break
         # save the model in the tm folder
-        torch.save(self.model.state_dict(), 'tm/model.pt')
+                block_hash = hash(self)
+        torch.save(self.model.state_dict(), f'tm/{block_hash}.pt')
         return self
 
     def predict(self, X: da.Array, to_mem_length: int = 3000) -> list[torch.Tensor]:

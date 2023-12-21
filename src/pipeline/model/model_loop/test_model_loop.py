@@ -6,9 +6,14 @@ from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksP
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 import numpy as np
 from src.utils.flatten_dict import flatten_dict
-import torch.nn.functional as F
 from dask_image.imread import imread
+from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
+import torch.nn as nn
+from unet import UNet2D
 
+from dask import config as cfg
+
+cfg.set({'distributed.scheduler.worker-ttl': None})
 
 if __name__ == "__main__":
     # This is meant to be an example of how to set up the model loop pipeline
@@ -16,8 +21,8 @@ if __name__ == "__main__":
 
     # make a nn.Module model
     Client(n_workers=24, threads_per_worker=1, memory_limit='16GB')
-    import torch.nn as nn
-    model = nn.Conv2d(9, 1, 3, padding=1)
+
+    model = UNet2D(in_channels=7, out_channels=1, conv_depths=(64, 128, 256))
     # make a optimizer
     import torch.optim as optim
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -32,7 +37,7 @@ if __name__ == "__main__":
         def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> float:
 
             # comment out if your model contains a sigmoid or equivalent activation layer
-            inputs = F.sigmoid(inputs)
+            # inputs = F.sigmoid(inputs)
 
             # flatten label and prediction tensors
             inputs = inputs.view(-1)
@@ -45,8 +50,8 @@ if __name__ == "__main__":
     criterion = DiceLoss()
 
     # make a model fit block
-    from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
-    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
+
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=10, batch_size=32, patience=10)
     model_str = str(model_fit_block)
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
@@ -64,9 +69,9 @@ if __name__ == "__main__":
     fp = feature_pipeline.get_pipeline()
     mp = model_loop_pipeline.get_pipeline()
     pipeline = Pipeline(steps=[('feature_pipeline', fp), ('model_loop_pipeline', mp)])
-    print(pipeline)
 
     indices = np.arange(5635)
+    np.random.shuffle(indices)
     train_indices, test_indices = indices[:4508], indices[4508:]
     fit_params = {
         "model_loop_pipeline": {
@@ -84,11 +89,16 @@ if __name__ == "__main__":
     predict_params = {
         "to_mem_length": 5635
     }
+    params = {"model_blocks_pipeline": {
+                model_str: {
+                    "train_indices": train_indices,
+                    "test_indices": test_indices,
+                    "to_mem_length": 5635
+                },
 
-    # pipeline.predict(None, **flatten_dict(predict_params))
-
-    # this will crash because the label pipeline isnt done yet
-    # read the labels using imread and then pass them to the pipeline
+            }
+            }
     y = imread("data/raw/train_kelp/*.tif")
-    print(y)
-    pipeline.fit(None, y, **flatten_dict(fit_params))
+    X = imread("data/raw/train_satellite/*.tif").transpose(0, 3, 1, 2)
+    mp.fit(X, y, **flatten_dict(params))
+    # pipeline.predict(None, **flatten_dict(predict_params))
