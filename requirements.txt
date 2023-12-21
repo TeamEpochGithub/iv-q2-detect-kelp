@@ -188,3 +188,5 @@ zarr==2.16.1
 imagecodecs==2023.9.18
 bokeh==3.3.2
 catboost==1.2.2
+jaxtyping==0.2.25
+typeguard==2.13.3

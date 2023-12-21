@@ -1,18 +1,19 @@
+"""Functions for creating the transformation pipeline."""
+
 from typing import Any
+
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.transformation.divider import Divider
 from src.pipeline.model.feature.transformation.error import TransformationPipelineError
-from src.logging_utils.logger import logger
 
 
 def get_transformations(transformation_steps: list[dict[str, Any]]) -> Pipeline | None:
-    """
-    This function creates the transformation pipeline.
+    """Create the transformation pipeline.
+
     :param transformation_steps: list of transformation steps
     :return: transformation pipeline
     """
-
     # Create the transformation pipeline
     steps = [match(transformation_step) for transformation_step in transformation_steps]
 
@@ -24,15 +25,13 @@ def get_transformations(transformation_steps: list[dict[str, Any]]) -> Pipeline 
 
 
 def match(transformation_step: dict[str, Any]) -> tuple[str, Any]:
-    """
-    This function matches the transformation steps to the correct function.
+    """Match the transformation steps to the correct function.
+
     :param transformation_step: transformation step
     :return: transformation pipeline
     """
-
     # Check if type is defined
     if not transformation_step.get("type"):
-        logger.error("type is required")
         raise TransformationPipelineError("type is required")
 
     transformation_type = transformation_step.get("type")
@@ -43,7 +42,4 @@ def match(transformation_step: dict[str, Any]) -> tuple[str, Any]:
         case "divider":
             return "divider", Divider(**transformation_args)
         case _:
-            logger.error(f"Unknown transformation type: {transformation_type}")
-            raise TransformationPipelineError(
-                f"Unknown transformation type: {transformation_type}"
-            )
+            raise TransformationPipelineError(f"Unknown transformation type: {transformation_type}")

@@ -12,7 +12,13 @@ Contents:
    :toctree: _autosummary
    :recursive:
 
+   dashboard
+   external
    src
+   cv
+   run_dashboard
+   submit
+   train
 
 Indices and tables
 ==================
