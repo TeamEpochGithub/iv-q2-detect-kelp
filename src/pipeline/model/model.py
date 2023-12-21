@@ -57,12 +57,22 @@ class ModelPipeline():
             steps.append(('post_processing_pipeline',
                          self.post_processing_pipeline.get_pipeline()))
 
-        return Pipeline(steps)
+        return Pipeline(steps, verbose=True)
 
     def __str__(self) -> str:
-        """
-        String representation of the class.
+        """String representation of the class.
 
         :return: String representation of the class
         """
         return "ModelPipeline"
+
+    def __repr__(self) -> str:
+        """Representation of the class.
+
+        :return: Representation of the class
+        """
+        return "ModelPipeline(" + \
+            f"feature_pipeline={self.feature_pipeline.__repr__()}," + \
+            f"target_pipeline={self.target_pipeline.__repr__()}," + \
+            f"model_loop_pipeline={self.model_loop_pipeline.__repr__()}," + \
+            f"post_processing_pipeline={self.post_processing_pipeline.__repr__()})"

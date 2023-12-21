@@ -1,4 +1,10 @@
-def print_section_separator(title, spacing=2, separator_length=250):
+def print_section_separator(title: str, spacing: int = 2, separator_length: int = 250) -> None:
+    """Print a section separator.
+
+    :param title: title of the section
+    :param spacing: spacing between the sections
+    :param separator_length: length of the separator
+    """
     separator_char = '='
     title_char = ' '
     separator = separator_char * separator_length

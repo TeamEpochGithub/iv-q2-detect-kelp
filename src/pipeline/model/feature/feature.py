@@ -90,4 +90,4 @@ class FeaturePipeline():
 
         :return: String representation of the class
         """
-        return f"FeaturePipeline(processed_path={self.processed_path}, transformation_pipeline={self.transformation_pipeline}, column_pipeline={self.column_pipeline})"
+        return f"FeaturePipeline(processed_path='{self.processed_path}',transformation_pipeline={self.transformation_pipeline},column_pipeline={self.column_pipeline})"
