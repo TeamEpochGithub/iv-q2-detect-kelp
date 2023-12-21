@@ -74,6 +74,7 @@ if __name__ == '__main__':
     model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
 
     # Read in the raw data
+    logger.info("Reading in the raw feature and target data")
     raw_data_path = "data/raw/train_satellite"
     raw_target_path = "data/raw/train_kelp"
     X = imread(f"{raw_data_path}/*.tif").transpose(0, 3, 1, 2)
