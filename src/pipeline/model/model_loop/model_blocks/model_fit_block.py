@@ -13,6 +13,7 @@ from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2T
 from joblib import hash
 from src.logging_utils.logger import logger
 
+
 class ModelBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
     :param model: Model to train.
@@ -82,14 +83,10 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         test_dataset = Dask2TorchDataset(X_test, y_test)
         test_dataset.index_to_mem(to_mem_length)
         # make a dataloaders from the datasets
-        def collate_fn(batch):
-            X = batch[0]
-            y = batch[1]
-            return X, y
         trainloader = DataLoader(
-            train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
+            train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0], batch[1]))
         testloader = DataLoader(
-            test_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
+            test_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0], batch[1]))
 
         # define the loss function
         criterion = self.criterion
@@ -98,7 +95,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         lowest_val_loss = np.inf
         # train the model
         # print the current device of the model
-        
+
         logger.info("Training the model")
         for epoch in range(self.epochs):
             self.model.train()

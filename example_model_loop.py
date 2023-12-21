@@ -11,15 +11,10 @@ from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBloc
 import torch.nn as nn
 from dask import config as cfg
 import coloredlogs
-from src.logging_utils.logger import logger
-
 
 coloredlogs.install()
 cfg.set({'distributed.scheduler.worker-ttl': None})
 
-
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
 
 if __name__ == "__main__":
     # This is meant to be an example of how to set up the model loop pipeline
@@ -57,7 +52,7 @@ if __name__ == "__main__":
 
     # make a model fit block
 
-    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=2, batch_size=32, patience=10)
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
     model_str = str(model_fit_block)
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
