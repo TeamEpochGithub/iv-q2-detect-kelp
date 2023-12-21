@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # make a nn.Module model
     Client(n_workers=24, threads_per_worker=1, memory_limit='16GB')
 
-    model = UNet2D(in_channels=7, out_channels=1, conv_depths=(64, 128, 256))
+    model = nn.Conv2d(9, 1, 3, padding=1)
     # make a optimizer
     import torch.optim as optim
     optimizer = optim.Adam(model.parameters(), lr=0.001)
@@ -99,6 +99,5 @@ if __name__ == "__main__":
             }
             }
     y = imread("data/raw/train_kelp/*.tif")
-    X = imread("data/raw/train_satellite/*.tif").transpose(0, 3, 1, 2)
-    mp.fit(X, y, **flatten_dict(params))
-    # pipeline.predict(None, **flatten_dict(predict_params))
+    pipeline.fit(None, y, **flatten_dict(fit_params))
+    pipeline.predict(None, **flatten_dict(predict_params))
