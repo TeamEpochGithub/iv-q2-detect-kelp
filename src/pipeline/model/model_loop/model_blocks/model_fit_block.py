@@ -142,7 +142,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     # trained_epochs = (epoch - early_stopping_counter + 1)
                     break
         # save the model in the tm folder
-                block_hash = hash(self)
+        block_hash = hash(self)
         torch.save(self.model.state_dict(), f'tm/{block_hash}.pt')
         return self
 
