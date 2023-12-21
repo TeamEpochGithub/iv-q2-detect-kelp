@@ -4,6 +4,7 @@ from dask_image.imread import imread
 from distributed import Client
 import numpy as np
 from sklearn.model_selection import train_test_split
+from src.logging_utils.logger import logger
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
@@ -31,6 +32,8 @@ if __name__ == '__main__':
 
     # Print section separator
     print_section_separator("Q2 Detect Kelp States -- Training")
+
+    logger.info("Setting up the pipeline")
 
     # Paths
     processed_path = "data/processed"
