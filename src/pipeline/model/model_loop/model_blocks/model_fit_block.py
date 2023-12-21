@@ -7,7 +7,6 @@ from tqdm import tqdm
 import numpy as np
 import copy
 from typing import Self
-from src.logging_utils.logger import logger
 from typing import Any
 from collections.abc import Iterable
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
