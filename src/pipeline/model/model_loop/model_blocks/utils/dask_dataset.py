@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 import dask.array as da
 import torch
 from typing import Any
+import numpy as np
 
 
 class Dask2TorchDataset(Dataset[Any]):
@@ -53,6 +54,21 @@ class Dask2TorchDataset(Dataset[Any]):
             x_arr = self.daskX[idx - self.memIdx].compute()
             if self.daskY is not None:
                 y_arr = self.daskY[idx - self.memIdx].compute()
+                return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
+            else:
+                return torch.from_numpy(x_arr)
+
+    def __getitems__(self, idxs):
+            # when index to mem is called some indices will be in memory already
+            # get all indices larger than the memory index
+            not_in_mem_idxs = [idxs[i] - self.memIdx for i in range(len(idxs)) if idxs[i] >= len(self.memX)]
+            in_mem_idxs = [idxs[i] for i in range(len(idxs)) if idxs[i] < len(self.memX)]
+
+            x_arr = self.daskX[not_in_mem_idxs].compute()
+            x_arr = np.concatenate((self.memX[in_mem_idxs], x_arr), axis=0)
+            if self.daskY is not None:
+                y_arr = self.daskY[not_in_mem_idxs].compute()
+                y_arr = np.concatenate((self.memY[in_mem_idxs], y_arr), axis=0)
                 return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
             else:
                 return torch.from_numpy(x_arr)

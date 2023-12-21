@@ -11,7 +11,8 @@ from src.logging_utils.logger import logger
 from typing import Any
 from collections.abc import Iterable
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
-
+from joblib import hash
+from src.logging_utils.logger import logger
 
 class ModelBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
@@ -53,6 +54,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
 
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
     def fit(self, X: da.Array, y: da.Array, train_indices: Iterable[int], test_indices: Iterable[int],
@@ -69,20 +71,26 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         """
         # split test and train based on indices
         # TODO add scheduler to the loop if it is not none
+        logger.info("Splitting data into train and test sets")
         X_train = X[train_indices]
         y_train = y[train_indices]
         X_test = X[test_indices]
         y_test = y[test_indices]
         # make the datsets
+        logger.info(f"Making datasets with {to_mem_length} samples in memory")
         train_dataset = Dask2TorchDataset(X_train, y_train)
         train_dataset.index_to_mem(to_mem_length)
         test_dataset = Dask2TorchDataset(X_test, y_test)
         test_dataset.index_to_mem(to_mem_length)
         # make a dataloaders from the datasets
+        def collate_fn(batch):
+            X = batch[0]
+            y = batch[1]
+            return X, y
         trainloader = DataLoader(
-            train_dataset, batch_size=self.batch_size, shuffle=True)
+            train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
         testloader = DataLoader(
-            test_dataset, batch_size=self.batch_size, shuffle=True)
+            test_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)
 
         # define the loss function
         criterion = self.criterion
@@ -91,7 +99,8 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         lowest_val_loss = np.inf
         # train the model
         # print the current device of the model
-        print('Starting training')
+        
+        logger.info("Training the model")
         for epoch in range(self.epochs):
             self.model.train()
             train_losses = []
@@ -142,8 +151,14 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     # trained_epochs = (epoch - early_stopping_counter + 1)
                     break
         # save the model in the tm folder
-        block_hash = hash(self)
+        # TODO this is placeholder for now but this is deterministic
+        block_hash = str(hash(str(self.model)))[:6] + str(hash(str(self.optimizer)))[:6] + \
+            str(hash(str(self.criterion)))[:6] + str(hash(str(self.scheduler)))[:6] + '_' + \
+            str(hash(self.epochs))[:6] + str(hash(self.batch_size))[:6] + \
+            str(hash(self.patience))[:6]
+        logger.info(f"Saving model to tm/{block_hash}.pt")
         torch.save(self.model.state_dict(), f'tm/{block_hash}.pt')
+        logger.info(f"Model saved to tm/{block_hash}.pt")
         return self
 
     def predict(self, X: da.Array, to_mem_length: int = 3000) -> list[torch.Tensor]:
@@ -154,6 +169,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :param to_mem_length: Number of samples to load into memory.
         :return: Predictions.
         """
+        logger.info("Predicting on the test data")
         X_dataset = Dask2TorchDataset(X, y=None)
         X_dataset.index_to_mem(to_mem_length)
         X_dataloader = DataLoader(

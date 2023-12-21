@@ -9,10 +9,17 @@ from src.utils.flatten_dict import flatten_dict
 from dask_image.imread import imread
 from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 import torch.nn as nn
-
 from dask import config as cfg
+import coloredlogs
+from src.logging_utils.logger import logger
 
+
+coloredlogs.install()
 cfg.set({'distributed.scheduler.worker-ttl': None})
+
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 if __name__ == "__main__":
     # This is meant to be an example of how to set up the model loop pipeline
@@ -78,7 +85,7 @@ if __name__ == "__main__":
                 model_str: {
                     "train_indices": train_indices,
                     "test_indices": test_indices,
-                    "to_mem_length": 5635
+                    "to_mem_length": 3000
                 },
 
             }
@@ -86,17 +93,8 @@ if __name__ == "__main__":
     }
 
     predict_params = {
-        "to_mem_length": 5635
+        "to_mem_length": 0
     }
-    params = {"model_blocks_pipeline": {
-                model_str: {
-                    "train_indices": train_indices,
-                    "test_indices": test_indices,
-                    "to_mem_length": 5635
-                },
-
-            }
-            }
     y = imread("data/raw/train_kelp/*.tif")
     pipeline.fit(None, y, **flatten_dict(fit_params))
-    pipeline.predict(None, **flatten_dict(predict_params))
+    # pipeline.predict(None, **flatten_dict(predict_params))
