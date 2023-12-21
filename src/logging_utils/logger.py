@@ -1,8 +1,10 @@
 """Setup the logger."""
 
 import datetime
-import os
 import logging
+from pathlib import Path
+
+from dateutil import tz
 
 # Create a logger
 logger = logging.getLogger(__name__)
@@ -11,11 +13,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Create a file handler using date and time to create a unique filename
-time = datetime.datetime.now().strftime("%S-%M-%H_%d-%m-%Y")
+time = datetime.datetime.now(tz=tz.gettz("Europe/Amsterdam")).strftime("%S-%M-%H_%d-%m-%Y")
 
 # Create directory if it does not exist
-if not os.path.exists("logging/logs"):
-    os.makedirs("logging/logs")
+Path("logging/logs").mkdir(parents=True, exist_ok=True)
 
 file_handler = logging.FileHandler("logging/logs/" + str(time) + ".txt")
 
