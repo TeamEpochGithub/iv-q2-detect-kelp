@@ -1,8 +1,6 @@
 from dask_image.imread import imread
 
 from distributed import Client
-import numpy as np
-from sklearn.model_selection import train_test_split
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
@@ -41,7 +39,7 @@ if __name__ == '__main__':
     orig_time = time.time()
     # Create the feature pipeline
     fp = FeaturePipeline(processed_path=processed_path,
-                                       transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
+                         transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     feature_pipeline = fp.get_pipeline()
 
     # Get target pipeline TODO
@@ -60,12 +58,12 @@ if __name__ == '__main__':
 
     # Read in the raw data
     raw_data_path = "data/raw/test_satellite"
-    X = imread(f"{raw_data_path}/*.tif").transpose(0,3,1,2)
+    X = imread(f"{raw_data_path}/*.tif").transpose(0, 3, 1, 2)
 
     # Fit the model pipeline
     mp = model_pipeline.get_pipeline()
 
     # Transform the model pipeline
-    x = mp.fit_transform(X) # TODO remove and replace with predict
-    #x = mp.predict(X)
+    # TODO remove and replace with predict, x = mp.predict(X)
+    x = mp.fit_transform(X)
     print(x.shape)

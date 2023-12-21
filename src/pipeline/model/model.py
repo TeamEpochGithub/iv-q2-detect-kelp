@@ -15,13 +15,32 @@ class ModelPipeline():
     :param model_loop_pipeline: The model loop pipeline
     :param post_processing_pipeline: The post processing pipeline
     """
-    def __init__(self, feature_pipeline: FeaturePipeline, target_pipeline: TargetPipeline, model_loop_pipeline: ModelLoopPipeline, post_processing_pipeline: PostProcessingPipeline):
+
+    def __init__(
+        self,
+        feature_pipeline: FeaturePipeline | None = None,
+        target_pipeline: TargetPipeline | None = None,
+        model_loop_pipeline: ModelLoopPipeline | None = None,
+        post_processing_pipeline: PostProcessingPipeline | None = None
+    ):
+        """Initialize the class.
+
+        :param feature_pipeline: The feature pipeline
+        :param target_pipeline: The target pipeline
+        :param model_loop_pipeline: The model loop pipeline
+        :param post_processing_pipeline: The post processing pipeline
+        """
+
         self.feature_pipeline = feature_pipeline
         self.target_pipeline = target_pipeline
         self.model_loop_pipeline = model_loop_pipeline
         self.post_processing_pipeline = post_processing_pipeline
 
     def get_pipeline(self) -> Pipeline:
+        """Get the pipeline.
+
+        :return: Pipeline object
+        """
 
         steps = []
 
@@ -39,7 +58,7 @@ class ModelPipeline():
                          self.post_processing_pipeline.get_pipeline()))
 
         return Pipeline(steps)
-    
+
     def __str__(self) -> str:
         """
         String representation of the class.

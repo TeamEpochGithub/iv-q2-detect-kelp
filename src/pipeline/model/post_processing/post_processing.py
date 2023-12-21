@@ -1,3 +1,4 @@
+from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 
@@ -18,13 +19,13 @@ class PostProcessingPipeline():
 
         :return: Pipeline object
         """
-        steps = []
+        steps: list[tuple[str, BaseEstimator | Pipeline]] = []
 
         # TODO add steps to pipeline
 
         if steps:
             return Pipeline(steps=steps)
-        
+
     def __str__(self) -> str:
         """
         String representation of the class.

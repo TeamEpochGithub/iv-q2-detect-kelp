@@ -38,7 +38,11 @@ class CacheTIFBlock(BaseEstimator, TransformerMixin):
         """
         return store_raw(self.data_path, X)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
+        """Hash the class.
+
+        :return: The hash value
+        """
         # Get the hash of the class name
         hash_value = hash(self.__class__.__name__)
 
