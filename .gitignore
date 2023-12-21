@@ -193,8 +193,14 @@ submissions/
 # Hydra logs
 outputs/
 
-# Ignore logs
-logging/
-
 #Leakage images
 plots/images/leakage/[0-9]*
+
+#Ignore
+notebooks/submission/zip
+
+#Ignore plots
+plots/images/all
+plots/images/predictions
+plots/images/test
+plots/images/train

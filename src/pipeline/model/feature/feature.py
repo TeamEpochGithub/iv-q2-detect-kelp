@@ -15,9 +15,7 @@ from src.logging_utils.logger import logger
 from src.pipeline.caching.tif import CacheTIFPipeline
 from src.pipeline.model.feature.column.get_columns import get_columns
 from src.pipeline.model.feature.error import FeaturePipelineError
-from src.pipeline.model.feature.transformation.get_transformations import (
-    get_transformations,
-)
+from src.pipeline.model.feature.transformation.get_transformations import get_transformations
 
 
 @dataclass
