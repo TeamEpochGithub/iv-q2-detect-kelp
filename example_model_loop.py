@@ -92,4 +92,4 @@ if __name__ == "__main__":
     }
     y = imread("data/raw/train_kelp/*.tif")
     pipeline.fit(None, y, **flatten_dict(fit_params))
-    # pipeline.predict(None, **flatten_dict(predict_params))
+    pipeline.predict(None, **flatten_dict(predict_params))

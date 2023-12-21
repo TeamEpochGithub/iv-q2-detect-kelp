@@ -169,7 +169,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         X_dataset = Dask2TorchDataset(X, y=None)
         X_dataset.index_to_mem(to_mem_length)
         X_dataloader = DataLoader(
-            X_dataset, batch_size=self.batch_size, shuffle=True)
+            X_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0]))
         self.model.eval()
         preds = []
         with torch.no_grad():
