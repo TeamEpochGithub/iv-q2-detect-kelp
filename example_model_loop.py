@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # Do not remove this code
 
     # make a nn.Module model
-    Client(n_workers=24, threads_per_worker=1, memory_limit='16GB')
+    client = Client(n_workers=24, threads_per_worker=1, memory_limit='16GB')
 
     model = nn.Conv2d(9, 1, 3, padding=1)
     # make a optimizer
@@ -88,8 +88,9 @@ if __name__ == "__main__":
     }
 
     predict_params = {
-        "to_mem_length": 0
+        "to_mem_length": 3000
     }
     y = imread("data/raw/train_kelp/*.tif")
     pipeline.fit(None, y, **flatten_dict(fit_params))
     pipeline.predict(None, **flatten_dict(predict_params))
+    client.close()

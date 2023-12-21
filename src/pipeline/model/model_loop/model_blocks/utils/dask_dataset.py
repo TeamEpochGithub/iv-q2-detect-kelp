@@ -71,12 +71,17 @@ class Dask2TorchDataset(Dataset[Any]):
         in_mem_idxs = [idxs[i] for i in range(len(idxs)) if idxs[i] < len(self.memX)]
 
         # compute the not in mem items and concat with the ones already in mem
-        x_arr = self.daskX[not_in_mem_idxs].compute()
-        x_arr = np.concatenate((self.memX[in_mem_idxs], x_arr), axis=0)
+        if len(not_in_mem_idxs) > 0:
+            x_arr = np.concatenate((self.memX[in_mem_idxs], self.daskX[not_in_mem_idxs].compute()), axis=0)
+        else:
+            x_arr = self.memX[in_mem_idxs]
+        
         if self.daskY is not None and self.memY is not None:
             # if y exists do the same for y
-            y_arr = self.daskY[not_in_mem_idxs].compute()
-            y_arr = np.concatenate((self.memY[in_mem_idxs], y_arr), axis=0)
+            if len(not_in_mem_idxs) > 0:
+                y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
+            else:
+                y_arr = self.memY[in_mem_idxs]
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
         else:
             return torch.from_numpy(x_arr)

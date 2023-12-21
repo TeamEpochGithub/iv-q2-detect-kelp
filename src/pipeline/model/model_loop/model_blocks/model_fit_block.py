@@ -84,9 +84,9 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         test_dataset.index_to_mem(to_mem_length)
         # make a dataloaders from the datasets
         trainloader = DataLoader(
-            train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0], batch[1]))
+            train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
         testloader = DataLoader(
-            test_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0], batch[1]))
+            test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
         # define the loss function
         criterion = self.criterion
@@ -165,11 +165,11 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :param to_mem_length: Number of samples to load into memory.
         :return: Predictions.
         """
-        logger.info("Predicting on the test data")
+        logger.info(f"Predicting on the test data with {to_mem_length} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
         X_dataset.index_to_mem(to_mem_length)
         X_dataloader = DataLoader(
-            X_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=lambda batch: (batch[0]))
+            X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0]))
         self.model.eval()
         preds = []
         with torch.no_grad():
@@ -180,6 +180,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     # forward pass
                     y_pred = self.model(X_batch)
                     preds.append(y_pred)
+        logger.info("Done predicting")
         return preds
 
     def __str__(self) -> str:
