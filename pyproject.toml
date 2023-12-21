@@ -26,7 +26,7 @@ allow_untyped_calls = true
 disable_error_code = ["import-untyped"]
 
 [tool.ruff]
-extend-exclude = ["docs/conf.py", "external/*"]
+extend-exclude = ["external/*"]
 line-length = 175
 target-version = "py311"
 fix = false
@@ -36,7 +36,7 @@ select = [
 ignore = [
     # pydocstyle (D)
     "D203",  # 1 blank line required before class docstring
-    "D213",  # MMulti-line docstring summary should start at the second line
+    "D213",  # Multi-line docstring summary should start at the second line
     # flake8-django (DJ)
     "DJ",  # Django is not used
      # eradicate (ERA)
@@ -71,7 +71,7 @@ ignore = [
     # flake8-quotes (Q)
     "Q000",  # Single quotes found but double quotes preferred
     # flake8-simplify (SIM)
-    "SIM108",  #U se ternary operator instead of `if`-`else`-block
+    "SIM108",  # Use ternary operator instead of `if`-`else`-block
     # flake8-type-checking (TCH)
     "TCH001",  # Move application import into a type-checking block. Breaks Sphinx autodoc (https://github.com/sphinx-doc/sphinx/issues/11225).
     "TCH002",  # Move third-party import into a type-checking block. Breaks Sphinx autodoc (https://github.com/sphinx-doc/sphinx/issues/11225).

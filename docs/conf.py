@@ -1,3 +1,5 @@
+# ruff: noqa: INP001
+
 """Sphinx configuration file."""
 
 import importlib
