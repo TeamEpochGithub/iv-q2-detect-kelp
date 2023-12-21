@@ -15,11 +15,22 @@ from src.pipeline.model.model import ModelPipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 
+from src.logging_utils.section_separator import print_section_separator
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 if __name__ == '__main__':
 
+    # Coloured logs
+    import coloredlogs
+    coloredlogs.install()
+
     # Initialize dask client
     client = Client()
+
+    # Print section separator
+    print_section_separator("Q2 Detect Kelp States -- Training")
 
     # Paths
     processed_path = "data/processed"

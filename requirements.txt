@@ -188,3 +188,4 @@ zarr==2.16.1
 imagecodecs==2023.9.18
 bokeh==3.3.2
 catboost==1.2.2
+coloredlogs==15.0.1

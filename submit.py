@@ -1,6 +1,7 @@
 from dask_image.imread import imread
 
 from distributed import Client
+from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
@@ -12,11 +13,20 @@ from src.pipeline.model.model import ModelPipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 if __name__ == '__main__':
 
+    # Coloured logs
+    import coloredlogs
+    coloredlogs.install()
+
     # Initialize dask client
     client = Client()
+
+    # Print section separator
+    print_section_separator("Q2 Detect Kelp States -- Submit")
 
     # Paths
     processed_path = "data/test"
