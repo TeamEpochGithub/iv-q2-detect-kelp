@@ -91,7 +91,7 @@ if __name__ == '__main__':
     print(f"Train indices: {train_indices}")
     print(f"Test indices: {test_indices}")
 
-    # fit_args = {}
+    # fit_args: dict[] = {}
 
     # Fit the model pipeline
     mp = model_pipeline.get_pipeline()
