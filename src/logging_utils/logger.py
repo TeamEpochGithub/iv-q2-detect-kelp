@@ -1,7 +1,7 @@
 """Setup the logger."""
 import datetime
-import os
 import logging
+import os
 # Create a logger
 logger = logging.getLogger("logger")
 # Set the logging level
