@@ -1,40 +1,43 @@
+"""A pipeline step that caches a TIF image to disk."""
+from dataclasses import dataclass
 from typing import Self
-from sklearn.base import BaseEstimator, TransformerMixin
-from src.logging_utils.logger import logger
-from src.pipeline.caching.util.error import CachePipelineError
+
 import dask.array as da
+from sklearn.base import BaseEstimator, TransformerMixin
+
+from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
 
 
-class CacheTIFBlock(BaseEstimator, TransformerMixin):
-    """
-    The caching pipeline is responsible for loading and storing the data to disk.
+@dataclass
+class CacheTIFPipeline(BaseEstimator, TransformerMixin):
+    """The caching pipeline is responsible for loading and storing the data to disk.
+
     :param data_path: The path to the data
     """
 
-    def __init__(self, data_path: str) -> None:
+    data_path: str
 
-        if not data_path:
-            logger.error("data_path is required")
+    def __post_init__(self) -> None:
+        """Check if the data path is defined."""
+        if not self.data_path:
             raise CachePipelineError("data_path is required")
 
-        # Set paths to self
-        self.data_path = data_path
-
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
-        """
-        :param X: The data to fit
-        :param y: The target variable
-        :return: The fitted pipeline
+        """Do nothing. This method only exists for compatibility with Scikit-Learn Pipelines.
+
+        :param X: The data to fit.
+        :param y: The target variable.
+        :return: The same pipeline step.
         """
         return self
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
-        """
-        Transform the data.
-        :param X: The data to transform
-        :param y: The target variable
-        :return: The transformed data
+        """Store the images to disk.
+
+        :param X: The data to store.
+        :param y: The target variable. Unused, but required for compatibility with Scikit-Learn Pipelines.
+        :return: The transformed data.
         """
         return store_raw(self.data_path, X)
 

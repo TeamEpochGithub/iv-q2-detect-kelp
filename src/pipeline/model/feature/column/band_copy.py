@@ -1,6 +1,10 @@
+"""Pipeline step that copies a band."""
+
 import time
 from typing import Self
+
 import dask
+import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 import dask.array as da

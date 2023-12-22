@@ -1,12 +1,14 @@
+"""A piepline step that divides the data by a number."""
 from typing import Self
+
+import dask.array as da
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
-import dask.array as da
 
 
 class Divider(BaseEstimator, TransformerMixin):
-    """
-    This class divides the data by a number.
+    """Pipeline step to divide the data by a number.
+
     :param divider: The number to divide by
     """
 

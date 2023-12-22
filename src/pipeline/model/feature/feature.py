@@ -57,11 +57,13 @@ class FeaturePipeline(Pipeline):
             logger.debug("No transformation steps were provided")
 
         if self.processed_path:
-            steps.append(('store_processed', CacheTIFBlock(self.processed_path + '/' + self.transformation_hash)))
+            steps.append(('store_processed', CacheTIFBlock(
+                self.processed_path + '/' + self.transformation_hash)))
 
         if self.column_pipeline:
             if self.processed_path:
-                self.column_pipeline.set_path(self.processed_path + '/' + self.transformation_hash)
+                self.column_pipeline.set_path(
+                    self.processed_path + '/' + self.transformation_hash)
             steps.append((str(self.column_pipeline), self.column_pipeline))
         else:
             logger.debug("No column steps were provided")
