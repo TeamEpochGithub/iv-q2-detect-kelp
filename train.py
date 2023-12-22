@@ -125,3 +125,6 @@ if __name__ == '__main__':
     # Transform the model pipeline
     x = model_pipeline.fit_transform(X, y)
     print(x.shape)
+
+    # Close client
+    client.close()
