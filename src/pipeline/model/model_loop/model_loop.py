@@ -30,4 +30,7 @@ class ModelLoopPipeline():
         if self.model_blocks_pipeline:
             steps.append(('model_blocks_pipeline', self.model_blocks_pipeline.get_pipeline()))
 
-        return Pipeline(steps=steps, memory="tm" if cache_model else None)
+        if steps:
+            return Pipeline(steps=steps, memory="tm" if cache_model else None)
+        else:
+            return None
