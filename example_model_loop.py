@@ -10,15 +10,16 @@ from dask_image.imread import imread
 from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 import torch.nn as nn
 from dask import config as cfg
-import coloredlogs
-
-coloredlogs.install()
 cfg.set({'distributed.scheduler.worker-ttl': None})
 
 
 if __name__ == "__main__":
     # This is meant to be an example of how to set up the model loop pipeline
     # Do not remove this code
+
+    import coloredlogs
+
+    coloredlogs.install()
 
     # make a nn.Module model
     client = Client(n_workers=24, threads_per_worker=1, memory_limit='16GB')

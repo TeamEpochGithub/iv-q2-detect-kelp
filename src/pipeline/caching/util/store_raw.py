@@ -43,6 +43,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     # Iterate over the dask array and store each image
     dask_array = dask_array.astype(np.float32)
     da.to_npy_stack(data_path, dask_array)
+    dask_array = da.from_npy_stack(data_path)
 
     end_time = time.time()
     logger.debug(f"Finished storing data to disk in: {end_time - start_time} seconds")

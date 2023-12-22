@@ -28,7 +28,7 @@ class ModelLoopPipeline():
         if self.pretrain_pipeline:
             steps.append(('pretrain_pipeline', self.pretrain_pipeline.get_pipeline()))
         if self.model_blocks_pipeline:
-            steps.append(('model_blocks_pipeline', self.model_blocks_pipeline.get_pipeline()))
+            steps.append(('model_blocks_pipeline', self.model_blocks_pipeline))
 
         if steps:
             return Pipeline(steps=steps, memory="tm" if cache_model else None)

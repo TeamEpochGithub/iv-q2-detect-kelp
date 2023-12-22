@@ -12,6 +12,7 @@ class Dask2TorchDataset(Dataset[Any]):
     :param X: Input features.
     :param y: Labels.
     """
+
     def __init__(self, X: da.Array, y: da.Array | None) -> None:
         """
         Initialize the Dask2TorchDataset.
@@ -39,26 +40,6 @@ class Dask2TorchDataset(Dataset[Any]):
         """
         return self.daskX.shape[0] + len(self.memX)
 
-    # def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
-    #     """
-    #     Implement the index_to_mem method to update the memory index and compute the memory and dask arrays accordingly.
-
-    #     :param idx: Index of the item.
-    #     :return: Item at the given index.
-    #     """
-    #     if idx < len(self.memX):
-    #         if self.memY is not None:
-    #             return torch.from_numpy(self.memX[idx]), torch.from_numpy(self.memY[idx])
-    #         else:
-    #             return torch.from_numpy(self.memX[idx])
-    #     else:
-    #         x_arr = self.daskX[idx - self.memIdx].compute()
-    #         if self.daskY is not None:
-    #             y_arr = self.daskY[idx - self.memIdx].compute()
-    #             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
-    #         else:
-    #             return torch.from_numpy(x_arr)
-
     def __getitems__(self, idxs: list[int]) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
         """
         Implement the index_to_mem method to update the memory index and compute the memory and dask arrays accordingly.
@@ -67,19 +48,23 @@ class Dask2TorchDataset(Dataset[Any]):
         """
 
         # get the indices for the in mem and not in mem items
-        not_in_mem_idxs = [idxs[i] - self.memIdx for i in range(len(idxs)) if idxs[i] >= len(self.memX)]
-        in_mem_idxs = [idxs[i] for i in range(len(idxs)) if idxs[i] < len(self.memX)]
+        not_in_mem_idxs = [
+            idxs[i] - self.memIdx for i in range(len(idxs)) if idxs[i] >= len(self.memX)]
+        in_mem_idxs = [idxs[i]
+                       for i in range(len(idxs)) if idxs[i] < len(self.memX)]
 
         # compute the not in mem items and concat with the ones already in mem
         if len(not_in_mem_idxs) > 0:
-            x_arr = np.concatenate((self.memX[in_mem_idxs], self.daskX[not_in_mem_idxs].compute()), axis=0)
+            x_arr = np.concatenate(
+                (self.memX[in_mem_idxs], self.daskX[not_in_mem_idxs].compute()), axis=0)
         else:
             x_arr = self.memX[in_mem_idxs]
-        
+
         if self.daskY is not None and self.memY is not None:
             # if y exists do the same for y
             if len(not_in_mem_idxs) > 0:
-                y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
+                y_arr = np.concatenate(
+                    (self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
                 y_arr = self.memY[in_mem_idxs]
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)

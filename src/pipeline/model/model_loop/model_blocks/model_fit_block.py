@@ -16,6 +16,7 @@ from src.logging_utils.logger import logger
 
 class ModelBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
+
     :param model: Model to train.
     :param optimizer: Optimizer.
     :param scheduler: Scheduler.
@@ -29,8 +30,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
     # TODO idk what type a loss function or optimizer is
     def __init__(self, model: nn.Module, optimizer: Any, scheduler: Any, criterion: Any,
                  epochs: int = 10, batch_size: int = 32, patience: int = 5,) -> None:
-        """
-        Initialize the ModelBlock.
+        """Initialize the ModelBlock.
 
         :param model: Model to train.
         :param optimizer: Optimizer.
@@ -46,12 +46,12 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         self.criterion = criterion
         self.scheduler = scheduler
 
-        # save model related parameters
-        # we do this here so that the hash chnages based on num epochs
+        # Save model related parameters (Done here so hash changes based on num epochs)
         self.epochs = epochs
         self.batch_size = batch_size
         self.patience = patience
 
+        # Set the device
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"Setting model to device: {self.device}")
@@ -69,57 +69,71 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :param to_mem_length: Number of samples to load into memory.
         :return: Fitted model.
         """
-        # split test and train based on indices
         # TODO add scheduler to the loop if it is not none
-        logger.info("Splitting data into train and test sets")
+
+        train_indices.sort()
+        test_indices.sort()
+
+        # Rechunk the data
+        logger.info("Rechunking the data")
+        X = X.rechunk((1, -1, -1, -1))
+        y = y.rechunk((1, -1, -1))
+
         X_train = X[train_indices]
         y_train = y[train_indices]
         X_test = X[test_indices]
         y_test = y[test_indices]
-        # make the datsets
+
+        # Make datasets from the train and test sets
         logger.info(f"Making datasets with {to_mem_length} samples in memory")
         train_dataset = Dask2TorchDataset(X_train, y_train)
         train_dataset.index_to_mem(to_mem_length)
         test_dataset = Dask2TorchDataset(X_test, y_test)
         test_dataset.index_to_mem(to_mem_length)
-        # make a dataloaders from the datasets
+
+        # Create dataloaders from the datasets
         trainloader = DataLoader(
             train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
         testloader = DataLoader(
             test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
-        # define the loss function
+        # Define the loss function
         criterion = self.criterion
-        # define the optimizer
+
+        # Define the optimizer
         optimizer = self.optimizer
         lowest_val_loss = np.inf
-        # train the model
-        # print the current device of the model
 
+        # Train model
         logger.info("Training the model")
         for epoch in range(self.epochs):
             self.model.train()
             train_losses = []
             val_losses = []
+
+            # Train using trainloader
             with tqdm(trainloader, unit="batch", disable=False) as tepoch:
                 for data in tepoch:
                     X_batch, y_batch = data
                     X_batch = X_batch.to(self.device).float()
                     y_batch = y_batch.to(self.device).float()
-                    # forward pass
+
+                    # Forward pass
                     y_pred = self.model(X_batch).squeeze(1)
                     loss = criterion(y_pred, y_batch)
 
-                    # backward pass
+                    # Backward pass
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
-                    # print tqdm
+
+                    # Print tqdm
                     train_losses.append(loss.item())
                     tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=sum(train_losses) / len(train_losses))
+                    tepoch.set_postfix(
+                        loss=sum(train_losses) / len(train_losses))
 
-            # validation on testloader
+            # Validate using testloader
             self.model.eval()
             with torch.no_grad():
                 with tqdm(testloader, unit="batch", disable=False) as tepoch:
@@ -127,14 +141,18 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                         X_batch, y_batch = data
                         X_batch = X_batch.to(self.device).float()
                         y_batch = y_batch.to(self.device).float()
-                        # forward pass
+
+                        # Forward pass
                         y_pred = self.model(X_batch).squeeze(1)
                         val_loss = criterion(y_pred, y_batch)
-                        # print tqdm
+
+                        # Print tqdm
                         val_losses.append(val_loss.item())
                         tepoch.set_description(f"Epoch {epoch}")
-                        tepoch.set_postfix(loss=sum(val_losses) / len(val_losses))
-            # store the best model so far based on validation loss
+                        tepoch.set_postfix(
+                            loss=sum(val_losses) / len(val_losses))
+                        
+            # Store the best model so far based on validation loss
             if val_loss < lowest_val_loss:
                 lowest_val_loss = val_loss
                 best_model = copy.deepcopy(self.model.state_dict())
@@ -146,8 +164,9 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     self.model.load_state_dict(best_model)
                     # trained_epochs = (epoch - early_stopping_counter + 1)
                     break
-        # save the model in the tm folder
-        # TODO this is placeholder for now but this is deterministic
+
+        # Save the model in the tm folder
+        # TODO This is placeholder for now but this is deterministic
         block_hash = str(hash(str(self.model)))[:6] + str(hash(str(self.optimizer)))[:6] + \
             str(hash(str(self.criterion)))[:6] + str(hash(str(self.scheduler)))[:6] + '_' + \
             str(hash(self.epochs))[:6] + str(hash(self.batch_size))[:6] + \
@@ -165,7 +184,8 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :param to_mem_length: Number of samples to load into memory.
         :return: Predictions.
         """
-        logger.info(f"Predicting on the test data with {to_mem_length} samples in memory")
+        logger.info(
+            f"Predicting on the test data with {to_mem_length} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
         X_dataset.index_to_mem(to_mem_length)
         X_dataloader = DataLoader(
@@ -183,15 +203,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         logger.info("Done predicting")
         return preds
 
-    def __str__(self) -> str:
-        """
-        Return the string representation of the model.
-
-        :return: String representation of the model.
-        """
-        return str(self.model)
-
-    def transform(self, X: da.Array, y: da.Array) -> list[torch.Tensor]:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> list[torch.Tensor]:
         """
         transform method for sklearn pipeline
         :param X: Input features.
@@ -199,3 +211,12 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :return: Predictions and labels.
         """
         return self.predict(X)
+
+    def __str__(self) -> str:
+        """
+        Return the string representation of the model.
+
+        :return: String representation of the model.
+        """
+        return "ModelBlock"
+

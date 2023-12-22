@@ -6,6 +6,8 @@ from distributed import Client
 import numpy as np
 from sklearn import set_config
 from sklearn.model_selection import train_test_split
+import torch
+import torch.nn as nn
 from src.logging_utils.logger import logger
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
@@ -15,12 +17,16 @@ from src.pipeline.model.feature.transformation.divider import Divider
 
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 from src.pipeline.model.model import ModelPipeline
+from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
+from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 
 from src.logging_utils.section_separator import print_section_separator
 
 import warnings
+
+from src.utils.flatten_dict import flatten_dict
 warnings.filterwarnings("ignore", category=UserWarning)
 
 if __name__ == '__main__':
@@ -74,13 +80,47 @@ if __name__ == '__main__':
     y = imread(f"{raw_target_path}/*.tif")  # TODO remove
 
     # Get model loop pipeline TODO
-    mlp = ModelLoopPipeline(None, None)
+    model = nn.Conv2d(8, 1, 3, padding=1)
+    # make a optimizer
+    import torch.optim as optim
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # make a scheduler
+    scheduler = None
+    # make a loss function
+
+    class DiceLoss(nn.Module):
+        def __init__(self, size_average: bool = True) -> None:
+            super().__init__()
+
+        def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> float:
+
+            # comment out if your model contains a sigmoid or equivalent activation layer
+            # inputs = F.sigmoid(inputs)
+
+            # flatten label and prediction tensors
+            inputs = inputs.view(-1)
+            targets = targets.view(-1)
+
+            intersection = (inputs * targets).sum()
+            dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
+
+            return 1 - dice
+    criterion = DiceLoss()
+
+    # make a model fit block
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
+    model_str = str(model_fit_block)
+
+    # make a model blocks pipeline
+    model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
+
+    model_loop_pipeline = ModelLoopPipeline(None, model_blocks_pipeline=model_blocks_pipeline)
 
     # Get post processing pipeline TODO
     ppp = PostProcessingPipeline()
 
     # Get model pipeline
-    model_pipeline_object = ModelPipeline(feature_pipeline, tp, mlp, ppp)
+    model_pipeline_object = ModelPipeline(feature_pipeline, tp, model_loop_pipeline, None)
 
     ################################
 
@@ -120,11 +160,27 @@ if __name__ == '__main__':
     logger.debug(f"Train indices: {train_indices}")
     logger.debug(f"Test indices: {test_indices}")
 
-    # fit_args: dict[tuple[str, Any]] = {}
+    fit_params = {
+        "model_loop_pipeline": {
+            "model_blocks_pipeline": {
+                model_str: {
+                    "train_indices": train_indices,
+                    "test_indices": test_indices,
+                    "to_mem_length": 2500
+                },
+
+            }
+        }
+    }
+
+    predict_params = {
+        "to_mem_length": 3000
+    }
 
     # Transform the model pipeline
-    x = model_pipeline.fit_transform(X, y)
-    print(x.shape)
+    x = model_pipeline.fit(X, y, **flatten_dict(fit_params))
+
+
 
     # Close client
     client.close()
