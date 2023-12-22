@@ -34,6 +34,7 @@ class ColumnBlockPipeline(Pipeline):
             steps.append((str(self.column_block), self.column_block))
         if self.cache_block:
             if self.path:
+                self.cache_block.set_path(self.path + "/" + str(self.column_block))
                 steps.append((str(self.cache_block), self.cache_block))
         return steps
 

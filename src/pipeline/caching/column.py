@@ -75,3 +75,9 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
 
         :return: String representation of the CacheColumnBlock"""
         return "CacheColumnBlock"
+    
+    def __repr__(self) -> str:
+        """Representation of the CacheColumnBlock
+
+        :return: Representation of the CacheColumnBlock"""
+        return f"CacheColumnBlock(data_path={self.data_path}, column={self.column})"

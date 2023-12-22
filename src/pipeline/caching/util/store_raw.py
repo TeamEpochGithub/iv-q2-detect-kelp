@@ -28,7 +28,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
         if glob.glob(f"{data_path}/*.tif"):
             logger.info("Data already exists on disk")
             return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
-        if glob.glob(f"{data_path}*.npy"):
+        if glob.glob(f"{data_path}/*.npy"):
             logger.info("Data already exists on disk")
             return da.from_npy_stack(data_path).astype(np.float32)
 

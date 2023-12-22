@@ -46,5 +46,5 @@ if __name__ == "__main__":
     transformation_pipeline = TransformationPipeline([divider])
     import numpy as np
     X = np.array([1, 2, 3, 4, 5])
-    X, y = transformation_pipeline.get_pipeline().fit_transform(X)
+    X = transformation_pipeline.fit_transform(X)
     print(X)
