@@ -69,3 +69,9 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         :param data_path: The new data path
         """
         self.data_path = data_path
+
+    def __str__(self) -> str:
+        """String representation of the CacheColumnBlock
+
+        :return: String representation of the CacheColumnBlock"""
+        return "CacheColumnBlock"

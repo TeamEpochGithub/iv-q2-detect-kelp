@@ -1,21 +1,20 @@
 import time
-from typing import Iterable
-from numpy import ndarray
-from pandas.core.frame import DataFrame
+from typing import Any
 from sklearn.pipeline import Pipeline
 from src.logging_utils.logger import logger
-
+import dask.array as da
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
+
 
 class ColumnPipeline(Pipeline):
     """ColumnPipeline is the class used to create the column pipeline.
-    
+
     :param columns: The columns
     """
 
     def __init__(self, columns: list[ColumnBlockPipeline]) -> None:
         """Initialize the class.
-        
+
         :param columns: The columns
         """
         self.columns = columns
@@ -33,8 +32,8 @@ class ColumnPipeline(Pipeline):
                 column.set_path(self.path)
             steps.append((str(column), column))
         return steps
-    
-    def fit_transform(self, X: Iterable | ndarray | DataFrame, y: Iterable | ndarray | DataFrame = None, **fit_params) -> ndarray:
+
+    def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
         """Fit and transform the data
 
         :param X: Data to fit and transform
@@ -45,14 +44,23 @@ class ColumnPipeline(Pipeline):
         logger.info("Fitting column pipeline")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
-        logger.info(f"Fitted column pipeline in {time.time() - start_time} seconds")
+        logger.info(
+            f"Fitted column pipeline in {time.time() - start_time} seconds")
         return X
-    
+
     def __repr__(self) -> str:
-        return super().__repr__()
-    
+        """Representation of the ColumnPipeline
+
+        :return: String representation of the ColumnPipeline
+        """
+        return f"ColumnPipeline(columns={self.columns})"
+
     def __str__(self) -> str:
-        return super().__str__()
+        """String representation of the ColumnPipeline
+
+        :return: String representation of the ColumnPipeline
+        """
+        return "ColumnPipeline"
 
     def set_path(self, path: str) -> None:
         """Set the path

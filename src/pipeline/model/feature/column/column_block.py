@@ -2,6 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from src.pipeline.caching.column import CacheColumnBlock
 
+
 class ColumnBlockPipeline(Pipeline):
     """
     ColumnBlockPipeline
@@ -22,7 +23,7 @@ class ColumnBlockPipeline(Pipeline):
         self.path = ""
         super().__init__(self._get_steps())
 
-    def _get_steps(self):
+    def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
         """
         Get the column block pipeline steps
 

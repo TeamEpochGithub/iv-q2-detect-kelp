@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 
-class TransformationPipeline():
+class TransformationPipeline(Pipeline):
     """
     TransformationPipeline
 
@@ -16,21 +16,19 @@ class TransformationPipeline():
         :param transformations: list of transformations
         """
         self.transformations = transformations
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self) -> Pipeline:
+    def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
         """
-        Get the transformation pipeline
+        Get the transformation pipeline steps
 
-        :return: Pipeline object
+        :return: list of steps
         """
         steps = []
         for transformation in self.transformations:
             if transformation:
-                steps.append(
-                    (str(transformation), transformation))
-
-        if steps:
-            return Pipeline(steps)
+                steps.append((str(transformation), transformation))
+        return steps
 
     def __str__(self) -> str:
         """
