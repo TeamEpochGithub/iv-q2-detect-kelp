@@ -1,3 +1,4 @@
+"""The caching tif pipeline is responsible for loading and storing all data to disk."""
 from typing import Self
 
 import dask.array as da
@@ -10,10 +11,15 @@ from src.pipeline.caching.util.store_raw import store_raw
 
 class CacheTIFBlock(BaseEstimator, TransformerMixin):
     """The caching pipeline is responsible for loading and storing the data to disk.
+
     :param data_path: The path to the data
     """
 
     def __init__(self, data_path: str) -> None:
+        """Initialize the caching pipeline.
+
+        :param data_path: The path to the data
+        """
         if not data_path:
             logger.error("data_path is required")
             raise CachePipelineError("data_path is required")
@@ -22,7 +28,9 @@ class CacheTIFBlock(BaseEstimator, TransformerMixin):
         self.data_path = data_path
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
-        """:param X: The data to fit
+        """Fit the data.
+
+        :param X: The data to fit
         :param y: The target variable
         :return: The fitted pipeline
         """
@@ -30,6 +38,7 @@ class CacheTIFBlock(BaseEstimator, TransformerMixin):
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
         """Transform the data.
+
         :param X: The data to transform
         :param y: The target variable
         :return: The transformed data

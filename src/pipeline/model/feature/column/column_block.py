@@ -1,3 +1,4 @@
+"""Column block pipeline."""
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
@@ -5,14 +6,14 @@ from src.pipeline.caching.column import CacheColumnBlock
 
 
 class ColumnBlockPipeline(Pipeline):
-    """ColumnBlockPipeline
+    """ColumnBlockPipeline extends the sklearn Pipeline class.
 
     :param column_block: column block
     :param cache_block: cache block
     """
 
     def __init__(self, column_block: BaseEstimator, cache_block: CacheColumnBlock | None = None) -> None:
-        """Initialize the ColumnBlockPipeline
+        """Initialize the ColumnBlockPipeline.
 
         :param column_block: column block
         :param cache_block: cache block
@@ -23,21 +24,20 @@ class ColumnBlockPipeline(Pipeline):
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
-        """Get the column block pipeline steps
+        """Get the column block pipeline steps.
 
         :return: list of steps
         """
         steps = []
         if self.column_block:
             steps.append((str(self.column_block), self.column_block))
-        if self.cache_block:
-            if self.path:
-                self.cache_block.set_path(self.path + "/" + str(self.column_block))
-                steps.append((str(self.cache_block), self.cache_block))
+        if self.cache_block and self.path:
+            self.cache_block.set_path(self.path + "/" + str(self.column_block))
+            steps.append((str(self.cache_block), self.cache_block))
         return steps
 
     def set_path(self, path: str) -> None:
-        """Set the path
+        """Set the path.
 
         :param path: path
         """
@@ -46,7 +46,7 @@ class ColumnBlockPipeline(Pipeline):
         self.steps = self._get_steps()
 
     def __str__(self) -> str:
-        """Convert the class to a string
+        """Convert the class to a string.
 
         :return: string representation of the class
         """

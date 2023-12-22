@@ -1,8 +1,4 @@
-# This file contains the feature processing pipeline, which is used to process the raw data into features that can be used by the model.
-# It returns two things: the raw feature dataframe and the pipeline object.
-# The pipeline object is used to transform the test data in the same way as the training data.
-
-# Import libraries
+"""Feature processing pipeline."""
 from joblib import hash
 from sklearn.pipeline import Pipeline
 
@@ -13,7 +9,7 @@ from src.pipeline.model.feature.transformation.transformation import Transformat
 
 
 class FeaturePipeline(Pipeline):
-    """This class is used to create the feature pipeline.
+    """Feature pipeline class is used to create the feature pipeline.
 
     :param processed_path: path to the processed data
     :param transformation_pipeline: transformation pipeline
@@ -41,7 +37,7 @@ class FeaturePipeline(Pipeline):
         super().__init__(self._get_steps(), memory=self._get_memory())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
-        """This function returns the steps for the pipeline.
+        """_get_steps function returns the steps for the pipeline.
 
         :return: list of steps
         """
@@ -64,7 +60,7 @@ class FeaturePipeline(Pipeline):
         return steps
 
     def _get_memory(self) -> str | None:
-        """This function returns the memory location for the pipeline.
+        """_get_memory function returns the memory location for the pipeline.
 
         :return: memory location
         """
@@ -73,15 +69,15 @@ class FeaturePipeline(Pipeline):
         return None
 
     def __str__(self) -> str:
-        """String representation of the class.
+        """__str__ returns string representation of the class.
 
         :return: String representation of the class
         """
         return "FeaturePipeline"
 
     def __repr__(self) -> str:
-        """String representation of the class.
+        """__repr__ returns the full representation of the class.
 
-        :return: String representation of the class
+        :return: Full representation of the class
         """
         return f"FeaturePipeline(processed_path='{self.processed_path}',transformation_pipeline={self.transformation_pipeline},column_pipeline={self.column_pipeline})"

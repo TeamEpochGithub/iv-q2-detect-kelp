@@ -1,3 +1,6 @@
+"""Section separator module."""
+
+
 def print_section_separator(title: str, spacing: int = 2, separator_length: int = 250) -> None:
     """Print a section separator.
 

@@ -64,7 +64,3 @@ if __name__ == "__main__":
     band_copy = BandCopy(1)
     X = da.from_array([[1, 2], [3, 4]])
     X = band_copy.transform(X)
-    print(str(band_copy))
-    # Print class of band copy
-    print(band_copy.__class__.__name__)
-    print(X.compute())

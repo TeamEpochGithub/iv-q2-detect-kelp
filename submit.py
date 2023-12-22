@@ -1,3 +1,4 @@
+"""Submit script for generating predictions on the test set."""
 import warnings
 
 from dask_image.imread import imread
@@ -54,8 +55,8 @@ if __name__ == "__main__":
 
     # Get target pipeline TODO
     tp = None
-    raw_target_path = "data/raw/train_kelp"  # TODO remove
-    y = imread(f"{raw_target_path}/*.tif")  # TODO remove
+    raw_target_path = "data/raw/train_kelp"  # TODO(Epoch): remove
+    y = imread(f"{raw_target_path}/*.tif")  # TODO(Epoch): remove
 
     # Get model loop pipeline TODO
     mlp = ModelLoopPipeline(None, None)
@@ -74,6 +75,5 @@ if __name__ == "__main__":
     mp = model_pipeline.get_pipeline()
 
     # Transform the model pipeline
-    # TODO remove and replace with predict, x = mp.predict(X)
+    # TODO(Epoch): Remove and replace with predict, x = mp.predict(X)
     x = mp.fit_transform(X)
-    print(x.shape)

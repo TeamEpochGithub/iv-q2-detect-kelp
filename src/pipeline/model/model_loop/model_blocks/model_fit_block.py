@@ -1,3 +1,4 @@
+"""ModelBlock class."""
 import copy
 from typing import Any, Self
 
@@ -7,6 +8,7 @@ import torch
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import nn
+from torch.optim import Optimizer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -26,14 +28,14 @@ class ModelBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO we dont know if we are gonna use a torch scheduler or timm or smth else
-    # TODO idk what type a loss function or optimizer is
+    # TODO(Epoch): We dont know if we are gonna use a torch scheduler or timm or smth else
+    # TODO(@Jeffrey): Idk what type a loss function or optimizer is
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Any,
+        optimizer: Optimizer,
         scheduler: Any,
-        criterion: Any,
+        criterion: nn.Module,
         epochs: int = 10,
         batch_size: int = 32,
         patience: int = 5,
@@ -74,7 +76,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :param to_mem_length: Number of samples to load into memory.
         :return: Fitted model.
         """
-        # TODO add scheduler to the loop if it is not none
+        # TODO(Epoch): Add scheduler to the loop if it is not none
 
         train_indices.sort()
         test_indices.sort()
@@ -137,21 +139,20 @@ class ModelBlock(BaseEstimator, TransformerMixin):
 
             # Validate using testloader
             self.model.eval()
-            with torch.no_grad():
-                with tqdm(testloader, unit="batch", disable=False) as tepoch:
-                    for data in tepoch:
-                        X_batch, y_batch = data
-                        X_batch = X_batch.to(self.device).float()
-                        y_batch = y_batch.to(self.device).float()
+            with torch.no_grad(), tqdm(testloader, unit="batch", disable=False) as tepoch:
+                for data in tepoch:
+                    X_batch, y_batch = data
+                    X_batch = X_batch.to(self.device).float()
+                    y_batch = y_batch.to(self.device).float()
 
-                        # Forward pass
-                        y_pred = self.model(X_batch).squeeze(1)
-                        val_loss = criterion(y_pred, y_batch)
+                    # Forward pass
+                    y_pred = self.model(X_batch).squeeze(1)
+                    val_loss = criterion(y_pred, y_batch)
 
-                        # Print tqdm
-                        val_losses.append(val_loss.item())
-                        tepoch.set_description(f"Epoch {epoch}")
-                        tepoch.set_postfix(loss=sum(val_losses) / len(val_losses))
+                    # Print tqdm
+                    val_losses.append(val_loss.item())
+                    tepoch.set_description(f"Epoch {epoch}")
+                    tepoch.set_postfix(loss=sum(val_losses) / len(val_losses))
 
             # Store the best model so far based on validation loss
             if val_loss < lowest_val_loss:
@@ -167,7 +168,13 @@ class ModelBlock(BaseEstimator, TransformerMixin):
                     break
 
         # Save the model in the tm folder
-        # TODO This is placeholder for now but this is deterministic
+        # TODO(Epoch): This is placeholder for now but this is deterministic
+        self.save_model()
+
+        return self
+
+    def save_model(self) -> None:
+        """Save the model in the tm folder."""
         block_hash = (
             str(hash(str(self.model)))[:6]
             + str(hash(str(self.optimizer)))[:6]
@@ -181,7 +188,6 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Saving model to tm/{block_hash}.pt")
         torch.save(self.model.state_dict(), f"tm/{block_hash}.pt")
         logger.info(f"Model saved to tm/{block_hash}.pt")
-        return self
 
     def predict(self, X: da.Array, to_mem_length: int = 3000) -> list[torch.Tensor]:
         """Predict on the test data.
@@ -196,19 +202,19 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0]))
         self.model.eval()
         preds = []
-        with torch.no_grad():
-            with tqdm(X_dataloader, unit="batch", disable=False) as tepoch:
-                for data in tepoch:
-                    X_batch = data
-                    X_batch = X_batch.to(self.device).float()
-                    # forward pass
-                    y_pred = self.model(X_batch)
-                    preds.append(y_pred)
+        with torch.no_grad(), tqdm(X_dataloader, unit="batch", disable=False) as tepoch:
+            for data in tepoch:
+                X_batch = data
+                X_batch = X_batch.to(self.device).float()
+                # forward pass
+                y_pred = self.model(X_batch)
+                preds.append(y_pred)
         logger.info("Done predicting")
         return preds
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> list[torch.Tensor]:
-        """Transform method for sklearn pipeline
+        """Transform method for sklearn pipeline.
+
         :param X: Input features.
         :param y: Labels.
         :return: Predictions and labels.

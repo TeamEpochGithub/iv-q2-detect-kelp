@@ -1,3 +1,4 @@
+"""ColumnPipeline is the class used to create the column pipeline."""
 import time
 from typing import Any
 
@@ -24,7 +25,7 @@ class ColumnPipeline(Pipeline):
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, ColumnBlockPipeline]]:
-        """Get the steps in the pipeline
+        """Get the steps in the pipeline.
 
         :return: List of steps in the pipeline
         """
@@ -36,7 +37,7 @@ class ColumnPipeline(Pipeline):
         return steps
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
-        """Fit and transform the data
+        """Fit and transform the data.
 
         :param X: Data to fit and transform
         :param y: Target data
@@ -50,21 +51,21 @@ class ColumnPipeline(Pipeline):
         return X
 
     def __repr__(self) -> str:
-        """Representation of the ColumnPipeline
+        """Representation of the ColumnPipeline.
 
         :return: String representation of the ColumnPipeline
         """
         return f"ColumnPipeline(columns={self.columns})"
 
     def __str__(self) -> str:
-        """String representation of the ColumnPipeline
+        """__str__ returns string representation of the ColumnPipeline.
 
         :return: String representation of the ColumnPipeline
         """
         return "ColumnPipeline"
 
     def set_path(self, path: str) -> None:
-        """Set the path
+        """Set the path.
 
         :param path: path
         """

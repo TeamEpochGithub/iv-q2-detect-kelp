@@ -1,3 +1,4 @@
+"""ModelPipeline is the class used to create the model pipeline."""
 from typing import Any
 
 from sklearn.pipeline import Pipeline
@@ -23,7 +24,7 @@ class ModelPipeline:
         target_pipeline: TargetPipeline | None = None,
         model_loop_pipeline: ModelLoopPipeline | None = None,
         post_processing_pipeline: PostProcessingPipeline | None = None,
-    ):
+    ) -> None:
         """Initialize the class.
 
         :param feature_pipeline: The feature pipeline
@@ -55,7 +56,7 @@ class ModelPipeline:
         return Pipeline(steps)
 
     def __str__(self) -> str:
-        """String representation of the class.
+        """__str__ returns string representation of the class.
 
         :return: String representation of the class
         """
@@ -68,8 +69,8 @@ class ModelPipeline:
         """
         return (
             "ModelPipeline("
-            + f"feature_pipeline={self.feature_pipeline.__repr__()},"
-            + f"target_pipeline={self.target_pipeline.__repr__()},"
-            + f"model_loop_pipeline={self.model_loop_pipeline.__repr__()},"
-            + f"post_processing_pipeline={self.post_processing_pipeline.__repr__()})"
+            f"feature_pipeline={self.feature_pipeline.__repr__()},"
+            f"target_pipeline={self.target_pipeline.__repr__()},"
+            f"model_loop_pipeline={self.model_loop_pipeline.__repr__()},"
+            f"post_processing_pipeline={self.post_processing_pipeline.__repr__()})"
         )

@@ -1,3 +1,4 @@
+"""The caching column block is responsible for loading and storing individual columns to disk."""
 from typing import Self
 
 import dask.array as da
@@ -10,26 +11,33 @@ from src.pipeline.caching.util.store_raw import store_raw
 
 class CacheColumnBlock(BaseEstimator, TransformerMixin):
     """The caching column block is responsible for loading and storing individual columns to disk.
+
     :param data_path: The path to the data
     :param column: The column to store
     """
 
     def __init__(self, data_path: str | None = None, column: int = -1) -> None:
-        # Set paths to self
-        self.data_path = data_path
+        """Initialize the caching column block.
 
-        # Set the column to self
+        :param data_path: The path to the data
+        :param column: The column to store
+        """
+        # Set values to self
+        self.data_path = data_path
         self.column = column
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
-        """:param X: The data to fit
+        """Fit the transformer.
+
+        :param X: The data to fit
         :param y: The target variable
-        :return: The fitted block
+        :return: The fitted transformer
         """
         return self
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
         """Transform the data.
+
         :param X: The data to transform
         :param y: The target variable
         :return: The transformed data
@@ -39,8 +47,8 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
             if not X:
                 logger.error("data_paths are required")
                 raise CachePipelineError("data_path is required")
-            else:
-                return X
+
+            return X
 
         # Load or store the data column
         logger.info("Loading or storing column")
@@ -48,8 +56,7 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
 
         # Create the new array
         X_new = da.concatenate([X[:, : self.column], column[:, None]], axis=1)
-        X_new = X_new.rechunk()
-        return X_new
+        return X_new.rechunk()
 
     def get_data_path(self) -> str | None:
         """Get the data path.
@@ -66,14 +73,14 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         self.data_path = data_path
 
     def __str__(self) -> str:
-        """String representation of the CacheColumnBlock
+        """__str__ returns string representation of the CacheColumnBlock.
 
         :return: String representation of the CacheColumnBlock
         """
         return "CacheColumnBlock"
 
     def __repr__(self) -> str:
-        """Representation of the CacheColumnBlock
+        """__repr__ returns full representation of the CacheColumnBlock.
 
         :return: Representation of the CacheColumnBlock
         """

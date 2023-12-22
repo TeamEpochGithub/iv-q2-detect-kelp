@@ -1,3 +1,4 @@
+"""TargetPipeline class sets up the target pipeline."""
 from sklearn.pipeline import Pipeline
 
 
@@ -10,7 +11,7 @@ class TargetPipeline:
     :param column_steps: The column steps
     """
 
-    def __init__(self, raw_target_path: str, processed_path: str, transformation_steps: list[str], column_steps: list[str]):
+    def __init__(self, raw_target_path: str, processed_path: str, transformation_steps: list[str], column_steps: list[str]) -> None:
         """Initialize the class.
 
         :param raw_target_path: The raw target path
@@ -28,5 +29,5 @@ class TargetPipeline:
 
         :return: Pipeline object
         """
-        # TODO implement target pipeline
+        # TODO(Epoch): Implement target pipeline
         return None

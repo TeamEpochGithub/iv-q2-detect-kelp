@@ -1,8 +1,9 @@
+"""Flatten a nested dictionary to be used for sklearn pipeline parameters."""
 from typing import Any
 
 
 def flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = "__") -> dict[str, str]:
-    """Flatten a nested dictionary to be used for sklearn pipeline parameters
+    """Flatten a nested dictionary to be used for sklearn pipeline parameters.
 
     :param d: dictionary to flatten
     :param parent_key: parent key

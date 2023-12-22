@@ -3,15 +3,16 @@ import time
 import warnings
 
 import numpy as np
-import torch
 from dask_image.imread import imread
 from distributed import Client
 from sklearn import set_config
+from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
 from torch import nn
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.modules.dice_loss import DiceLoss
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     orig_time = time.time()
 
     ###############################
-    # TODO: Use config to create the classes
+    # TODO(Epoch): Use config to create the classes
 
     processed_path = "data/processed"
     raw_data_path = "data/raw/train_satellite"
@@ -73,36 +74,21 @@ if __name__ == "__main__":
 
     # Get target pipeline TODO
     tp = None
-    raw_target_path = "data/raw/train_kelp"  # TODO remove
-    y = imread(f"{raw_target_path}/*.tif")  # TODO remove
+    raw_target_path = "data/raw/train_kelp"  # TODO(Epoch): remove
+    y = imread(f"{raw_target_path}/*.tif")  # TODO(Epoch): remove
 
-    # Get model loop pipeline TODO: Use config to create the classes
+    # Get model loop pipeline TODO(Epoch): Use config to create the classes
     model = nn.Conv2d(8, 1, 3, padding=1)
-    # make a optimizer
+
+    # Make a optimizer
     from torch import optim
 
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    # make a scheduler
+
+    # Make a scheduler
     scheduler = None
-    # make a loss function
 
-    class DiceLoss(nn.Module):
-        def __init__(self, size_average: bool = True) -> None:
-            super().__init__()
-
-        def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> float:
-            # comment out if your model contains a sigmoid or equivalent activation layer
-            # inputs = F.sigmoid(inputs)
-
-            # flatten label and prediction tensors
-            inputs = inputs.view(-1)
-            targets = targets.view(-1)
-
-            intersection = (inputs * targets).sum()
-            dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
-
-            return 1 - dice
-
+    # Make a loss function
     criterion = DiceLoss()
 
     # make a model fit block
@@ -130,7 +116,7 @@ if __name__ == "__main__":
     set_config(display="diagram")
 
     # Get the HTML representation of the pipeline
-    pipeline_html = model_pipeline._repr_html_()
+    pipeline_html = estimator_html_repr(model_pipeline)
 
     # Write the HTML to a file
     with open("logging/pipeline.html", "w", encoding="utf-8") as f:

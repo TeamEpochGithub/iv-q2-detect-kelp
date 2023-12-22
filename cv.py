@@ -6,6 +6,7 @@ from dask_image.imread import imread
 from distributed import Client
 from sklearn.model_selection import StratifiedKFold
 
+from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
@@ -55,12 +56,12 @@ if __name__ == "__main__":
     fp = FeaturePipeline(processed_path=processed_path, transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
     feature_pipeline = fp.get_pipeline()
 
-    # Get target pipeline TODO
+    # Get target pipeline TODO(Epoch): Remove
     tp = None
-    raw_target_path = "data/raw/train_kelp"  # TODO remove
-    y = imread(f"{raw_target_path}/*.tif")  # TODO remove
+    raw_target_path = "data/raw/train_kelp"  # TODO(Epoch): Remove
+    y = imread(f"{raw_target_path}/*.tif")  # TODO(Epoch): Remove
 
-    # Get post processing pipeline TODO
+    # TODO(Epoch): Get post processing pipeline
     ppp = PostProcessingPipeline()
 
     # Read in the raw data
@@ -69,7 +70,7 @@ if __name__ == "__main__":
     X = imread(f"{raw_data_path}/*.tif").transpose(0, 3, 1, 2)
     y = imread(f"{raw_target_path}/*.tif")
 
-    # Create an array of indices # TODO split comes from config file
+    # Create an array of indices # TODO(Epoch): Split comes from config file
     split = 0.2
     x = feature_pipeline.fit_transform(X)
     indices = np.arange(x.shape[0])
@@ -80,8 +81,8 @@ if __name__ == "__main__":
     # Split indices into train and test for each fold, create a stratification key from y
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
     for train_indices, test_indices in kf.split(X, stratification_key):
-        print(f"Train indices: {train_indices}")
-        print(f"Test indices: {test_indices}")
+        logger.debug(f"Train indices: {train_indices}")
+        logger.debug(f"Test indices: {test_indices}")
 
         # fit_args = {}
 
@@ -93,4 +94,4 @@ if __name__ == "__main__":
 
         mp = model_pipeline.get_pipeline()
         x = mp.fit_transform(X, y)
-        print(x.shape)
+        logger.debug(x.shape)

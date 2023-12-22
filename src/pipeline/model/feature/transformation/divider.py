@@ -50,7 +50,3 @@ if __name__ == "__main__":
     divider = Divider(2)
     X = da.from_array(np.array([1, 2, 3, 4, 5]))
     X = divider.transform(X)
-    print(str(divider))
-    # Print class of divider
-    print(divider.__class__.__name__)
-    print(X.compute())
