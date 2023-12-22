@@ -35,7 +35,7 @@ class FeaturePipeline:
 
     def __post_init__(self) -> None:
         """Check if the raw data path is defined."""
-        if not raw_data_path:
+        if not self.raw_data_path:
             raise FeaturePipelineError("raw_data_path is required")
 
     def get_pipeline(self) -> Pipeline:
