@@ -65,9 +65,8 @@ if __name__ == '__main__':
     column_pipeline = ColumnPipeline([column_block_pipeline])
 
     # Create the feature pipeline
-    fp = FeaturePipeline(processed_path=processed_path,
-                         transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
-    feature_pipeline = fp.get_pipeline()
+    feature_pipeline = FeaturePipeline(processed_path=processed_path,
+                                       transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
 
     # Get target pipeline TODO
     tp = None
@@ -81,7 +80,7 @@ if __name__ == '__main__':
     ppp = PostProcessingPipeline()
 
     # Get model pipeline
-    model_pipeline_object = ModelPipeline(fp, tp, mlp, ppp)
+    model_pipeline_object = ModelPipeline(feature_pipeline, tp, mlp, ppp)
 
     ################################
 

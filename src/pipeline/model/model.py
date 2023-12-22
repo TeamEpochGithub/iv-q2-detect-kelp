@@ -1,3 +1,4 @@
+from typing import Any
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline
@@ -42,11 +43,11 @@ class ModelPipeline():
         :return: Pipeline object
         """
 
-        steps = []
+        steps: list[tuple[str, Any]] = []
 
         if self.feature_pipeline:
             steps.append(
-                ('feature_pipeline', self.feature_pipeline.get_pipeline()))
+                (str(self.feature_pipeline), self.feature_pipeline))
         if self.target_pipeline:
             steps.append(
                 ('target_pipeline', self.target_pipeline.get_pipeline()))

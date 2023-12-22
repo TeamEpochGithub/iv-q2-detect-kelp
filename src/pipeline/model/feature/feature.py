@@ -11,7 +11,7 @@ from joblib import hash
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 
 
-class FeaturePipeline():
+class FeaturePipeline(Pipeline):
     """This class is used to create the feature pipeline.
 
     :param processed_path: path to the processed data
@@ -38,45 +38,44 @@ class FeaturePipeline():
         self.transformation_pipeline = transformation_pipeline
         self.column_pipeline = column_pipeline
 
-    def get_pipeline(self) -> Pipeline:
-        """
-        This function returns the feature pipeline.
-        :return: Pipeline object
-        """
+        # Create hash
+        if self.processed_path:
+            self.transformation_hash = hash(self.transformation_pipeline)
 
+        super().__init__(self._get_steps(), memory=self._get_memory())
+
+    def _get_steps(self) -> list[tuple[str, Pipeline]]:
+        """This function returns the steps for the pipeline.
+
+        :return: list of steps
+        """
         steps = []
-
-        # Create the transformation pipeline
-        transformation_hash = "raw"
         if self.transformation_pipeline:
-            transformation_hash = hash(self.transformation_pipeline)
-            transformation = (str(self.transformation_pipeline),
-                              self.transformation_pipeline)
-            steps.append(transformation)
+            steps.append((str(self.transformation_pipeline),
+                          self.transformation_pipeline))
         else:
             logger.debug("No transformation steps were provided")
 
-        # Full path
-        path = None
         if self.processed_path:
-            path = self.processed_path + '/' + transformation_hash
-            store = ('store_processed', CacheTIFBlock(path))
-            steps.append(store)
+            steps.append(('store_processed', CacheTIFBlock(self.processed_path + '/' + self.transformation_hash)))
 
-        # Create the column pipeline
         if self.column_pipeline:
-            if path:
-                self.column_pipeline.set_path(path)
-            column = (str(self.column_pipeline),
-                      self.column_pipeline)
-            steps.append(column)
+            if self.processed_path:
+                self.column_pipeline.set_path(self.processed_path + '/' + self.transformation_hash)
+            steps.append((str(self.column_pipeline), self.column_pipeline))
         else:
             logger.debug("No column steps were provided")
 
-        mem = self.processed_path + '/' + transformation_hash + \
-            '/pipeline_cache' if self.processed_path else None
+        return steps
 
-        return Pipeline(steps=steps, memory=mem)
+    def _get_memory(self) -> str | None:
+        """This function returns the memory location for the pipeline.
+
+        :return: memory location
+        """
+        if self.processed_path:
+            return self.processed_path + '/' + self.transformation_hash + '/pipeline_cache'
+        return None
 
     def __str__(self) -> str:
         """String representation of the class.
