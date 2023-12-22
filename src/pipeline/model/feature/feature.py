@@ -51,7 +51,7 @@ class FeaturePipeline():
         if self.transformation_pipeline:
             transformation_hash = hash(self.transformation_pipeline)
             transformation = (str(self.transformation_pipeline),
-                              self.transformation_pipeline.get_pipeline())
+                              self.transformation_pipeline)
             steps.append(transformation)
         else:
             logger.debug("No transformation steps were provided")

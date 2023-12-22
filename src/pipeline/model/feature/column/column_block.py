@@ -45,3 +45,10 @@ class ColumnBlockPipeline(Pipeline):
         self.path = path
         # Update the steps in the pipeline after changing the path
         self.steps = self._get_steps()
+
+    def __str__(self) -> str:
+        """Convert the class to a string
+
+        :return: string representation of the class
+        """
+        return f"ColumnBlockPipeline({self.column_block}, {self.cache_block})"
