@@ -49,8 +49,8 @@ class JointTransform2D:
             torchvision.transforms.RandomAffine.
         long_mask: bool, if True, returns the mask as LongTensor in label-encoded format.
     """
-    def __init__(self, crop=(256, 256), p_flip=0.5, color_jitter_params=(0.1, 0.1, 0.1, 0.1),
-                 p_random_affine=0, long_mask=False):
+
+    def __init__(self, crop=(256, 256), p_flip=0.5, color_jitter_params=(0.1, 0.1, 0.1, 0.1), p_random_affine=0, long_mask=False):
         self.crop = crop
         self.p_flip = p_flip
         self.color_jitter_params = color_jitter_params
@@ -119,8 +119,8 @@ class ImageToImage2D(Dataset):
 
     def __init__(self, dataset_path: str, joint_transform: Callable = None, one_hot_mask: int = False) -> None:
         self.dataset_path = dataset_path
-        self.input_path = os.path.join(dataset_path, 'images')
-        self.output_path = os.path.join(dataset_path, 'masks')
+        self.input_path = os.path.join(dataset_path, "images")
+        self.output_path = os.path.join(dataset_path, "masks")
         self.images_list = os.listdir(self.input_path)
         self.one_hot_mask = one_hot_mask
 
@@ -147,7 +147,7 @@ class ImageToImage2D(Dataset):
             image, mask = self.joint_transform(image, mask)
 
         if self.one_hot_mask:
-            assert self.one_hot_mask > 0, 'one_hot_mask must be nonnegative'
+            assert self.one_hot_mask > 0, "one_hot_mask must be nonnegative"
             mask = torch.zeros((self.one_hot_mask, mask.shape[1], mask.shape[2])).scatter_(0, mask.long(), 1)
 
         return image, mask, image_filename
@@ -178,7 +178,7 @@ class Image2D(Dataset):
 
     def __init__(self, dataset_path: str, transform: Callable = None):
         self.dataset_path = dataset_path
-        self.input_path = os.path.join(dataset_path, 'images')
+        self.input_path = os.path.join(dataset_path, "images")
         self.images_list = os.listdir(self.input_path)
 
         if transform:

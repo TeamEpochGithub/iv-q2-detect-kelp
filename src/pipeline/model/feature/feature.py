@@ -3,11 +3,12 @@
 # The pipeline object is used to transform the test data in the same way as the training data.
 
 # Import libraries
-from src.logging_utils.logger import logger
+from joblib import hash
 from sklearn.pipeline import Pipeline
+
+from src.logging_utils.logger import logger
 from src.pipeline.caching.tif import CacheTIFBlock
 from src.pipeline.model.feature.column.column import ColumnPipeline
-from joblib import hash
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 
 
@@ -20,19 +21,14 @@ class FeaturePipeline(Pipeline):
     """
 
     def __init__(
-            self,
-            processed_path: str | None = None,
-            transformation_pipeline: TransformationPipeline | None = None,
-            column_pipeline: ColumnPipeline | None = None
+        self, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None
     ) -> None:
-        """
-        Initialize the class.
+        """Initialize the class.
 
         :param processed_path: path to the processed data
         :param transformation_pipeline: transformation pipeline
         :param column_pipeline: column pipeline
         """
-
         # Set the parameters
         self.processed_path = processed_path
         self.transformation_pipeline = transformation_pipeline
@@ -51,19 +47,16 @@ class FeaturePipeline(Pipeline):
         """
         steps = []
         if self.transformation_pipeline:
-            steps.append((str(self.transformation_pipeline),
-                          self.transformation_pipeline))
+            steps.append((str(self.transformation_pipeline), self.transformation_pipeline))
         else:
             logger.debug("No transformation steps were provided")
 
         if self.processed_path:
-            steps.append(('store_processed', CacheTIFBlock(
-                self.processed_path + '/' + self.transformation_hash)))
+            steps.append(("store_processed", CacheTIFBlock(self.processed_path + "/" + self.transformation_hash)))
 
         if self.column_pipeline:
             if self.processed_path:
-                self.column_pipeline.set_path(
-                    self.processed_path + '/' + self.transformation_hash)
+                self.column_pipeline.set_path(self.processed_path + "/" + self.transformation_hash)
             steps.append((str(self.column_pipeline), self.column_pipeline))
         else:
             logger.debug("No column steps were provided")
@@ -76,7 +69,7 @@ class FeaturePipeline(Pipeline):
         :return: memory location
         """
         if self.processed_path:
-            return self.processed_path + '/' + self.transformation_hash + '/pipeline_cache'
+            return self.processed_path + "/" + self.transformation_hash + "/pipeline_cache"
         return None
 
     def __str__(self) -> str:

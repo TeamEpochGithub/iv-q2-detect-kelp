@@ -1,38 +1,36 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
 import time
-from dask_image.imread import imread
+import warnings
 
-from distributed import Client
 import numpy as np
+import torch
+from dask_image.imread import imread
+from distributed import Client
 from sklearn import set_config
 from sklearn.model_selection import train_test_split
-import torch
-import torch.nn as nn
+from torch import nn
+
 from src.logging_utils.logger import logger
+from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.feature.column.band_copy import BandCopy
 from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.feature.transformation.divider import Divider
-
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 from src.pipeline.model.model import ModelPipeline
 from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
 from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
-
-from src.logging_utils.section_separator import print_section_separator
-
-import warnings
-
 from src.utils.flatten_dict import flatten_dict
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # Coloured logs
     import coloredlogs
+
     coloredlogs.install()
 
     # Print section separator
@@ -65,24 +63,24 @@ if __name__ == '__main__':
     band_copy_pipeline = BandCopy(1)
 
     from src.pipeline.caching.column import CacheColumnBlock
-    cache = CacheColumnBlock(
-        "data/test", column=-1)
+
+    cache = CacheColumnBlock("data/test", column=-1)
     column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
     column_pipeline = ColumnPipeline([column_block_pipeline])
 
     # Create the feature pipeline
-    feature_pipeline = FeaturePipeline(processed_path=processed_path,
-                                       transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
+    feature_pipeline = FeaturePipeline(processed_path=processed_path, transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
 
     # Get target pipeline TODO
     tp = None
-    raw_target_path = 'data/raw/train_kelp'     # TODO remove
+    raw_target_path = "data/raw/train_kelp"  # TODO remove
     y = imread(f"{raw_target_path}/*.tif")  # TODO remove
 
-    # Get model loop pipeline TODO
+    # Get model loop pipeline TODO: Use config to create the classes
     model = nn.Conv2d(8, 1, 3, padding=1)
     # make a optimizer
-    import torch.optim as optim
+    from torch import optim
+
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     # make a scheduler
     scheduler = None
@@ -93,7 +91,6 @@ if __name__ == '__main__':
             super().__init__()
 
         def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> float:
-
             # comment out if your model contains a sigmoid or equivalent activation layer
             # inputs = F.sigmoid(inputs)
 
@@ -102,9 +99,10 @@ if __name__ == '__main__':
             targets = targets.view(-1)
 
             intersection = (inputs * targets).sum()
-            dice = (2.*intersection + smooth)/(inputs.sum() + targets.sum() + smooth)
+            dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
             return 1 - dice
+
     criterion = DiceLoss()
 
     # make a model fit block
@@ -129,13 +127,13 @@ if __name__ == '__main__':
     logger.debug(f"Pipeline: {model_pipeline}")
 
     # Save the pipeline to html file
-    set_config(display='diagram')
+    set_config(display="diagram")
 
     # Get the HTML representation of the pipeline
     pipeline_html = model_pipeline._repr_html_()
 
     # Write the HTML to a file
-    with open('logging/pipeline.html', 'w', encoding='utf-8') as f:
+    with open("logging/pipeline.html", "w", encoding="utf-8") as f:
         f.write(pipeline_html)
 
     # Read in the raw data
@@ -145,7 +143,7 @@ if __name__ == '__main__':
     logger.info(f"Raw data shape: {X.shape}")
     logger.info(f"Raw target shape: {y.shape}")
 
-    # Create an array of indices # TODO split comes from config file
+    # Create an array of indices # TODO(Epoch): split comes from config file
     logger.info("Splitting the data into train and test sets")
 
     # Suppress logger messages while getting the indices to avoid clutter in the log file
@@ -163,24 +161,15 @@ if __name__ == '__main__':
     fit_params = {
         "model_loop_pipeline": {
             "model_blocks_pipeline": {
-                model_str: {
-                    "train_indices": train_indices,
-                    "test_indices": test_indices,
-                    "to_mem_length": 2500
-                },
-
+                model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 2500},
             }
         }
     }
 
-    predict_params = {
-        "to_mem_length": 3000
-    }
+    predict_params = {"to_mem_length": 3000}
 
     # Transform the model pipeline
     x = model_pipeline.fit(X, y, **flatten_dict(fit_params))
-
-
 
     # Close client
     client.close()

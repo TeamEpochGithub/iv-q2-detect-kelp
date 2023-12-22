@@ -29,7 +29,7 @@ disable_error_code = ["import-untyped"]
 extend-exclude = ["external/*"]
 line-length = 175
 target-version = "py311"
-fix = false
+fix = true
 select = [
     "ALL",  # Every check supported by Ruff
 ]

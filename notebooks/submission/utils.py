@@ -40,7 +40,7 @@ class Logger:
 
 class MetricList:
     def __init__(self, metrics):
-        assert isinstance(metrics, dict), '\'metrics\' must be a dictionary of callables'
+        assert isinstance(metrics, dict), "'metrics' must be a dictionary of callables"
         self.metrics = metrics
         self.results = {key: 0.0 for key in self.metrics.keys()}
 
@@ -52,7 +52,7 @@ class MetricList:
         self.results = {key: 0.0 for key in self.metrics.keys()}
 
     def get_results(self, normalize=False):
-        assert isinstance(normalize, bool) or isinstance(normalize, Number), '\'normalize\' must be boolean or a number'
+        assert isinstance(normalize, bool) or isinstance(normalize, Number), "'normalize' must be boolean or a number"
         if not normalize:
             return self.results
         else:

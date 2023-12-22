@@ -17,8 +17,7 @@ if not os.path.exists("logging/logs"):
     os.makedirs("logging/logs")
 file_handler = logging.FileHandler("logging/logs/" + str(time) + ".txt")
 # Create a formatter
-formatter = logging.Formatter(
-    "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s")
+formatter = logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s")
 # Add the formatter to the file handler
 file_handler.setFormatter(formatter)
 # Add the file handler to the logger

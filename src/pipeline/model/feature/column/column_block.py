@@ -1,19 +1,18 @@
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
+
 from src.pipeline.caching.column import CacheColumnBlock
 
 
 class ColumnBlockPipeline(Pipeline):
-    """
-    ColumnBlockPipeline
+    """ColumnBlockPipeline
 
     :param column_block: column block
     :param cache_block: cache block
     """
 
     def __init__(self, column_block: BaseEstimator, cache_block: CacheColumnBlock | None = None) -> None:
-        """
-        Initialize the ColumnBlockPipeline
+        """Initialize the ColumnBlockPipeline
 
         :param column_block: column block
         :param cache_block: cache block
@@ -24,8 +23,7 @@ class ColumnBlockPipeline(Pipeline):
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
-        """
-        Get the column block pipeline steps
+        """Get the column block pipeline steps
 
         :return: list of steps
         """
