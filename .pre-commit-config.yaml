@@ -13,6 +13,8 @@ repos:
       - id: check-toml
       - id: check-xml
       - id: check-yaml
+      - id: mixed-line-ending
+        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/abravalheri/validate-pyproject
@@ -32,7 +34,7 @@ repos:
     hooks:
       - id: gitlab-ci-linter
   - repo: https://github.com/jackdewinter/pymarkdown
-    rev: v0.9.15
+    rev: v0.9.14
     hooks:
       - id: pymarkdown
         args:
