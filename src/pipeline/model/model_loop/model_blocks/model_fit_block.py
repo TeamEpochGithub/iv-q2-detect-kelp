@@ -1,14 +1,15 @@
 """ModelBlock class."""
 import copy
-from typing import Any, Self
+from typing import Self
 
 import dask.array as da
 import numpy as np
 import torch
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
-from torch import nn
+from torch import Tensor, nn
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -34,7 +35,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         self,
         model: nn.Module,
         optimizer: Optimizer,
-        scheduler: Any,
+        scheduler: LRScheduler | None,
         criterion: nn.Module,
         epochs: int = 10,
         batch_size: int = 32,
@@ -102,57 +103,15 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
         testloader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
-        # Define the loss function
-        criterion = self.criterion
-
-        # Define the optimizer
-        optimizer = self.optimizer
-        lowest_val_loss = np.inf
-
         # Train model
         logger.info("Training the model")
+        lowest_val_loss = np.inf
         for epoch in range(self.epochs):
-            self.model.train()
-            train_losses = []
-            val_losses = []
-
             # Train using trainloader
-            with tqdm(trainloader, unit="batch", disable=False) as tepoch:
-                for data in tepoch:
-                    X_batch, y_batch = data
-                    X_batch = X_batch.to(self.device).float()
-                    y_batch = y_batch.to(self.device).float()
-
-                    # Forward pass
-                    y_pred = self.model(X_batch).squeeze(1)
-                    loss = criterion(y_pred, y_batch)
-
-                    # Backward pass
-                    optimizer.zero_grad()
-                    loss.backward()
-                    optimizer.step()
-
-                    # Print tqdm
-                    train_losses.append(loss.item())
-                    tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=sum(train_losses) / len(train_losses))
+            self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
 
             # Validate using testloader
-            self.model.eval()
-            with torch.no_grad(), tqdm(testloader, unit="batch", disable=False) as tepoch:
-                for data in tepoch:
-                    X_batch, y_batch = data
-                    X_batch = X_batch.to(self.device).float()
-                    y_batch = y_batch.to(self.device).float()
-
-                    # Forward pass
-                    y_pred = self.model(X_batch).squeeze(1)
-                    val_loss = criterion(y_pred, y_batch)
-
-                    # Print tqdm
-                    val_losses.append(val_loss.item())
-                    tepoch.set_description(f"Epoch {epoch}")
-                    tepoch.set_postfix(loss=sum(val_losses) / len(val_losses))
+            val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
 
             # Store the best model so far based on validation loss
             if val_loss < lowest_val_loss:
@@ -172,6 +131,62 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         self.save_model()
 
         return self
+
+    def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
+        """Train the model for one epoch.
+
+        :param dataloader: Dataloader for the training data.
+        :param desc: Description for the tqdm progress bar.
+        :return: Average loss for the epoch.
+        """
+        losses = []
+        self.model.train()
+        pbar = tqdm(dataloader, unit="batch")
+        for batch in pbar:
+            X_batch, y_batch = batch
+            X_batch = X_batch.to(self.device).float()
+            y_batch = y_batch.to(self.device).float()
+
+            # Forward pass
+            y_pred = self.model(X_batch).squeeze(1)
+            loss = self.criterion(y_pred, y_batch)
+
+            # Backward pass
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            # Print tqdm
+            losses.append(loss.item())
+            pbar.set_description(desc=desc)
+            pbar.set_postfix(loss=sum(losses) / len(losses))
+        return sum(losses) / len(losses)
+
+    def _val_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
+        """Compute validation loss of the model for one epoch.
+
+        :param dataloader: Dataloader for the testing data.
+        :param desc: Description for the tqdm progress bar.
+        :return: Average loss for the epoch.
+        """
+        losses = []
+        self.model.eval()
+        pbar = tqdm(dataloader, unit="batch")
+        with torch.no_grad():
+            for batch in pbar:
+                X_batch, y_batch = batch
+                X_batch = X_batch.to(self.device).float()
+                y_batch = y_batch.to(self.device).float()
+
+                # Forward pass
+                y_pred = self.model(X_batch).squeeze(1)
+                loss = self.criterion(y_pred, y_batch)
+
+                # Print losses
+                losses.append(loss.item())
+                pbar.set_description(desc=desc)
+                pbar.set_postfix(loss=sum(losses) / len(losses))
+        return sum(losses) / len(losses)
 
     def save_model(self) -> None:
         """Save the model in the tm folder."""

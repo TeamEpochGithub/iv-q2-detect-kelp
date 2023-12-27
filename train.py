@@ -147,7 +147,7 @@ if __name__ == "__main__":
     fit_params = {
         "model_loop_pipeline": {
             "model_blocks_pipeline": {
-                model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 2500},
+                model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 5500},
             }
         }
     }
