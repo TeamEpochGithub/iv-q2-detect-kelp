@@ -27,9 +27,9 @@ class Model:
             during training (optional, default is False)
     """
 
-    def __init__(self, net: nn.Module, loss, optimizer, checkpoint_folder: str,
-                 scheduler: torch.optim.lr_scheduler._LRScheduler = None,
-                 device: torch.device = torch.device('cpu')):
+    def __init__(
+        self, net: nn.Module, loss, optimizer, checkpoint_folder: str, scheduler: torch.optim.lr_scheduler._LRScheduler = None, device: torch.device = torch.device("cpu")
+    ):
         """
         Wrapper for PyTorch models.
 
@@ -107,7 +107,7 @@ class Model:
 
         del X_batch, y_batch
 
-        logs = {'train_loss': epoch_running_loss / (batch_idx + 1)}
+        logs = {"train_loss": epoch_running_loss / (batch_idx + 1)}
 
         return logs
 
@@ -145,16 +145,23 @@ class Model:
 
         del X_batch, y_batch
 
-        logs = {'val_loss': running_val_loss / (batch_idx + 1),
-                **metric_list.get_results(normalize=batch_idx + 1)}
+        logs = {"val_loss": running_val_loss / (batch_idx + 1), **metric_list.get_results(normalize=batch_idx + 1)}
 
         return logs
 
-    def fit_dataset(self, dataset: ImageToImage2D, n_epochs: int, n_batch: int = 1, shuffle: bool = False,
-                    val_dataset: ImageToImage2D = None, save_freq: int = 100, save_model: bool = False,
-                    predict_dataset: Image2D = None, metric_list: MetricList = MetricList({}),
-                    verbose: bool = False):
-
+    def fit_dataset(
+        self,
+        dataset: ImageToImage2D,
+        n_epochs: int,
+        n_batch: int = 1,
+        shuffle: bool = False,
+        val_dataset: ImageToImage2D = None,
+        save_freq: int = 100,
+        save_model: bool = False,
+        predict_dataset: Image2D = None,
+        metric_list: MetricList = MetricList({}),
+        verbose: bool = False,
+    ):
         """
         Training loop for the network.
 
@@ -191,38 +198,35 @@ class Model:
             train_logs = self.fit_epoch(dataset, n_batch=n_batch, shuffle=shuffle)
 
             if self.scheduler is not None:
-                self.scheduler.step(train_logs['train_loss'])
+                self.scheduler.step(train_logs["train_loss"])
 
             if val_dataset is not None:
                 val_logs = self.val_epoch(val_dataset, n_batch=n_batch, metric_list=metric_list)
-                loss = val_logs['val_loss']
+                loss = val_logs["val_loss"]
             else:
-                loss = train_logs['train_loss']
+                loss = train_logs["train_loss"]
 
             if save_model:
                 # saving best model
                 if loss < min_loss:
-                    torch.save(self.net, os.path.join(self.checkpoint_folder, 'best_model.pt'))
-                    min_loss = val_logs['val_loss']
+                    torch.save(self.net, os.path.join(self.checkpoint_folder, "best_model.pt"))
+                    min_loss = val_logs["val_loss"]
 
                 # saving latest model
-                torch.save(self.net, os.path.join(self.checkpoint_folder, 'latest_model.pt'))
+                torch.save(self.net, os.path.join(self.checkpoint_folder, "latest_model.pt"))
 
             # measuring time and memory
             epoch_end = time()
             # logging
-            logs = {'epoch': epoch_idx,
-                    'time': epoch_end - train_start,
-                    'memory': torch.cuda.memory_allocated(),
-                    **val_logs, **train_logs}
+            logs = {"epoch": epoch_idx, "time": epoch_end - train_start, "memory": torch.cuda.memory_allocated(), **val_logs, **train_logs}
             logger.log(logs)
-            logger.to_csv(os.path.join(self.checkpoint_folder, 'logs.csv'))
+            logger.to_csv(os.path.join(self.checkpoint_folder, "logs.csv"))
 
             # saving model and logs
             if save_freq and (epoch_idx % save_freq == 0):
                 epoch_save_path = os.path.join(self.checkpoint_folder, str(epoch_idx).zfill(4))
                 chk_mkdir(epoch_save_path)
-                torch.save(self.net, os.path.join(epoch_save_path, 'model.pt'))
+                torch.save(self.net, os.path.join(epoch_save_path, "model.pt"))
                 if predict_dataset:
                     self.predict_dataset(predict_dataset, epoch_save_path)
 
@@ -246,7 +250,7 @@ class Model:
             if isinstance(rest[0][0], str):
                 image_filename = rest[0][0]
             else:
-                image_filename = '%s.png' % str(batch_idx + 1).zfill(3)
+                image_filename = "%s.png" % str(batch_idx + 1).zfill(3)
 
             X_batch = Variable(X_batch.to(device=self.device))
             y_out = self.net(X_batch).cpu().data.numpy()

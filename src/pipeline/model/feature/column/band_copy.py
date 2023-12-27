@@ -6,43 +6,8 @@ from typing import Self
 import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
-from src.pipeline.caching.column import CacheColumnPipeline
-
-
-class BandCopyPipeline:
-    """Creates a band copy pipeline.
-
-    :param band: The band to copy
-    :param processed_path: path to the processed data
-    """
-
-    def __init__(self, band: int, processed_path: str | None = None) -> None:
-        """Create a band copy pipeline.
-
-        :param band: The band to copy
-        :param processed_path: path to the processed data
-        """
-        self.band = band
-        if processed_path:
-            self.processed_path = processed_path + "/band_copy_" + str(band)
-
-    def get_pipeline(self) -> Pipeline:
-        """Create the band copy pipeline.
-
-        :return: The band copy pipeline
-        """
-        steps = [("band_copy", BandCopy(self.band))]
-
-        # Create the cache column pipeline
-        if self.processed_path:
-            cache = ("cache", CacheColumnPipeline(self.processed_path, column=-1))
-            steps.append(cache)
-
-        pipeline_path = self.processed_path + "/pipeline" if self.processed_path else None
-        return Pipeline(steps=steps, memory=pipeline_path)
 
 
 class BandCopy(BaseEstimator, TransformerMixin):
@@ -82,5 +47,20 @@ class BandCopy(BaseEstimator, TransformerMixin):
 
         start_time = time.time()
         X = dask.array.concatenate([X, copy_of_band[:, None]], axis=1)
+        X = X.rechunk()
         logger.debug(f"dask concat time: {time.time() - start_time}s")
         return X
+
+    def __str__(self) -> str:
+        """Return the name of the transformer.
+
+        :return: The name of the transformer
+        """
+        return f"BandCopy_{self.band}"
+
+
+if __name__ == "__main__":
+    # Test the band copy
+    band_copy = BandCopy(1)
+    X = da.from_array([[1, 2], [3, 4]])
+    X = band_copy.transform(X)

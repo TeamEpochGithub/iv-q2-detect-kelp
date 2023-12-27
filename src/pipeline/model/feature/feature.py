@@ -1,132 +1,83 @@
-"""Contains the feature processing pipeline, which is used to process the raw data into features that can be used by the model.
-
-It returns two things: the raw feature dataframe and the pipeline object.
-The pipeline object is used to transform the test data in the same way as the training data.
-"""
-import logging
-from dataclasses import dataclass, field
-from typing import Any
-
-from distributed import Client
+"""Feature processing pipeline."""
 from joblib import hash
 from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
-from src.pipeline.caching.tif import CacheTIFPipeline
-from src.pipeline.model.feature.column.get_columns import get_columns
-from src.pipeline.model.feature.error import FeaturePipelineError
-from src.pipeline.model.feature.transformation.get_transformations import get_transformations
+from src.pipeline.caching.tif import CacheTIFBlock
+from src.pipeline.model.feature.column.column import ColumnPipeline
+from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 
 
-@dataclass
-class FeaturePipeline:
-    """Class used to create the feature pipeline.
+class FeaturePipeline(Pipeline):
+    """Feature pipeline class is used to create the feature pipeline.
 
-    :param raw_data_path: path to the raw data
     :param processed_path: path to the processed data
-    :param transformation_steps: list of transformation steps
-    :param column_steps: list of column steps
+    :param transformation_pipeline: transformation pipeline
+    :param column_pipeline: column pipeline
     """
 
-    raw_data_path: str
-    processed_path: str | None = None
-    transformation_steps: list[dict[str, Any]] = field(default_factory=list)
-    column_steps: list[dict[str, Any]] = field(default_factory=list)
+    def __init__(
+        self, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None
+    ) -> None:
+        """Initialize the class.
 
-    def __post_init__(self) -> None:
-        """Check if the raw data path is defined."""
-        if not self.raw_data_path:
-            raise FeaturePipelineError("raw_data_path is required")
+        :param processed_path: path to the processed data
+        :param transformation_pipeline: transformation pipeline
+        :param column_pipeline: column pipeline
+        """
+        # Set the parameters
+        self.processed_path = processed_path
+        self.transformation_pipeline = transformation_pipeline
+        self.column_pipeline = column_pipeline
 
-    def get_pipeline(self) -> Pipeline:
-        """Return the feature pipeline.
+        # Create hash
+        if self.processed_path:
+            self.transformation_hash = hash(self.transformation_pipeline)
 
-        :return: Pipeline object
+        super().__init__(self._get_steps(), memory=self._get_memory())
+
+    def _get_steps(self) -> list[tuple[str, Pipeline]]:
+        """_get_steps function returns the steps for the pipeline.
+
+        :return: list of steps
         """
         steps = []
-
-        # Create the raw data parser
-        parser = ("raw_data_parser", CacheTIFPipeline(self.raw_data_path))
-        steps.append(parser)
-
-        # Create the transformation pipeline
-        transformation_hash = "raw"
-        if self.transformation_steps:
-            transformation_pipeline = get_transformations(self.transformation_steps)
-            if transformation_pipeline:
-                transformations = ("transformations", transformation_pipeline)
-                steps.append(transformations)
-
-                # Get the hash of the transformation pipeline
-                transformation_hash = hash(transformation_pipeline)
-                logger.debug(f"Transformation pipeline hash: {transformation_hash}")
+        if self.transformation_pipeline:
+            steps.append((str(self.transformation_pipeline), self.transformation_pipeline))
         else:
-            logger.info("No transformation steps were provided")
+            logger.debug("No transformation steps were provided")
 
-        # Add the store pipeline
         if self.processed_path:
-            store = (
-                "store_processed",
-                CacheTIFPipeline(self.processed_path + "/" + transformation_hash),
-            )
-            steps.append(store)
+            steps.append(("store_processed", CacheTIFBlock(self.processed_path + "/" + self.transformation_hash)))
 
-        if self.column_steps:
+        if self.column_pipeline:
             if self.processed_path:
-                column_path = self.processed_path + "/" + transformation_hash
-            else:
-                column_path = None
+                self.column_pipeline.set_path(self.processed_path + "/" + self.transformation_hash)
+            steps.append((str(self.column_pipeline), self.column_pipeline))
+        else:
+            logger.debug("No column steps were provided")
 
-            column_pipeline = get_columns(self.column_steps, column_path)
-            if column_pipeline:
-                columns = ("columns", column_pipeline)
-                steps.append(columns)
-        if not self.processed_path:
-            logger.info("No processed path was provided, returning pipeline without caching")
-            return Pipeline(steps)
+        return steps
 
-        return Pipeline(
-            steps=steps,
-            memory=self.processed_path + "/" + transformation_hash + "/pipeline_cache",
-        )
+    def _get_memory(self) -> str | None:
+        """_get_memory function returns the memory location for the pipeline.
 
+        :return: memory location
+        """
+        if self.processed_path:
+            return self.processed_path + "/" + self.transformation_hash + "/pipeline_cache"
+        return None
 
-if __name__ == "__main__":
-    # Example test
-    raw_data_path = "data/raw/train_satellite"
-    processed_path = "data/processed"
-    features_path = "data/features"
-    transform_steps = [{"type": "divider", "divider": 65500}]
-    columns = [{"type": "band_copy", "band": 0}, {"type": "band_copy", "band": 2}]
+    def __str__(self) -> str:
+        """__str__ returns string representation of the class.
 
-    client = Client()
-    import time
+        :return: String representation of the class
+        """
+        return "FeaturePipeline"
 
-    orig_time = time.time()
-    # Create the feature pipeline
-    feature_pipeline = FeaturePipeline(
-        raw_data_path,
-        processed_path,
-        transformation_steps=transform_steps,
-        column_steps=columns,
-    )
-    pipeline = feature_pipeline.get_pipeline()
+    def __repr__(self) -> str:
+        """__repr__ returns the full representation of the class.
 
-    # Parse the raw data
-    orig_time = time.time()
-    images = pipeline.fit_transform(None)
-    logging.info(time.time() - orig_time)
-
-    # Display the first image
-    image1 = images[0].compute()
-
-    # Display all bands of the first image in multiple plots on the same figure
-    import matplotlib.pyplot as plt
-
-    plt.figure(figsize=(15, 15))
-    for i in range(9):
-        plt.subplot(1, 9, i + 1)
-        plt.imshow(image1[i])
-    plt.show()
-
-    logging.info(images.shape)
+        :return: Full representation of the class
+        """
+        return f"FeaturePipeline(processed_path='{self.processed_path}',transformation_pipeline={self.transformation_pipeline},column_pipeline={self.column_pipeline})"

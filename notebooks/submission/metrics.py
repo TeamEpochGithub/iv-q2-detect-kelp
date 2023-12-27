@@ -6,17 +6,15 @@ EPSILON = 1e-32
 
 
 class LogNLLLoss(_WeightedLoss):
-    __constants__ = ['weight', 'reduction', 'ignore_index']
+    __constants__ = ["weight", "reduction", "ignore_index"]
 
-    def __init__(self, weight=None, size_average=None, reduce=None, reduction=None,
-                 ignore_index=-100):
+    def __init__(self, weight=None, size_average=None, reduce=None, reduction=None, ignore_index=-100):
         super().__init__(weight, size_average, reduce, reduction)
         self.ignore_index = ignore_index
 
     def forward(self, y_input, y_target):
         y_input = torch.log(y_input + EPSILON)
-        return cross_entropy(y_input, y_target, weight=self.weight,
-                             ignore_index=self.ignore_index)
+        return cross_entropy(y_input, y_target, weight=self.weight, ignore_index=self.ignore_index)
 
 
 def classwise_iou(output, gt):
@@ -63,7 +61,6 @@ def make_weighted_metric(classwise_metric):
     """
 
     def weighted_metric(output, gt, weights=None):
-
         # dimensions to sum over
         # dims = (0, *range(2, len(output.shape)))
 
@@ -89,6 +86,6 @@ def make_weighted_metric(classwise_metric):
 jaccard_index = make_weighted_metric(classwise_iou)
 f1_score = make_weighted_metric(classwise_f1)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     output, gt = torch.zeros(3, 2, 5, 5), torch.zeros(3, 5, 5).long()
     print(classwise_iou(output, gt))
