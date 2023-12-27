@@ -26,7 +26,7 @@ def load_tiff(path: Path) -> npt.NDArray[np.int32]:
     return img
 
 
-def make_fig(img: npt.NDArray[np.float32 | np.int32], title: str) -> dcc.Graph:
+def make_fig(img: npt.NDArray[np.float64 | np.float32 | np.int32], title: str) -> dcc.Graph:
     """Take a numpy array of an image, with shape (X,Y,C) or (X,Y), values [0 to 1], and return a plotly figure.
 
     It is plotted as RGB or heatmap depending on the shape.
@@ -136,12 +136,44 @@ def features_layout(image_id: str) -> html.Div:
     normed_max = np.max(ir_water_normed[(land_dist > 5) & (x[:, :, 0] >= 0)])
     ir_water_normed_for_viz = (ir_water_normed - normed_min) / (normed_max - normed_min)
 
-    # Use catboost predictions as a feature, for simplicity, train it on the same image,
-    # Uses the three channels in ir_water_normed and land_closeness
+    # Use catboost predictions as a feature, for simplicity, train it on the same image
+    dice, y_pred = catboost_baseline(ir_water_normed, land_closeness, y)
+
+    # Compute normalized difference water index, with Green and NIR
+    ndwi = (rgb[:, :, 1] - ir[:, :, 1]) / (rgb[:, :, 1] + ir[:, :, 1])
+
+    # Compute modified normalized difference water index, with Green and SWIR
+    mndwi = (rgb[:, :, 1] - ir[:, :, 0]) / (rgb[:, :, 1] + ir[:, :, 0])
+
+    # Compute normalized difference vegetation index, with Red and NIR
+    ndvi = (rgb[:, :, 2] - ir[:, :, 1]) / (rgb[:, :, 2] + ir[:, :, 1])
+
+    # Plot each image
+    figs = [
+        make_fig(ir, "SWIR/NIR/Red"),
+        make_fig(land_closeness, "Land Closeness"),
+        make_fig(overlay, "Kelp Overlay"),
+        make_fig(ir_water_normed_for_viz, "ir_water_normed"),
+        make_fig(y_pred, f"Catboost prediction (dice={dice:.2f})"),
+        make_fig(ndwi, "Normalized Difference Water Index"),
+        make_fig(mndwi, "Modified Normalized Difference Water Index"),
+        make_fig(ndvi, "Normalized Difference Vegetation Index"),
+    ]
+
+    return html.Div(figs, style={"display": "flex"})
+
+
+def catboost_baseline(ir_water_normed: npt.NDArray[np.float32], land_closeness: npt.NDArray[np.float32], y: npt.NDArray[np.int32]) -> tuple[float, npt.NDArray[np.float32]]:
+    """Train a catboost model on the given image, and return the dice coefficient and the predictions.
+
+    :param ir_water_normed: ir_water_normed feature
+    :param land_closeness: land_closeness feature
+    :param y: kelp mask
+    :return: dice coefficient and predictions
+    """
     import catboost
 
     model = catboost.CatBoostClassifier()
-
     # Flatten the image features and stack them
     X = np.stack(
         [
@@ -152,7 +184,6 @@ def features_layout(image_id: str) -> html.Div:
         ],
         axis=-1,
     )
-
     # Load the model if it exists
     model_path = "./data/processed/catboost_model.cbm"
     if Path(model_path).is_file():
@@ -160,17 +191,13 @@ def features_layout(image_id: str) -> html.Div:
     else:
         y_ = y.flatten()
         model.fit(X, y_, verbose=True)
-
     # Save the model
     model.save_model(model_path)
-
     # Predict on the same image
     y_pred = model.predict_proba(X)[:, 1]
     y_pred = y_pred.reshape(y.shape)
-
     # Apply a gaussian blur to the per-pixel predictions
     y_pred = scipy.ndimage.gaussian_filter(y_pred, sigma=1)
-
     # Compute dice coefficient
     y_pred_round = y_pred > 0.5
     intersection = np.sum(y_pred_round & y)
@@ -179,14 +206,4 @@ def features_layout(image_id: str) -> html.Div:
         dice = 1
     else:
         dice = 2 * intersection / union
-
-    # Plot each image
-    figs = [
-        make_fig(ir, "SWIR/NIR/Red"),
-        make_fig(land_closeness, "Land Closeness"),
-        make_fig(overlay, "Kelp Overlay"),
-        make_fig(ir_water_normed_for_viz, "ir_water_normed"),
-        make_fig(y_pred, f"Catboost prediction (dice={dice:.2f})"),
-    ]
-
-    return html.Div(figs, style={"display": "flex"})
+    return dice, y_pred
