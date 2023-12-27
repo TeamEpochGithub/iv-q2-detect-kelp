@@ -1,0 +1,41 @@
+defaults:
+  - pipeline/default
+  - _self_
+
+pipeline:
+  feature_pipeline:
+    processed_path: data/processed
+
+    transformation_pipeline:
+      transformations:
+
+        # Divider
+        - _target_: src.pipeline.model.feature.transformation.divider.Divider
+          divider: 2
+
+    column_pipeline:
+      columns:
+
+        # BandCopy
+        - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+          column_block:
+            _target_: src.pipeline.model.feature.column.band_copy.BandCopy
+            band: 1
+          cache_block:
+            _target_: src.pipeline.caching.column.CacheColumnBlock
+            data_path: data/processed/cache
+            column: -1
+
+  # Targets
+  target_pipeline: None
+
+  # Model Loop
+  model_loop_pipeline:
+    fit_params:
+      epochs: 100
+      batch_size: 32
+
+
+
+  # Post processing pipeline
+  post_processing_pipeline:
