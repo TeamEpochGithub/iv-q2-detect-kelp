@@ -17,8 +17,7 @@ class Test(TestCase):
         return column_block_pipeline
 
     def test_column_pipeline(self):
-        pipeline = self.get_pipeline()
-        cp = pipeline.get_pipeline()
+        cp = self.get_pipeline()
         self.assertNotEqual(cp, None)
 
         X = np.array([[1, 2], [3, 4]])

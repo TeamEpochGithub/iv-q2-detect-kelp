@@ -1,8 +1,11 @@
+"""ColumnPipeline is the class used to create the column pipeline."""
 import time
 from typing import Any
-from sklearn.pipeline import Pipeline
-from src.logging_utils.logger import logger
+
 import dask.array as da
+from sklearn.pipeline import Pipeline
+
+from src.logging_utils.logger import logger
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
 
 
@@ -22,7 +25,7 @@ class ColumnPipeline(Pipeline):
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, ColumnBlockPipeline]]:
-        """Get the steps in the pipeline
+        """Get the steps in the pipeline.
 
         :return: List of steps in the pipeline
         """
@@ -34,7 +37,7 @@ class ColumnPipeline(Pipeline):
         return steps
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
-        """Fit and transform the data
+        """Fit and transform the data.
 
         :param X: Data to fit and transform
         :param y: Target data
@@ -44,26 +47,25 @@ class ColumnPipeline(Pipeline):
         logger.info("Fitting column pipeline")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
-        logger.info(
-            f"Fitted column pipeline in {time.time() - start_time} seconds")
+        logger.info(f"Fitted column pipeline in {time.time() - start_time} seconds")
         return X
 
     def __repr__(self) -> str:
-        """Representation of the ColumnPipeline
+        """Representation of the ColumnPipeline.
 
         :return: String representation of the ColumnPipeline
         """
         return f"ColumnPipeline(columns={self.columns})"
 
     def __str__(self) -> str:
-        """String representation of the ColumnPipeline
+        """__str__ returns string representation of the ColumnPipeline.
 
         :return: String representation of the ColumnPipeline
         """
         return "ColumnPipeline"
 
     def set_path(self, path: str) -> None:
-        """Set the path
+        """Set the path.
 
         :param path: path
         """

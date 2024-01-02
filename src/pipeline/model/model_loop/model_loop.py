@@ -1,98 +1,40 @@
+"""Model loop pipeline."""
 from sklearn.pipeline import Pipeline
 
-# TODO: Remove these classes
-from sklearn.base import BaseEstimator
+from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
+from src.pipeline.model.model_loop.pretrain.pretrain import PretrainPipeline
 
 
-class PretrainPipeline():
-    """PretrainPipeline is the class used to create the pretrain pipeline.
+class ModelLoopPipeline:
+    """Model loop pipeline.
 
-    :param pretrain_blocks: The pretrain blocks
+    :param pretrain_pipeline: Pretrain pipeline.
+    :param model_blocks_pipeline: Model blocks pipeline.
     """
 
-    def __init__(self, pretrain_blocks: list[BaseEstimator]) -> None:
-        """
-        Initialize the class.
+    def __init__(self, pretrain_pipeline: PretrainPipeline | None, model_blocks_pipeline: ModelBlocksPipeline | None) -> None:
+        """Model loop pipeline.
 
-        :param pretrain_blocks: The pretrain blocks
-        """
-        pass
-
-    def get_pipeline(self) -> Pipeline | None:
-        """
-        PretrainPipeline is the class used to create the pretrain pipeline.
-
-        :return: Pipeline object
-        """
-        pass
-
-
-class ModelBlocksPipeline():
-    """ModelBlocksPipeline is the class used to create the model blocks pipeline.
-
-    :param model_blocks: The model blocks
-    """
-
-    def __init__(self, model_blocks: list[BaseEstimator]) -> None:
-        """
-        Initialize the class.
-
-        :param model_blocks: The model blocks
-        """
-        pass
-
-    def get_pipeline(self) -> Pipeline | None:
-        """
-        ModelBlocksPipeline is the class used to create the model blocks pipeline.
-
-        :return: Pipeline object
-        """
-        pass
-# TODO: Remove till here
-
-
-class ModelLoopPipeline():
-    """
-    ModelLoopPipeline is the class used to create the model loop pipeline.
-
-    :param pretrain_pipeline: The pretrain pipeline
-    :param model_blocks_pipeline: The model blocks pipeline
-    """
-
-    def __init__(self, pretrain_pipeline: PretrainPipeline | None = None, model_blocks_pipeline: ModelBlocksPipeline | None = None) -> None:
-        """
-        Initialize the class.
-
-        :param pretrain_pipeline: The pretrain pipeline
-        :param model_blocks_pipeline: The model blocks pipeline
+        :param pretrain_pipeline: Pretrain pipeline.
+        :param model_blocks_pipeline: Model blocks pipeline.
         """
         self.pretrain_pipeline = pretrain_pipeline
         self.model_blocks_pipeline = model_blocks_pipeline
 
-    def get_pipeline(self) -> Pipeline | None:
-        """
-        ModelLoopPipeline is the class used to create the model loop pipeline.
+    def get_pipeline(self, *, cache_model: bool = True) -> Pipeline | None:
+        """Get the pipeline.
 
-        :return: Pipeline object
+        :param cache_model: Whether to cache the model.
+        :return: Pipeline object.
         """
         steps = []
+
         if self.pretrain_pipeline:
-            steps.append(
-                ('pretrain_pipeline', self.pretrain_pipeline.get_pipeline()))
+            steps.append(("pretrain_pipeline", self.pretrain_pipeline.get_pipeline()))
         if self.model_blocks_pipeline:
-            steps.append(('model_blocks_pipeline',
-                         self.model_blocks_pipeline.get_pipeline()))
+            steps.append(("model_blocks_pipeline", self.model_blocks_pipeline))
 
         if steps:
-            return Pipeline(steps)
+            return Pipeline(steps=steps, memory="tm" if cache_model else None)
 
-        # No pipeline was created
         return None
-
-    def __str__(self) -> str:
-        """
-        String representation of the class.
-
-        :return: String representation of the class
-        """
-        return "ModelLoopPipeline"

@@ -1,4 +1,7 @@
-from dashboard.dashboard import app
+"""Main script to run the dash dashboard."""
 
-if __name__ == '__main__':
+from dashboard.dashboard import app, create_layout
+
+if __name__ == "__main__":
+    app.layout = create_layout()
     app.run_server(debug=True)

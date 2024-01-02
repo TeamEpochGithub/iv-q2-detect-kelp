@@ -53,8 +53,7 @@ class Test(TestCase):
         self.assertNotEqual(pipeline.get_pipeline(), None)
 
     def test_feature_pipeline(self):
-        pipeline = self.get_pipeline()
-        fp = pipeline.get_pipeline()
+        fp = self.get_pipeline()
 
         # Parse the raw data
         x = da.array([[1, 2], [3, 4]])
@@ -64,3 +63,4 @@ class Test(TestCase):
 
 if __name__ == '__main__':
     Test().test_feature_pipeline()
+    print("Everything passed")
