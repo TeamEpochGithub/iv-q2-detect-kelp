@@ -7,20 +7,18 @@ from .blocks import First2D, Encoder2D, Decoder2D, Last2D, Center2D, First3D, En
 
 class UNet2D(nn.Module):
     def __init__(self, in_channels, out_channels, conv_depths=(64, 128, 256, 512, 1024)):
-        assert len(conv_depths) > 2, 'conv_depths must have at least 3 members'
+        assert len(conv_depths) > 2, "conv_depths must have at least 3 members"
 
         super().__init__()
 
         # defining encoder layers
         encoder_layers = []
         encoder_layers.append(First2D(in_channels, conv_depths[0], conv_depths[0]))
-        encoder_layers.extend([Encoder2D(conv_depths[i], conv_depths[i + 1], conv_depths[i + 1])
-                               for i in range(len(conv_depths) - 2)])
+        encoder_layers.extend([Encoder2D(conv_depths[i], conv_depths[i + 1], conv_depths[i + 1]) for i in range(len(conv_depths) - 2)])
 
         # defining decoder layers
         decoder_layers = []
-        decoder_layers.extend([Decoder2D(2 * conv_depths[i + 1], 2 * conv_depths[i], 2 * conv_depths[i], conv_depths[i])
-                               for i in reversed(range(len(conv_depths) - 2))])
+        decoder_layers.extend([Decoder2D(2 * conv_depths[i + 1], 2 * conv_depths[i], 2 * conv_depths[i], conv_depths[i]) for i in reversed(range(len(conv_depths) - 2))])
         decoder_layers.append(Last2D(conv_depths[1], conv_depths[0], out_channels))
 
         # encoder, center and decoder layers
@@ -36,10 +34,7 @@ class UNet2D(nn.Module):
         x_dec = [self.center(x_enc[-1])]
         for dec_layer_idx, dec_layer in enumerate(self.decoder_layers):
             x_opposite = x_enc[-1 - dec_layer_idx]
-            x_cat = torch.cat(
-                [pad_to_shape(x_dec[-1], x_opposite.shape), x_opposite],
-                dim=1
-            )
+            x_cat = torch.cat([pad_to_shape(x_dec[-1], x_opposite.shape), x_opposite], dim=1)
             x_dec.append(dec_layer(x_cat))
 
         if not return_all:
@@ -50,20 +45,18 @@ class UNet2D(nn.Module):
 
 class UNet3D(nn.Module):
     def __init__(self, in_channels, out_channels, conv_depths=(64, 128, 256, 512, 1024)):
-        assert len(conv_depths) > 2, 'conv_depths must have at least 3 members'
+        assert len(conv_depths) > 2, "conv_depths must have at least 3 members"
 
         super().__init__()
 
         # defining encoder layers
         encoder_layers = []
         encoder_layers.append(First3D(in_channels, conv_depths[0], conv_depths[0]))
-        encoder_layers.extend([Encoder3D(conv_depths[i], conv_depths[i + 1], conv_depths[i + 1])
-                               for i in range(len(conv_depths) - 2)])
+        encoder_layers.extend([Encoder3D(conv_depths[i], conv_depths[i + 1], conv_depths[i + 1]) for i in range(len(conv_depths) - 2)])
 
         # defining decoder layers
         decoder_layers = []
-        decoder_layers.extend([Decoder3D(2 * conv_depths[i + 1], 2 * conv_depths[i], 2 * conv_depths[i], conv_depths[i])
-                               for i in reversed(range(len(conv_depths) - 2))])
+        decoder_layers.extend([Decoder3D(2 * conv_depths[i + 1], 2 * conv_depths[i], 2 * conv_depths[i], conv_depths[i]) for i in reversed(range(len(conv_depths) - 2))])
         decoder_layers.append(Last3D(conv_depths[1], conv_depths[0], out_channels))
 
         # encoder, center and decoder layers
@@ -79,10 +72,7 @@ class UNet3D(nn.Module):
         x_dec = [self.center(x_enc[-1])]
         for dec_layer_idx, dec_layer in enumerate(self.decoder_layers):
             x_opposite = x_enc[-1 - dec_layer_idx]
-            x_cat = torch.cat(
-                [pad_to_shape(x_dec[-1], x_opposite.shape), x_opposite],
-                dim=1
-            )
+            x_cat = torch.cat([pad_to_shape(x_dec[-1], x_opposite.shape), x_opposite], dim=1)
             x_dec.append(dec_layer(x_cat))
 
         if not return_all:

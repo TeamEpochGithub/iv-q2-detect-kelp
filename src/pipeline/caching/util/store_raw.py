@@ -28,7 +28,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
         if glob.glob(f"{data_path}/*.tif"):
             logger.info("Data already exists on disk")
             return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
-        if glob.glob(f"{data_path}*.npy"):
+        if glob.glob(f"{data_path}/*.npy"):
             logger.info("Data already exists on disk")
             return da.from_npy_stack(data_path).astype(np.float32)
 
@@ -41,7 +41,9 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     start_time = time.time()
 
     # Iterate over the dask array and store each image
-    da.to_npy_stack(data_path, dask_array.astype(np.float32))
+    dask_array = dask_array.astype(np.float32)
+    da.to_npy_stack(data_path, dask_array)
+    dask_array = da.from_npy_stack(data_path)
 
     end_time = time.time()
     logger.debug(f"Finished storing data to disk in: {end_time - start_time} seconds")

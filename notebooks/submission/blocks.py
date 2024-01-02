@@ -4,7 +4,7 @@ from torch.nn.modules.loss import _Loss
 
 
 class SoftDiceLoss(_Loss):
-    def __init__(self, size_average=None, reduce=None, reduction='mean'):
+    def __init__(self, size_average=None, reduce=None, reduction="mean"):
         super().__init__(size_average, reduce, reduction)
 
     def forward(self, y_pred, y_gt):
@@ -23,11 +23,11 @@ class First2D(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout2d(p=dropout))
 
         self.first = nn.Sequential(*layers)
@@ -37,10 +37,7 @@ class First2D(nn.Module):
 
 
 class Encoder2D(nn.Module):
-    def __init__(
-            self, in_channels, middle_channels, out_channels,
-            dropout=False, downsample_kernel=2
-    ):
+    def __init__(self, in_channels, middle_channels, out_channels, dropout=False, downsample_kernel=2):
         super().__init__()
 
         layers = [
@@ -50,11 +47,11 @@ class Encoder2D(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout2d(p=dropout))
 
         self.encoder = nn.Sequential(*layers)
@@ -75,11 +72,11 @@ class Center2D(nn.Module):
             nn.Conv2d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(out_channels, deconv_channels, kernel_size=2, stride=2)
+            nn.ConvTranspose2d(out_channels, deconv_channels, kernel_size=2, stride=2),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout2d(p=dropout))
 
         self.center = nn.Sequential(*layers)
@@ -99,11 +96,11 @@ class Decoder2D(nn.Module):
             nn.Conv2d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(out_channels, deconv_channels, kernel_size=2, stride=2)
+            nn.ConvTranspose2d(out_channels, deconv_channels, kernel_size=2, stride=2),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout2d(p=dropout))
 
         self.decoder = nn.Sequential(*layers)
@@ -124,7 +121,7 @@ class Last2D(nn.Module):
             nn.BatchNorm2d(middle_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(middle_channels, out_channels, kernel_size=1),
-            nn.Softmax(dim=1)
+            nn.Softmax(dim=1),
         ]
 
         self.first = nn.Sequential(*layers)
@@ -143,11 +140,11 @@ class First3D(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv3d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout3d(p=dropout))
 
         self.first = nn.Sequential(*layers)
@@ -157,10 +154,7 @@ class First3D(nn.Module):
 
 
 class Encoder3D(nn.Module):
-    def __init__(
-            self, in_channels, middle_channels, out_channels,
-            dropout=False, downsample_kernel=2
-    ):
+    def __init__(self, in_channels, middle_channels, out_channels, dropout=False, downsample_kernel=2):
         super().__init__()
 
         layers = [
@@ -170,11 +164,11 @@ class Encoder3D(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv3d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout3d(p=dropout))
 
         self.encoder = nn.Sequential(*layers)
@@ -195,11 +189,11 @@ class Center3D(nn.Module):
             nn.Conv3d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose3d(out_channels, deconv_channels, kernel_size=2, stride=2)
+            nn.ConvTranspose3d(out_channels, deconv_channels, kernel_size=2, stride=2),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout3d(p=dropout))
 
         self.center = nn.Sequential(*layers)
@@ -219,11 +213,11 @@ class Decoder3D(nn.Module):
             nn.Conv3d(middle_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm3d(out_channels),
             nn.ReLU(inplace=True),
-            nn.ConvTranspose3d(out_channels, deconv_channels, kernel_size=2, stride=2)
+            nn.ConvTranspose3d(out_channels, deconv_channels, kernel_size=2, stride=2),
         ]
 
         if dropout:
-            assert 0 <= dropout <= 1, 'dropout must be between 0 and 1'
+            assert 0 <= dropout <= 1, "dropout must be between 0 and 1"
             layers.append(nn.Dropout3d(p=dropout))
 
         self.decoder = nn.Sequential(*layers)
@@ -244,7 +238,7 @@ class Last3D(nn.Module):
             nn.BatchNorm3d(middle_channels),
             nn.ReLU(inplace=True),
             nn.Conv3d(middle_channels, out_channels, kernel_size=1),
-            nn.Softmax(dim=1)
+            nn.Softmax(dim=1),
         ]
 
         self.first = nn.Sequential(*layers)

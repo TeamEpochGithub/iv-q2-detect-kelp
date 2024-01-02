@@ -1,6 +1,6 @@
 default_language_version:
     python: python3.11
-exclude: ^(external/|notebooks/|venv/)
+exclude: ^(external/|venv/|tests/|notebooks/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -13,6 +13,8 @@ repos:
       - id: check-toml
       - id: check-xml
       - id: check-yaml
+      - id: mixed-line-ending
+        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/abravalheri/validate-pyproject
@@ -40,12 +42,12 @@ repos:
           - md013
           - scan
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.8
+    rev: v0.1.9
     hooks:
       - id: ruff
       - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.7.1
+    rev: v1.8.0
     hooks:
       - id: mypy
         args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=venv/Scripts/python.exe]
