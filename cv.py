@@ -1,97 +1,115 @@
-"""Run cross-validation on a model or ensemble."""
+"""Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import time
 import warnings
+from dataclasses import dataclass
+from typing import Any
 
-import numpy as np
+import hydra
 from dask_image.imread import imread
 from distributed import Client
+from hydra.core.config_store import ConfigStore
+from hydra.utils import instantiate
+from omegaconf import OmegaConf
+from sklearn import set_config
+from sklearn.base import estimator_html_repr
 from sklearn.model_selection import StratifiedKFold
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.pipeline.model.feature.column.band_copy import BandCopy
-from src.pipeline.model.feature.column.column import ColumnPipeline
-from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
-from src.pipeline.model.feature.feature import FeaturePipeline
-from src.pipeline.model.feature.transformation.divider import Divider
-from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
-from src.pipeline.model.model import ModelPipeline
-from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
-from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
+from src.utils.flatten_dict import flatten_dict
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-if __name__ == "__main__":
+
+@dataclass
+class CVConfig:
+    """Schema for the train config yaml file."""
+
+    model: Any
+    n_splits: int
+    raw_data_path: str = "data/raw/train_satellite"
+    raw_target_path: str = "data/raw/train_kelp"
+
+
+# Set up the config store, necessary for type checking of config yaml
+cs = ConfigStore.instance()
+cs.store(name="base_cv", node=CVConfig)
+
+
+@hydra.main(version_base=None, config_path="conf", config_name="cv")
+def run_train(cfg: CVConfig) -> None:
+    """Train a model pipeline with a train-test split."""
+    # Check for missing keys in the config file
+    missing = OmegaConf.missing_keys(cfg)
+    if missing:
+        raise ValueError(f"Missing keys in config file\n{missing}")
+
     # Coloured logs
     import coloredlogs
 
     coloredlogs.install()
 
-    # Initialize dask client
-    client = Client()
-
     # Print section separator
-    print_section_separator("Q2 Detect Kelp States -- Cross validation")
+    print_section_separator("Q2 Detect Kelp States -- CV")
 
-    # Paths
-    processed_path = "data/processed"
-
-    # Create the transformation pipeline
-    divider = Divider(2)
-
-    transformation_pipeline = TransformationPipeline([divider])
-
-    # Create the column pipeline
-    band_copy_pipeline = BandCopy(1)
-
-    from src.pipeline.caching.column import CacheColumnBlock
-
-    cache = CacheColumnBlock("data/test", column=-1)
-    column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
-    column_pipeline = ColumnPipeline([column_block_pipeline])
-
-    import time
-
+    # Set up the pipeline
+    logger.info("Setting up the pipeline")
     orig_time = time.time()
-    # Create the feature pipeline
-    fp = FeaturePipeline(processed_path=processed_path, transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
-    feature_pipeline = fp.get_pipeline()
+    model_pipeline = instantiate(cfg.model.pipeline).get_pipeline()
+    logger.info(f"Pipeline setup time: {time.time() - orig_time} seconds")
+    logger.debug(f"Pipeline: {model_pipeline}")
 
-    # Get target pipeline TODO(Epoch): Remove
-    tp = None
-    raw_target_path = "data/raw/train_kelp"  # TODO(Epoch): Remove
-    y = imread(f"{raw_target_path}/*.tif")  # TODO(Epoch): Remove
-
-    # TODO(Epoch): Get post processing pipeline
-    ppp = PostProcessingPipeline()
+    # Save the pipeline to an HTML file, next to the log file in the hydra output
+    set_config(display="diagram")
+    pipeline_html = estimator_html_repr(model_pipeline)
+    out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    with open(f"{out_dir}/pipeline.html", "w", encoding="utf-8") as f:
+        f.write(pipeline_html)
 
     # Read in the raw data
-    raw_data_path = "data/raw/train_satellite"
-    raw_target_path = "data/raw/train_kelp"
-    X = imread(f"{raw_data_path}/*.tif").transpose(0, 3, 1, 2)
-    y = imread(f"{raw_target_path}/*.tif")
+    logger.info("Lazily reading the raw data")
+    X = imread(f"{cfg.raw_data_path}/*.tif").transpose(0, 3, 1, 2)
+    y = imread(f"{cfg.raw_target_path}/*.tif")
+    logger.info(f"Raw data shape: {X.shape}")
+    logger.info(f"Raw target shape: {y.shape}")
 
-    # Create an array of indices # TODO(Epoch): Split comes from config file
-    split = 0.2
-    x = feature_pipeline.fit_transform(X)
-    indices = np.arange(x.shape[0])
+    # Lazily process the features to know the shape in advance
+    # Suppress logger messages while getting the indices to avoid clutter in the log file
+    logger.info("Finding shape of processed data")
+    logger.setLevel("ERROR")
+    feature_pipeline = model_pipeline.named_steps.feature_pipeline
+    x_processed = feature_pipeline.fit_transform(X)
+    logger.setLevel("INFO")
+    logger.info(f"Processed data shape: {x_processed.shape}")
 
-    # Create a KFold object
-    kf = StratifiedKFold(n_splits=5)
-
-    # Split indices into train and test for each fold, create a stratification key from y
+    # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
+    kf = StratifiedKFold(n_splits=cfg.n_splits)
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
-    for train_indices, test_indices in kf.split(X, stratification_key):
-        logger.debug(f"Train indices: {train_indices}")
-        logger.debug(f"Test indices: {test_indices}")
+    for i, (train_indices, test_indices) in enumerate(kf.split(x_processed, stratification_key)):
+        print_section_separator(f"CV - Fold {i}")
 
-        # fit_args = {}
+        logger.info("Creating clean pipeline for this fold")
+        model_pipeline = instantiate(cfg.model.pipeline).get_pipeline()
 
-        # Get model loop pipeline TODO
-        mlp = ModelLoopPipeline(None, None)
+        # Set train and test indices for each model block
+        # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
+        # Then we convert it to a flat dictionary with __ as the separator between each level
+        fit_params = {
+            "model_loop_pipeline": {
+                "model_blocks_pipeline": {
+                    name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": -1}
+                    for name, _ in model_pipeline.named_steps.model_loop_pipeline.named_steps.model_blocks_pipeline.steps
+                }
+            }
+        }
+        fit_params_flat = flatten_dict(fit_params)
 
-        # Get model pipeline
-        model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
+        # Fit the pipeline
+        model_pipeline.fit(X, y, **fit_params_flat)
 
-        mp = model_pipeline.get_pipeline()
-        x = mp.fit_transform(X, y)
-        logger.debug(x.shape)
+
+if __name__ == "__main__":
+    # Run with dask client, which will automatically close if there is an error
+    with Client() as client:
+        logger.info(f"Client: {client}")
+        run_train()

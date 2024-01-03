@@ -68,7 +68,7 @@ def run_train(cfg: TrainConfig) -> None:
         f.write(pipeline_html)
 
     # Read in the raw data
-    logger.info("Reading in the raw feature and target data")
+    logger.info("Lazily reading the raw data")
     X = imread(f"{cfg.raw_data_path}/*.tif").transpose(0, 3, 1, 2)
     y = imread(f"{cfg.raw_target_path}/*.tif")
     logger.info(f"Raw data shape: {X.shape}")
