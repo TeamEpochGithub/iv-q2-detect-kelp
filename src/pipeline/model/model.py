@@ -45,7 +45,7 @@ class ModelPipeline:
         steps: list[tuple[str, Any]] = []
 
         if self.feature_pipeline:
-            steps.append((str(self.feature_pipeline), self.feature_pipeline))
+            steps.append(("feature_pipeline", self.feature_pipeline))
         if self.target_pipeline:
             steps.append(("target_pipeline", self.target_pipeline.get_pipeline()))
         if self.model_loop_pipeline:

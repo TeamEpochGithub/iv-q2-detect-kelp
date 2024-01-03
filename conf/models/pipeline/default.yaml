@@ -13,6 +13,9 @@ target_pipeline: None
 
 model_loop_pipeline:
   _target_: src.pipeline.model.model_loop.model_loop.ModelLoopPipeline
+  model_blocks_pipeline:
+    _target_: src.pipeline.model.model_loop.model_blocks.model_blocks.ModelBlocksPipeline
+
 
 post_processing_pipeline:
   _target_: src.pipeline.model.post_processing.post_processing.PostProcessingPipeline
