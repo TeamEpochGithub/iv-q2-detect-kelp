@@ -19,7 +19,7 @@ from src.utils.flatten_dict import flatten_dict
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
-@hydra.main(version_base=None, config_path="conf/models", config_name="unet2M")
+@hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:
     """Train a model pipeline with a train-test split."""
     # Coloured logs
@@ -30,18 +30,10 @@ def run_train(cfg: DictConfig) -> None:
     # Print section separator
     print_section_separator("Q2 Detect Kelp States -- Training")
 
-    # Initialize dask client
-    client = Client()
-
-    # Log client information
-    logger.info(f"Client: {client}")
-
-    ###############################
-
     # Set up the pipeline
     logger.info("Setting up the pipeline")
     orig_time = time.time()
-    model_pipeline = instantiate(cfg.pipeline).get_pipeline()
+    model_pipeline = instantiate(cfg.model.pipeline).get_pipeline()
     logger.info(f"Pipeline setup time: {time.time() - orig_time} seconds")
     logger.debug(f"Pipeline: {model_pipeline}")
 
@@ -70,7 +62,7 @@ def run_train(cfg: DictConfig) -> None:
     indices = np.arange(x_processed.shape[0])
 
     # Split indices into train and test
-    train_indices, test_indices = train_test_split(indices, test_size=cfg.split)
+    train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
     logger.info("Splitting the data into train and test sets")
     logger.debug(f"Train indices: {train_indices}")
     logger.debug(f"Test indices: {test_indices}")
@@ -91,9 +83,9 @@ def run_train(cfg: DictConfig) -> None:
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params_flat)
 
-    # Close client
-    client.close()
-
 
 if __name__ == "__main__":
-    run_train()
+    # Run with dask client, which will automatically close if there is an error
+    with Client() as client:
+        logger.info(f"Client: {client}")
+        run_train()
