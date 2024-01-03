@@ -92,7 +92,7 @@ if __name__ == "__main__":
     criterion = DiceLoss()
 
     # make a model fit block
-    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=1, batch_size=32, patience=10)
+    model_fit_block = ModelBlock(model, optimizer, scheduler, criterion, epochs=10, batch_size=32, patience=1)
     model_str = str(model_fit_block)
 
     # make a model blocks pipeline
@@ -139,7 +139,11 @@ if __name__ == "__main__":
     indices = np.arange(x.shape[0])
 
     # Split indices into train and test
-    train_indices, test_indices = train_test_split(indices, test_size=split)
+    # the split of 0 is not supported by train test split so we have to do it manually
+    if split == 0:
+        train_indices, test_indices = indices, []
+    else:
+        train_indices, test_indices = train_test_split(indices, test_size=split)
 
     logger.debug(f"Train indices: {train_indices}")
     logger.debug(f"Test indices: {test_indices}")
@@ -147,12 +151,12 @@ if __name__ == "__main__":
     fit_params = {
         "model_loop_pipeline": {
             "model_blocks_pipeline": {
-                model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 5500},
+                model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 5635},
             }
         }
     }
 
-    predict_params = {"to_mem_length": 3000}
+    predict_params = {"to_mem_length": 5635}
 
     # Transform the model pipeline
     x = model_pipeline.fit(X, y, **flatten_dict(fit_params))

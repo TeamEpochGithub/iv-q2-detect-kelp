@@ -67,7 +67,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], to_mem_length: int = 3000) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], to_mem_length: int = 5635) -> Self:
         """Train the model.
 
         :param X: Input features.
@@ -105,26 +105,22 @@ class ModelBlock(BaseEstimator, TransformerMixin):
 
         # Train model
         logger.info("Training the model")
-        lowest_val_loss = np.inf
+        self.lowest_val_loss = np.inf
         for epoch in range(self.epochs):
             # Train using trainloader
             self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
 
-            # Validate using testloader
-            val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
+            # Validate using testloader if we have validation data
+            if len(testloader) > 0:
+                self.val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
 
-            # Store the best model so far based on validation loss
-            if val_loss < lowest_val_loss:
-                lowest_val_loss = val_loss
-                best_model = copy.deepcopy(self.model.state_dict())
-                early_stopping_counter = 0
-            else:
-                early_stopping_counter += 1
-                if early_stopping_counter >= self.patience:
-                    logger.info(f"Early stopping at epoch {epoch}")
-                    self.model.load_state_dict(best_model)
-                    # trained_epochs = (epoch - early_stopping_counter + 1)
+            if len(testloader) > 0:
+                # not train full
+                if self.early_stopping():
                     break
+            else:
+                # train full
+                raise NotImplementedError("Early stopping not implemented for full train")
 
         # Save the model in the tm folder
         # TODO(Epoch): This is placeholder for now but this is deterministic
@@ -235,6 +231,24 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         :return: Predictions and labels.
         """
         return self.predict(X)
+
+    def early_stopping(self) -> bool:
+        """Check if early stopping should be done.
+
+        :return: Whether early stopping should be done.
+        """
+        # Store the best model so far based on validation loss
+        if self.val_loss < self.lowest_val_loss:
+            self.lowest_val_loss = self.val_loss
+            self.best_model = copy.deepcopy(self.model.state_dict())
+            self.early_stopping_counter = 0
+        else:
+            self.early_stopping_counter += 1
+            if self.early_stopping_counter >= self.patience:
+                logger.info("Loading best model")
+                self.model.load_state_dict(self.best_model)
+                return True
+        return False
 
     def __str__(self) -> str:
         """Return the string representation of the model.
