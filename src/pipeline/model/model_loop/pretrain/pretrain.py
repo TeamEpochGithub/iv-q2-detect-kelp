@@ -24,7 +24,7 @@ class PretrainPipeline(Pipeline):
         :return: list of steps
         """
         # Use list comprehension to get the steps
-        if isinstance(self.steps[0], tuple):
-            return self.steps
-        else:
-            return [(str(step), step) for step in self.steps]
+        # if isinstance(self.steps[0], tuple):
+        #     return self.steps
+        # else:
+        return [(str(step), step) for step in self.steps]
