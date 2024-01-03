@@ -1,7 +1,7 @@
 """Model blocks pipeline."""
 from sklearn.pipeline import Pipeline
 
-from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
+from src.pipeline.model.model_loop.model_blocks.torch_block import TorchBlock
 
 
 class ModelBlocksPipeline(Pipeline):
@@ -10,7 +10,7 @@ class ModelBlocksPipeline(Pipeline):
     :param model_blocks: list of model blocks
     """
 
-    def __init__(self, model_blocks: list[ModelBlock]) -> None:
+    def __init__(self, model_blocks: list[TorchBlock]) -> None:
         """Initialize the ModelBlocksPipeline.
 
         :param model_blocks: list of model blocks
@@ -18,7 +18,7 @@ class ModelBlocksPipeline(Pipeline):
         self.model_blocks = model_blocks
         super().__init__(self._get_steps())
 
-    def _get_steps(self) -> list[tuple[str, ModelBlock]]:
+    def _get_steps(self) -> list[tuple[str, TorchBlock]]:
         """Get the pipeline steps.
 
         :return: list of steps

@@ -50,7 +50,7 @@ class Test(TestCase):
 
     def test_get_pipeline(self):
         pipeline = self.get_pipeline()
-        self.assertNotEqual(pipeline.get_pipeline(), None)
+        self.assertNotEqual(pipeline, None)
 
     def test_feature_pipeline(self):
         fp = self.get_pipeline()
