@@ -4,8 +4,12 @@
 
 Closes #XXX.
 
-- Does 1
-- And 2
+- (Does 1)
+- (And 2)
+
+## Relevant Links
+
+- [Example Link](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 
 ## Check the boxes below before you merge this MR
 
@@ -14,3 +18,7 @@ Closes #XXX.
 - [ ] All unit, integration, and system tests pass.
 - [ ] Main scripts run as expected.
 - [ ] `requirements.txt` is up to date.
+
+## Notes
+
+(Other things to pay attention to while reviewing this MR)

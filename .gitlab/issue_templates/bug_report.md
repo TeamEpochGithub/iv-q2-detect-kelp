@@ -25,4 +25,12 @@ it's very hard to read otherwise.)
 
 (If you can, link to the line of code that might be responsible for the problem)
 
+## Relevant Links
+
+- [Example Link](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
+
+## Notes
+
+(Other things to pay attention to)
+
 /label ~bug
