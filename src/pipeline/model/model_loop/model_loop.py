@@ -30,7 +30,7 @@ class ModelLoopPipeline:
         steps = []
 
         if self.pretrain_pipeline:
-            steps.append(("pretrain_pipeline", self.pretrain_pipeline.get_pipeline()))
+            steps.append(("pretrain_pipeline", self.pretrain_pipeline))
         if self.model_blocks_pipeline:
             steps.append(("model_blocks_pipeline", self.model_blocks_pipeline))
 

@@ -9,6 +9,7 @@ from sklearn import set_config
 from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
 from torch import nn
+from sklearn.preprocessing import StandardScaler
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -22,6 +23,7 @@ from src.pipeline.model.feature.transformation.transformation import Transformat
 from src.pipeline.model.model import ModelPipeline
 from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
 from src.pipeline.model.model_loop.model_blocks.model_fit_block import ModelBlock
+from src.pipeline.model.model_loop.pretrain.pretrain import PretrainPipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 from src.utils.flatten_dict import flatten_dict
@@ -97,8 +99,9 @@ if __name__ == "__main__":
 
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
-
-    model_loop_pipeline = ModelLoopPipeline(None, model_blocks_pipeline=model_blocks_pipeline)
+    scaler = StandardScaler()
+    pretrain_pipeline = PretrainPipeline(steps=[scaler])
+    model_loop_pipeline = ModelLoopPipeline(pretrain_pipeline=pretrain_pipeline, model_blocks_pipeline=model_blocks_pipeline)
 
     # Get post processing pipeline TODO
     ppp = PostProcessingPipeline()

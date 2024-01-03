@@ -9,7 +9,7 @@ from src.pipeline.model.post_processing.post_processing import PostProcessingPip
 from src.pipeline.model.target.target import TargetPipeline
 
 
-class ModelPipeline:
+class ModelPipeline(Pipeline):
     """ModelPipeline is the class used to create the model pipeline.
 
     :param feature_pipeline: The feature pipeline
