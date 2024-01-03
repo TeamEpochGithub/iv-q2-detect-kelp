@@ -1,13 +1,16 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
 import time
 import warnings
+from dataclasses import dataclass
+from typing import Any
 
 import hydra
 import numpy as np
 from dask_image.imread import imread
 from distributed import Client
+from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
-from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from sklearn import set_config
 from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
@@ -19,9 +22,29 @@ from src.utils.flatten_dict import flatten_dict
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
+@dataclass
+class TrainConfig:
+    """Schema for the train config yaml file."""
+
+    model: Any
+    test_size: float
+    raw_data_path: str = "data/raw/train_satellite"
+    raw_target_path: str = "data/raw/train_kelp"
+
+
+# Set up the config store, necessary for type checking of config yaml
+cs = ConfigStore.instance()
+cs.store(name="base_train", node=TrainConfig)
+
+
 @hydra.main(version_base=None, config_path="conf", config_name="train")
-def run_train(cfg: DictConfig) -> None:
+def run_train(cfg: TrainConfig) -> None:
     """Train a model pipeline with a train-test split."""
+    # Check for missing keys in the config file
+    missing = OmegaConf.missing_keys(cfg)
+    if missing:
+        raise ValueError(f"Missing keys in config file\n{missing}")
+
     # Coloured logs
     import coloredlogs
 
