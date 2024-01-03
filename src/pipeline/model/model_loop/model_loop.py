@@ -22,19 +22,20 @@ class ModelLoopPipeline:
         self.model_blocks_pipeline = model_blocks_pipeline
 
     def get_pipeline(self, *, cache_model: bool = True) -> Pipeline | None:
-        """Get the pipeline.
+            """
+            Get the pipeline.
 
-        :param cache_model: Whether to cache the model.
-        :return: Pipeline object.
-        """
-        steps = []
+            :param cache_model: Whether to cache the model.
+            :return: Pipeline object or None if no steps are defined.
+            """
+            steps = []
 
-        if self.pretrain_pipeline:
-            steps.append(("pretrain_pipeline", self.pretrain_pipeline))
-        if self.model_blocks_pipeline:
-            steps.append(("model_blocks_pipeline", self.model_blocks_pipeline))
+            if self.pretrain_pipeline:
+                steps.append(("pretrain_pipeline", self.pretrain_pipeline))
+            if self.model_blocks_pipeline:
+                steps.append(("model_blocks_pipeline", self.model_blocks_pipeline))
 
-        if steps:
-            return Pipeline(steps=steps, memory="tm" if cache_model else None)
+            if steps:
+                return Pipeline(steps=steps, memory="tm" if cache_model else None)
 
-        return None
+            return None

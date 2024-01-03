@@ -9,7 +9,7 @@ from sklearn import set_config
 from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
 from torch import nn
-from sklearn.preprocessing import StandardScaler
+from dask_ml.preprocessing import StandardScaler
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -27,6 +27,8 @@ from src.pipeline.model.model_loop.pretrain.pretrain import PretrainPipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 from src.utils.flatten_dict import flatten_dict
+from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
+
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -100,6 +102,7 @@ if __name__ == "__main__":
     # make a model blocks pipeline
     model_blocks_pipeline = ModelBlocksPipeline(model_blocks=[model_fit_block])
     scaler = StandardScaler()
+    scaler = ScalerBlock(scaler)
     pretrain_pipeline = PretrainPipeline(steps=[scaler])
     model_loop_pipeline = ModelLoopPipeline(pretrain_pipeline=pretrain_pipeline, model_blocks_pipeline=model_blocks_pipeline)
 
