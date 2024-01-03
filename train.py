@@ -110,11 +110,11 @@ if __name__ == "__main__":
     ppp = PostProcessingPipeline()
 
     # Get model pipeline
-    model_pipeline_object = ModelPipeline(feature_pipeline, tp, model_loop_pipeline, None)
+    model_pipeline = ModelPipeline(feature_pipeline, tp, model_loop_pipeline, None)
 
     ################################
 
-    model_pipeline = model_pipeline_object.get_pipeline()
+    model_pipeline = model_pipeline
     logger.info(f"Pipeline setup time: {time.time() - orig_time} seconds")
     logger.debug(f"Pipeline: {model_pipeline}")
 
@@ -155,8 +155,8 @@ if __name__ == "__main__":
     logger.debug(f"Test indices: {test_indices}")
 
     fit_params = {
-        "model_loop_pipeline": {
-            "model_blocks_pipeline": {
+        "model_loop_pipeline_step": {
+            "model_blocks_pipeline_step": {
                 model_str: {"train_indices": train_indices, "test_indices": test_indices, "to_mem_length": 5635},
             }
         }

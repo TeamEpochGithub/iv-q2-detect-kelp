@@ -5,7 +5,7 @@ from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksP
 from src.pipeline.model.model_loop.pretrain.pretrain import PretrainPipeline
 
 
-class ModelLoopPipeline:
+class ModelLoopPipeline(Pipeline):
     """Model loop pipeline.
 
     :param pretrain_pipeline: Pretrain pipeline.
@@ -20,22 +20,19 @@ class ModelLoopPipeline:
         """
         self.pretrain_pipeline = pretrain_pipeline
         self.model_blocks_pipeline = model_blocks_pipeline
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self, *, cache_model: bool = True) -> Pipeline | None:
-            """
-            Get the pipeline.
+    def _get_steps(self):
+        """Get the pipeline steps.
 
-            :param cache_model: Whether to cache the model.
-            :return: Pipeline object or None if no steps are defined.
-            """
-            steps = []
+        :return: list of steps
+        """
+        steps = []
 
-            if self.pretrain_pipeline:
-                steps.append(("pretrain_pipeline", self.pretrain_pipeline))
-            if self.model_blocks_pipeline:
-                steps.append(("model_blocks_pipeline", self.model_blocks_pipeline))
+        if self.pretrain_pipeline:
+            steps.append(("pretrain_pipeline_step", self.pretrain_pipeline))
+        if self.model_blocks_pipeline:
+            steps.append(("model_blocks_pipeline_step", self.model_blocks_pipeline))
 
-            if steps:
-                return Pipeline(steps=steps, memory="tm" if cache_model else None)
+        return steps
 
-            return None

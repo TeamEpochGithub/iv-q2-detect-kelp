@@ -36,24 +36,43 @@ class ModelPipeline(Pipeline):
         self.target_pipeline = target_pipeline
         self.model_loop_pipeline = model_loop_pipeline
         self.post_processing_pipeline = post_processing_pipeline
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self) -> Pipeline:
-        """Get the pipeline.
+    def _get_steps(self):
+        """Get the pipeline steps.
 
-        :return: Pipeline object
+        :return: list of steps
         """
-        steps: list[tuple[str, Any]] = []
+        steps = []
 
         if self.feature_pipeline:
-            steps.append((str(self.feature_pipeline), self.feature_pipeline))
+            steps.append(("feature_pipeline_step", self.feature_pipeline))
         if self.target_pipeline:
-            steps.append(("target_pipeline", self.target_pipeline.get_pipeline()))
+            steps.append(("target_pipeline_step", self.target_pipeline))
         if self.model_loop_pipeline:
-            steps.append(("model_loop_pipeline", self.model_loop_pipeline.get_pipeline()))
+            steps.append(("model_loop_pipeline_step", self.model_loop_pipeline))
         if self.post_processing_pipeline:
-            steps.append(("post_processing_pipeline", self.post_processing_pipeline.get_pipeline()))
+            steps.append(("post_processing_pipeline_step", self.post_processing_pipeline))
 
-        return Pipeline(steps)
+        return steps
+
+    # def get_pipeline(self) -> Pipeline:
+    #     """Get the pipeline.
+
+    #     :return: Pipeline object
+    #     """
+    #     steps: list[tuple[str, Any]] = []
+
+    #     if self.feature_pipeline:
+    #         steps.append((str(self.feature_pipeline), self.feature_pipeline))
+    #     if self.target_pipeline:
+    #         steps.append(("target_pipeline", self.target_pipeline.get_pipeline()))
+    #     if self.model_loop_pipeline:
+    #         steps.append(("model_loop_pipeline", self.model_loop_pipeline))
+    #     if self.post_processing_pipeline:
+    #         steps.append(("post_processing_pipeline", self.post_processing_pipeline.get_pipeline()))
+
+    #     return Pipeline(steps)
 
     def __str__(self) -> str:
         """__str__ returns string representation of the class.
