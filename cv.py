@@ -48,7 +48,7 @@ def run_cv(cfg: DictConfig) -> None:
     setup_config(cfg)
 
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir)
+    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     feature_pipeline = model_pipeline.named_steps.feature_pipeline

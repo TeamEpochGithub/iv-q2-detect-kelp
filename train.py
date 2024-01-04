@@ -1,4 +1,5 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import glob
 import warnings
 from dataclasses import dataclass
 from typing import Any
@@ -7,6 +8,7 @@ import hydra
 import numpy as np
 from distributed import Client
 from hydra.core.config_store import ConfigStore
+from joblib import hash
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
@@ -47,8 +49,17 @@ def run_train(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
+    # Hash representation of model pipeline only based on model and test size
+    model_hash = str(hash(str(cfg["model"]) + str(cfg["test_size"])))
+
+    # Check if model is cached already, if so do not call fit.
+    # This is done to avoid retraining the model if it is already cached.
+    if glob.glob(f"tm/{model_hash}.pt"):
+        logger.info(f"Trained model already cached at tm/{model_hash}.pt, skipping training")
+        return
+
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir)
+    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     feature_pipeline = model_pipeline.named_steps.feature_pipeline
@@ -74,6 +85,10 @@ def run_train(cfg: DictConfig) -> None:
 
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params_flat)
+    # Get the model
+    model = next(iter(model_pipeline.named_steps.model_loop_pipeline.named_steps.model_blocks_pipeline.named_steps.values()))
+    # Save the model
+    model.save_model(model_hash)
 
 
 if __name__ == "__main__":

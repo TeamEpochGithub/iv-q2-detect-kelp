@@ -5,6 +5,7 @@ defaults:
 pipeline:
   feature_pipeline:
     processed_path: data/processed
+    is_train: None
     transformation_pipeline:
       transformations:
 
@@ -50,7 +51,7 @@ pipeline:
           scheduler: None
           criterion:
             _target_: src.modules.dice_loss.DiceLoss
-          epochs: 1
+          epochs: 5
           batch_size: 32
           patience: 10
 

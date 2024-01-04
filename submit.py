@@ -1,79 +1,80 @@
-"""Submit script for generating predictions on the test set."""
+"""Submit.py is the main script for running inference on the test set and creating a submission."""
+import glob
 import warnings
+from dataclasses import dataclass
+from typing import Any
 
-from dask_image.imread import imread
+import hydra
 from distributed import Client
+from hydra.core.config_store import ConfigStore
+from joblib import hash
+from omegaconf import DictConfig
 
+from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.pipeline.model.feature.column.band_copy import BandCopy
-from src.pipeline.model.feature.column.column import ColumnPipeline
-from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
-from src.pipeline.model.feature.feature import FeaturePipeline
-from src.pipeline.model.feature.transformation.divider import Divider
-from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
-from src.pipeline.model.model import ModelPipeline
-from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
-from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
+from src.utils.make_submission import make_submission
+from src.utils.setup import setup_config, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-if __name__ == "__main__":
+
+@dataclass
+class SubmitConfig:
+    """Schema for the train config yaml file."""
+
+    model: Any
+    test_size: float
+    raw_data_path: str = "data/raw/train_satellite"
+    raw_target_path: str = "data/raw/train_kelp"
+
+
+# Set up the config store, necessary for type checking of config yaml
+cs = ConfigStore.instance()
+cs.store(name="base_submit", node=SubmitConfig)
+
+
+@hydra.main(version_base=None, config_path="conf", config_name="submit")
+def run_submit(cfg: DictConfig) -> None:
+    """Run the main script for submitting the predictions."""
+    # Print section separator
+    print_section_separator("Q2 Detect Kelp States -- Submit")
+    log_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+
     # Coloured logs
     import coloredlogs
 
     coloredlogs.install()
 
-    # Initialize dask client
-    client = Client()
+    # Check for missing keys in the config file
+    setup_config(cfg)
 
-    # Print section separator
-    print_section_separator("Q2 Detect Kelp States -- Submit")
+    # Hash representation of model pipeline only based on model and test size
+    model_hash = str(hash(str(cfg["model"]) + str(cfg["test_size"])))
 
-    # Paths
-    processed_path = "data/test"
+    # Check if model is cached already, if not give an error
+    if not glob.glob(f"tm/{model_hash}.pt"):
+        logger.error(f"Model {model_hash} not found. Please train the model first.")
+        raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
 
-    # Create the transformation pipeline
-    divider = Divider(2)
+    # Preload the pipeline and save it to HTML
+    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir, is_train=False)
 
-    transformation_pipeline = TransformationPipeline([divider])
+    # Load the test data
+    feature_pipeline = model_pipeline.named_steps.feature_pipeline
+    X, _, filenames = setup_test_data(cfg.raw_data_path, feature_pipeline)
 
-    # Create the column pipeline
-    band_copy_pipeline = BandCopy(1)
+    # Load the model from the model hash
+    next(iter(model_pipeline.named_steps.model_loop_pipeline.named_steps.model_blocks_pipeline.named_steps.values())).load_model(model_hash)
 
-    from src.pipeline.caching.column import CacheColumnBlock
+    # Predict on the test data
+    predictions = model_pipeline.transform(X)
 
-    cache = CacheColumnBlock("data/test", column=-1)
-    column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
-    column_pipeline = ColumnPipeline([column_block_pipeline])
+    # Make submission
+    make_submission(log_dir, predictions, filenames, threshold=0.5)
 
-    import time
 
-    orig_time = time.time()
-    # Create the feature pipeline
-    fp = FeaturePipeline(processed_path=processed_path, transformation_pipeline=transformation_pipeline, column_pipeline=column_pipeline)
-    feature_pipeline = fp.get_pipeline()
-
-    # Get target pipeline TODO
-    tp = None
-    raw_target_path = "data/raw/train_kelp"  # TODO(Epoch): remove
-    y = imread(f"{raw_target_path}/*.tif")  # TODO(Epoch): remove
-
-    # Get model loop pipeline TODO
-    mlp = ModelLoopPipeline(None, None)
-
-    # Get post processing pipeline TODO
-    ppp = PostProcessingPipeline()
-
-    # Get model pipeline
-    model_pipeline = ModelPipeline(fp, tp, mlp, ppp)
-
-    # Read in the raw data
-    raw_data_path = "data/raw/test_satellite"
-    X = imread(f"{raw_data_path}/*.tif").transpose(0, 3, 1, 2)
-
-    # Fit the model pipeline
-    mp = model_pipeline.get_pipeline()
-
-    # Transform the model pipeline
-    # TODO(Epoch): Remove and replace with predict, x = mp.predict(X)
-    x = mp.fit_transform(X)
+if __name__ == "__main__":
+    # Run with dask client, which will automatically close if there is an error
+    with Client() as client:
+        logger.info(f"Client: {client}")
+        run_submit()
