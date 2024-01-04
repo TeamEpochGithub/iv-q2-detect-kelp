@@ -1,6 +1,5 @@
 """Scaler block to fit and transform the data."""
 
-import time
 from typing import Self
 
 import dask.array as da
@@ -31,14 +30,13 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         """
         logger.info("Fitting scaler")
         # save the original shape
-        start_time = time.time()
         # reshape X so that it is 2D
         train_indices.sort()
         X_reshaped = X[train_indices].transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # fit the scaler on the data
         self.scaler.fit(X_reshaped)
-        logger.info(f"Fitted scaler in {time.time() - start_time} seconds")
+        logger.info("Fitted scaler")
         return self
 
     def transform(self, X: da.Array) -> da.Array:
@@ -47,13 +45,12 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param X: Data to transform
         :return: Transformed data
         """
-        logger.info("Transforming scaler")
-        start_time = time.time()
+        logger.info("Transforming the data")
         # reshape the data to 2D
         X_reshaped = X.transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # apply the scaler
         X_reshaped = self.scaler.transform(X_reshaped)
         X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
-        logger.info(f"Transformed scaler in {time.time() - start_time} seconds")
+        logger.info("Transformed the data")
         return X

@@ -51,7 +51,7 @@ def run_cv(cfg: DictConfig) -> None:
     model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir)
 
     # Lazily read the raw data with dask, and find the shape after processing
-    feature_pipeline = model_pipeline.named_steps.feature_pipeline
+    feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
     X, y, x_processed = setup_train_data(cfg.raw_data_path, cfg.raw_target_path, feature_pipeline)
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
@@ -62,17 +62,20 @@ def run_cv(cfg: DictConfig) -> None:
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         logger.info("Creating clean pipeline for this fold")
-        model_pipeline = instantiate(cfg.model.pipeline).get_pipeline()
+        model_pipeline = instantiate(cfg.model.pipeline)
 
         # Set train and test indices for each model block
         # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
         # Then we convert it to a flat dictionary with __ as the separator between each level
         fit_params = {
-            "model_loop_pipeline": {
-                "model_blocks_pipeline": {
+            "model_loop_pipeline_step": {
+                "model_blocks_pipeline_step": {
                     name: {"train_indices": train_indices, "test_indices": test_indices}
-                    for name, _ in model_pipeline.named_steps.model_loop_pipeline.named_steps.model_blocks_pipeline.steps
-                }
+                    for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
+                },
+                "pretrain_pipeline_step": {
+                    "train_indices": train_indices,
+                },
             }
         }
         fit_params_flat = flatten_dict(fit_params)

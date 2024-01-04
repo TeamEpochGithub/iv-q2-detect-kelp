@@ -107,6 +107,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Train model
         logger.info("Training the model")
         self.lowest_val_loss = np.inf
+        if len(testloader) == 0:
+            logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
         for epoch in range(self.epochs):
             # Train using trainloader
             self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
@@ -120,8 +122,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 if self.early_stopping():
                     break
             else:
-                # train full
-                raise NotImplementedError("Early stopping not implemented for full train")
+                # train full TODO(Epoch)
+                pass
 
         # Save the model in the tm folder
         # TODO(Epoch): This is placeholder for now but this is deterministic

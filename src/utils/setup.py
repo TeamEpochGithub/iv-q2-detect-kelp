@@ -30,7 +30,7 @@ def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str) -> Pipeline:
     :param log_dir: The directory to save the pipeline to.
     """
     logger.info("Instantiating the pipeline")
-    model_pipeline = instantiate(pipeline_cfg).get_pipeline()
+    model_pipeline = instantiate(pipeline_cfg)
     logger.debug(f"Pipeline: \n{model_pipeline}")
 
     logger.info("Saving pipeline to HTML")
