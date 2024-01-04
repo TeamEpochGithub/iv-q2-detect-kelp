@@ -9,7 +9,7 @@ from sklearn import set_config
 from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
 from torch import nn
-from dask_ml.preprocessing import StandardScaler
+from dask_ml.preprocessing import StandardScaler, MinMaxScaler, RobustScaler
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
