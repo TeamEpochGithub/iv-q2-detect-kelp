@@ -80,7 +80,7 @@ def run_train(cfg: TrainConfig) -> None:
     # Suppress logger messages while getting the indices to avoid clutter in the log file
     logger.info("Finding shape of processed data")
     logger.setLevel("ERROR")
-    feature_pipeline = model_pipeline.named_steps.feature_pipeline
+    feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
     x_processed = feature_pipeline.fit_transform(X)
     logger.setLevel("INFO")
     logger.info(f"Processed data shape: {x_processed.shape}")
@@ -99,7 +99,10 @@ def run_train(cfg: TrainConfig) -> None:
         "model_loop_pipeline_step": {
             "model_blocks_pipeline_step": {
                 name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": -1}
-                for name, _ in model_pipeline.named_steps.model_loop_pipeline.named_steps.model_blocks_pipeline.steps
+                for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
+            },
+            "pretrain_pipeline_step":{
+                    "train_indices": train_indices,
             }
         }
     }

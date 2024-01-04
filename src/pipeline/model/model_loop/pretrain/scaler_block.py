@@ -14,7 +14,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         """
         self.scaler = scaler
 
-    def fit(self, X: da.Array, y: da.Array = None):
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int]):
         """Fit the scaler.
 
         :param X: Data to fit
@@ -25,7 +25,8 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         # save the original shape
         start_time = time.time()
         # reshape X so that it is 2D
-        X_reshaped = X.transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
+        train_indices.sort()
+        X_reshaped = X[train_indices].transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # fit the scaler on the data
         self.scaler.fit(X_reshaped)
