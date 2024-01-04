@@ -1,4 +1,5 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import os
 import warnings
 from dataclasses import dataclass
 from typing import Any
@@ -16,6 +17,8 @@ from src.utils.flatten_dict import flatten_dict
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
+# makes hydra give full error messages
+os.environ["HYDRA_FULL_ERROR"] = "1"
 
 
 @dataclass
