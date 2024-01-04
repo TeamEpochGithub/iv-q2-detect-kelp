@@ -26,7 +26,7 @@ def setup_config(cfg: DictConfig) -> None:
 def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str) -> Pipeline:
     """Instantiate the pipeline and log it to HTML.
 
-    :param pipeline_cfg: The model pipeline config. Root node should be
+    :param pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
     :param log_dir: The directory to save the pipeline to.
     """
     logger.info("Instantiating the pipeline")
