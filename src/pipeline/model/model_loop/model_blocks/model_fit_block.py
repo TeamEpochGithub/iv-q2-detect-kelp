@@ -91,13 +91,15 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         y_train = y[train_indices]
         X_test = X[test_indices]
         y_test = y[test_indices]
-
+        train_ratio = len(X_train) / (len(X_test) + len(X_train))
+        print(int(np.round(to_mem_length * train_ratio)))
+        print(int(np.round(to_mem_length * (1 - train_ratio))))
         # Make datasets from the train and test sets
         logger.info(f"Making datasets with {to_mem_length} samples in memory")
         train_dataset = Dask2TorchDataset(X_train, y_train)
-        train_dataset.index_to_mem(to_mem_length)
+        train_dataset.index_to_mem(int(to_mem_length * train_ratio))
         test_dataset = Dask2TorchDataset(X_test, y_test)
-        test_dataset.index_to_mem(to_mem_length)
+        test_dataset.index_to_mem(int(to_mem_length * (1 - train_ratio)))
 
         # Create dataloaders from the datasets
         trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
