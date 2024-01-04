@@ -9,25 +9,18 @@ from sklearn import set_config
 from sklearn.pipeline import Pipeline
 from sklearn.utils import estimator_html_repr
 
-from cv import CVConfig
 from src.logging_utils.logger import logger
-from train import TrainConfig
 
 
-def setup_config(cfg: TrainConfig | CVConfig, log_dir: str) -> None:
+def setup_config(cfg: DictConfig) -> None:
     """Verify that config has no missing values and log it to yaml.
 
     :param cfg: The config object. Created with Hydra or OmegaConf.
-    :param log_dir: The directory to save the config to.
     """
     # Check for missing keys in the config file
     missing = OmegaConf.missing_keys(cfg)
     if missing:
         raise ValueError(f"Missing keys in config file\n{missing}")
-
-    logger.info("Saving config to output directory")
-    with open(f"{log_dir}/config.yaml", "w", encoding="utf-8") as f:
-        OmegaConf.save(cfg, f)
 
 
 def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str) -> Pipeline:

@@ -7,6 +7,7 @@ import hydra
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
+from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
 from src.logging_utils.logger import logger
@@ -33,7 +34,7 @@ cs.store(name="base_cv", node=CVConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="cv")
-def run_cv(cfg: CVConfig) -> None:
+def run_cv(cfg: DictConfig) -> None:
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
     log_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -43,8 +44,8 @@ def run_cv(cfg: CVConfig) -> None:
 
     coloredlogs.install()
 
-    # Check for missing keys in the config file, and save the config to the output directory
-    setup_config(cfg, log_dir)
+    # Check for missing keys in the config file
+    setup_config(cfg)
 
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir)
@@ -59,6 +60,7 @@ def run_cv(cfg: CVConfig) -> None:
     for i, (train_indices, test_indices) in enumerate(kf.split(x_processed, stratification_key)):
         print_section_separator(f"CV - Fold {i}")
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
+
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = instantiate(cfg.model.pipeline).get_pipeline()
 

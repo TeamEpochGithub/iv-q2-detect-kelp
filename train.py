@@ -7,6 +7,7 @@ import hydra
 import numpy as np
 from distributed import Client
 from hydra.core.config_store import ConfigStore
+from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
 from src.logging_utils.logger import logger
@@ -33,7 +34,7 @@ cs.store(name="base_train", node=TrainConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="train")
-def run_train(cfg: TrainConfig) -> None:
+def run_train(cfg: DictConfig) -> None:
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States -- Training")
     log_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
@@ -43,8 +44,8 @@ def run_train(cfg: TrainConfig) -> None:
 
     coloredlogs.install()
 
-    # Check for missing keys in the config file, and save the config to the output directory
-    setup_config(cfg, log_dir)
+    # Check for missing keys in the config file
+    setup_config(cfg)
 
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir)
