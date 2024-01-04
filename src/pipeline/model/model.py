@@ -46,7 +46,7 @@ class ModelPipeline(Pipeline):
         steps = []
 
         if self.feature_pipeline:
-            steps.append(("feature_pipeline_step", self.feature_pipeline))
+            steps.append(("feature_pipeline", self.feature_pipeline))
         if self.target_pipeline:
             steps.append(("target_pipeline_step", self.target_pipeline))
         if self.model_loop_pipeline:

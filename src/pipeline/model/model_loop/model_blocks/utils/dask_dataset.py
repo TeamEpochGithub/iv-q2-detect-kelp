@@ -67,12 +67,15 @@ class Dask2TorchDataset(Dataset[Any]):
         # If y does not exist, return only x
         return torch.from_numpy(x_arr)
 
-    def index_to_mem(self, idx: int) -> None:
-        """Convert the dask array to numpy array and store it in memory.
+    def create_cache(self, size: int) -> None:
+        """Convert part of the dask array to numpy and store it in memory.
 
-        :param idx: Index of the item.
+        :param size: Maximum number of samples to load into memory. If -1, load all samples.
         """
-        self.memIdx = idx
+        if size == -1 or size >= self.daskX.shape[0]:
+            idx = self.daskX.shape[0]
+        else:
+            idx = size
         self.memX = self.daskX[:idx].compute()
         self.daskX = self.daskX[idx:]
         if self.daskY is not None:

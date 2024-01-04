@@ -1,5 +1,6 @@
-"""ModelBlock class."""
+"""TorchBlock class."""
 import copy
+from collections.abc import Callable
 from typing import Self
 
 import dask.array as da
@@ -17,7 +18,7 @@ from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
 
-class ModelBlock(BaseEstimator, TransformerMixin):
+class TorchBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
 
     :param model: Model to train.
@@ -34,17 +35,17 @@ class ModelBlock(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Optimizer,
+        optimizer: Callable[..., Optimizer],
         scheduler: LRScheduler | None,
         criterion: nn.Module,
         epochs: int = 10,
         batch_size: int = 32,
         patience: int = 5,
     ) -> None:
-        """Initialize the ModelBlock.
+        """Initialize the TorchBlock.
 
         :param model: Model to train.
-        :param optimizer: Optimizer.
+        :param optimizer: Optimizer. As partial function call so that model.parameters() can still be added.
         :param scheduler: Scheduler.
         :param criterion: Loss function.
         :param epochs: Number of epochs.
@@ -53,7 +54,7 @@ class ModelBlock(BaseEstimator, TransformerMixin):
 
         """
         self.model = model
-        self.optimizer = optimizer
+        self.optimizer = optimizer(model.parameters())
         self.criterion = criterion
         self.scheduler = scheduler
 
@@ -67,14 +68,14 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], to_mem_length: int = 5635) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
         """Train the model.
 
         :param X: Input features.
         :param y: Labels.
         :param train_indices: Indices of the training data.
         :param test_indices: Indices of the test data.
-        :param to_mem_length: Number of samples to load into memory.
+        :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
         # TODO(Epoch): Add scheduler to the loop if it is not none
@@ -92,14 +93,12 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         X_test = X[test_indices]
         y_test = y[test_indices]
         train_ratio = len(X_train) / (len(X_test) + len(X_train))
-        print(int(np.round(to_mem_length * train_ratio)))
-        print(int(np.round(to_mem_length * (1 - train_ratio))))
         # Make datasets from the train and test sets
-        logger.info(f"Making datasets with {to_mem_length} samples in memory")
+        logger.info(f"Making datasets with {'all' if cache_size == -1 else cache_size} samples in memory")
         train_dataset = Dask2TorchDataset(X_train, y_train)
-        train_dataset.index_to_mem(int(to_mem_length * train_ratio))
+        train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         test_dataset = Dask2TorchDataset(X_test, y_test)
-        test_dataset.index_to_mem(int(to_mem_length * (1 - train_ratio)))
+        test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
         trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
@@ -202,16 +201,16 @@ class ModelBlock(BaseEstimator, TransformerMixin):
         torch.save(self.model.state_dict(), f"tm/{block_hash}.pt")
         logger.info(f"Model saved to tm/{block_hash}.pt")
 
-    def predict(self, X: da.Array, to_mem_length: int = 3000) -> list[torch.Tensor]:
+    def predict(self, X: da.Array, cache_size: int = -1) -> list[torch.Tensor]:
         """Predict on the test data.
 
         :param X: Input features.
-        :param to_mem_length: Number of samples to load into memory.
+        :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
-        logger.info(f"Predicting on the test data with {to_mem_length} samples in memory")
+        logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
-        X_dataset.index_to_mem(to_mem_length)
+        X_dataset.create_cache(cache_size)
         X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0]))
         self.model.eval()
         preds = []
@@ -257,4 +256,4 @@ class ModelBlock(BaseEstimator, TransformerMixin):
 
         :return: String representation of the model.
         """
-        return "ModelBlock"
+        return "TorchBlock"
