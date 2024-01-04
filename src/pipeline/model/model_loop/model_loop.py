@@ -1,4 +1,5 @@
 """Model loop pipeline."""
+
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
@@ -22,7 +23,7 @@ class ModelLoopPipeline(Pipeline):
         self.model_blocks_pipeline = model_blocks_pipeline
         super().__init__(self._get_steps())
 
-    def _get_steps(self):
+    def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
 
         :return: list of steps
@@ -35,4 +36,3 @@ class ModelLoopPipeline(Pipeline):
             steps.append(("model_blocks_pipeline_step", self.model_blocks_pipeline))
 
         return steps
-

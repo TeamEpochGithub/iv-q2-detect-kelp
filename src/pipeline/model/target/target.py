@@ -1,9 +1,9 @@
 """TargetPipeline class sets up the target pipeline."""
+
 from sklearn.pipeline import Pipeline
-from typing import Any
 
 
-class TargetPipeline:
+class TargetPipeline(Pipeline):
     """TargetPipeline is the class used to create the target pipeline.
 
     :param raw_target_path: The raw target path

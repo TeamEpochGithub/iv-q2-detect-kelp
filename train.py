@@ -18,8 +18,6 @@ from sklearn.model_selection import train_test_split
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
-from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
-
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -101,9 +99,9 @@ def run_train(cfg: TrainConfig) -> None:
                 name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": -1}
                 for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
             },
-            "pretrain_pipeline_step":{
-                    "train_indices": train_indices,
-            }
+            "pretrain_pipeline_step": {
+                "train_indices": train_indices,
+            },
         }
     }
     fit_params_flat = flatten_dict(fit_params)

@@ -1,5 +1,4 @@
 """ModelPipeline is the class used to create the model pipeline."""
-from typing import Any
 
 from sklearn.pipeline import Pipeline
 
@@ -38,7 +37,7 @@ class ModelPipeline(Pipeline):
         self.post_processing_pipeline = post_processing_pipeline
         super().__init__(self._get_steps())
 
-    def _get_steps(self):
+    def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
 
         :return: list of steps

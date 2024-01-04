@@ -1,11 +1,19 @@
+"""Scaler block to fit and transform the data."""
+
+import time
+from typing import Self
+
+import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
+
 from src.logging_utils.logger import logger
 
-import numpy as np
-import dask.array as da
-import time
 
 class ScalerBlock(BaseEstimator, TransformerMixin):
+    """Scaler block to fit and transform the data.
+
+    :param scaler: Scaler.
+    """
 
     def __init__(self, scaler: BaseEstimator) -> None:
         """Initialize the ScalerBlock.
@@ -14,7 +22,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         """
         self.scaler = scaler
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int]):
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int]) -> Self:
         """Fit the scaler.
 
         :param X: Data to fit
@@ -32,15 +40,13 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         self.scaler.fit(X_reshaped)
         logger.info(f"Fitted scaler in {time.time() - start_time} seconds")
         return self
-        
-    def transform(self, X: np.ndarray) -> np.ndarray:
-        """
-        Transform the data.
-        
+
+    def transform(self, X: da.Array) -> da.Array:
+        """Transform the data.
+
         :param X: Data to transform
         :return: Transformed data
         """
-
         logger.info("Transforming scaler")
         start_time = time.time()
         # reshape the data to 2D
