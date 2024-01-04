@@ -2,10 +2,12 @@
 import time
 import warnings
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import hydra
 import numpy as np
+import omegaconf
 from dask_image.imread import imread
 from distributed import Client
 from hydra.core.config_store import ConfigStore
@@ -15,6 +17,7 @@ from sklearn import set_config
 from sklearn.base import estimator_html_repr
 from sklearn.model_selection import train_test_split
 
+import wandb
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
@@ -44,6 +47,21 @@ def run_train(cfg: TrainConfig) -> None:
     missing = OmegaConf.missing_keys(cfg)
     if missing:
         raise ValueError(f"Missing keys in config file\n{missing}")
+
+    wandb.init(
+        project="detect-kelp",
+        group="train",
+        settings=wandb.Settings(start_method="thread", code_dir="."),
+        dir=hydra.core.hydra_config.HydraConfig.get().runtime.output_dir,
+    )
+
+    wandb.config = omegaconf.OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+
+    # Store the config as an artefact of W&B
+    artifact = wandb.Artifact("train_config", type="config")
+    config_path = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir) / ".hydra/config.yaml"
+    artifact.add_file(str(config_path), "train.yaml")
+    wandb.log_artifact(artifact)
 
     # Coloured logs
     import coloredlogs
@@ -105,6 +123,8 @@ def run_train(cfg: TrainConfig) -> None:
 
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params_flat)
+
+    wandb.finish()
 
 
 if __name__ == "__main__":

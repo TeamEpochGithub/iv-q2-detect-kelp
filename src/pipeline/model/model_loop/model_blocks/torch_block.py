@@ -1,19 +1,22 @@
 """TorchBlock class."""
 import copy
-from collections.abc import Callable
-from typing import Self
+from collections.abc import Callable, Iterator
+from typing import Annotated, Self
 
 import dask.array as da
 import numpy as np
 import torch
+from annotated_types import Gt
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
+from torch.nn import Parameter
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
@@ -30,17 +33,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO(Epoch): We dont know if we are gonna use a torch scheduler or timm or smth else
-    # TODO(@Jeffrey): Idk what type a loss function or optimizer is
+    # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Callable[..., Optimizer],
+        optimizer: Callable[[Iterator[Parameter]], Optimizer],
         scheduler: LRScheduler | None,
         criterion: nn.Module,
-        epochs: int = 10,
-        batch_size: int = 32,
-        patience: int = 5,
+        epochs: Annotated[int, Gt(0)] = 10,
+        batch_size: Annotated[int, Gt(0)] = 32,
+        patience: Annotated[int, Gt(0)] = 5,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -78,7 +80,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
-        # TODO(Epoch): Add scheduler to the loop if it is not none
+        # TODO(Jasper): Add scheduler to the loop if it is not none
 
         train_indices.sort()
         test_indices.sort()
@@ -101,22 +103,34 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_dataset.create_cache(cache_size)
 
         # Create dataloaders from the datasets
-        trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        testloader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
         # Train model
         logger.info("Training the model")
         lowest_val_loss = np.inf
+
+        train_losses: list[float] = []
+        val_losses: list[float] = []
         for epoch in range(self.epochs):
             # Train using trainloader
-            self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
+            train_losses.append(self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train"))
 
             # Validate using testloader
-            val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
+            val_losses.append(self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid"))
+
+            if wandb.run:
+                # Log the metrics in a line plot in the "Training" section
+                wandb.log(
+                    {"Training/Loss": wandb.plot.line_series(xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Loss", xname="Epoch")}
+                )
+
+                # Log the metrics in separate charts in the "Training" section
+                wandb.log({"Training/Train Loss": train_losses[-1], "Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
 
             # Store the best model so far based on validation loss
-            if val_loss < lowest_val_loss:
-                lowest_val_loss = val_loss
+            if val_losses[-1] < lowest_val_loss:
+                lowest_val_loss = val_losses[-1]
                 best_model = copy.deepcopy(self.model.state_dict())
                 early_stopping_counter = 0
             else:
@@ -128,7 +142,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     break
 
         # Save the model in the tm folder
-        # TODO(Epoch): This is placeholder for now but this is deterministic
+        # TODO(Jasper): This is placeholder for now but this is deterministic
         self.save_model()
 
         return self
