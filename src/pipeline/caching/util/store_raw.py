@@ -26,10 +26,10 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     if os.path.exists(data_path):
         # Check if path has any tif files
         if glob.glob(f"{data_path}/*.tif"):
-            logger.info("Data already exists on disk")
+            logger.info(f"Data already exists on disk at {data_path}" + " and has tif files")
             return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
         if glob.glob(f"{data_path}/*.npy"):
-            logger.info("Data already exists on disk")
+            logger.info(f"Data already exists on disk at {data_path}" + " and has npy files")
             return da.from_npy_stack(data_path).astype(np.float32)
 
     # Check if the dask array is defined
