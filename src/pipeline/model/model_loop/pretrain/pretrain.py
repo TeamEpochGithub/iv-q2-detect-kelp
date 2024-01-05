@@ -4,7 +4,7 @@ from typing import Any
 from sklearn.pipeline import Pipeline
 
 
-class PretrainPipeline:
+class PretrainPipeline(Pipeline):
     """Class used to create the pretrain pipeline.
 
     :param steps: list of steps
@@ -16,13 +16,15 @@ class PretrainPipeline:
         :param steps: list of steps
         """
         self.steps = steps
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self) -> Pipeline | None:
-        """Get the pipeline.
+    def _get_steps(self) -> list[tuple[str, Any]]:
+        """Get the pipeline steps.
 
-        :return: Pipeline object
+        :return: list of steps
         """
-        if self.steps:
-            return Pipeline(steps=self.steps)
-
-        return None
+        # Use list comprehension to get the steps
+        # if isinstance(self.steps[0], tuple):
+        #     return self.steps
+        # else:
+        return [(str(step), step) for step in self.steps]

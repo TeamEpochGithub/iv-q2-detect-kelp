@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 
-class PostProcessingPipeline:
+class PostProcessingPipeline(Pipeline):
     """PostProcessingPipeline is the class used to create the post processing pipeline."""
 
     def __init__(self) -> None:
