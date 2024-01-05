@@ -1,4 +1,4 @@
-"""Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+"""cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
 import warnings
 from dataclasses import dataclass
 from typing import Any
@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 @dataclass
 class CVConfig:
-    """Schema for the train config yaml file."""
+    """Schema for the cv config yaml file."""
 
     model: Any
     n_splits: int
@@ -35,7 +35,7 @@ cs.store(name="base_cv", node=CVConfig)
 
 @hydra.main(version_base=None, config_path="conf", config_name="cv")
 def run_cv(cfg: DictConfig) -> None:
-    """Train a model pipeline with a train-test split."""
+    """Do cv on a model pipeline with K fold split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
     log_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
 
