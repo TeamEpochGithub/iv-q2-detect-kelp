@@ -48,7 +48,7 @@ pipeline:
             _args_:
               - _target_: hydra.utils.get_class
                 path: torch.optim.Adam
-            lr: 0.001
+            lr: 0.0001
           scheduler: None
           criterion:
             _target_: src.modules.dice_loss.DiceLoss
