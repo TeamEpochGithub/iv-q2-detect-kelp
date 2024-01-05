@@ -1,0 +1,8 @@
+defaults:
+  - base_cv
+  - hydra/logging
+  - model: conv2d
+
+raw_data_path: data/raw/train_satellite
+raw_target_path: data/raw/train_kelp
+n_splits: 5

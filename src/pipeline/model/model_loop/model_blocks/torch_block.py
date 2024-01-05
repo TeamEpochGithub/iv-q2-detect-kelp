@@ -70,6 +70,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
+        # Early stopping
+        self.last_val_loss = np.inf
+        self.lowest_val_loss = np.inf
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
         """Train the model.
 
@@ -94,13 +98,18 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         y_train = y[train_indices]
         X_test = X[test_indices]
         y_test = y[test_indices]
-
+        # Get the ratio of train to all data
+        train_ratio = len(X_train) / (len(X_test) + len(X_train))
         # Make datasets from the train and test sets
         logger.info(f"Making datasets with {'all' if cache_size == -1 else cache_size} samples in memory")
+        # Setting cache size to -1 will load all samples into memory
+        # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
+        # and cache_size * (1 - train_ratio) samples into memory for testing
+        # np.round is there to make sure we don't miss a sample due to int to float conversion
         train_dataset = Dask2TorchDataset(X_train, y_train)
-        train_dataset.create_cache(cache_size)
+        train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         test_dataset = Dask2TorchDataset(X_test, y_test)
-        test_dataset.create_cache(cache_size)
+        test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
@@ -108,38 +117,46 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         # Train model
         logger.info("Training the model")
-        lowest_val_loss = np.inf
 
         train_losses: list[float] = []
         val_losses: list[float] = []
+
+        # TODO(Tolga): Add early stopping for train full
+        # https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/issues/38
+        self.lowest_val_loss = np.inf
+        if len(test_loader) == 0:
+            logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
+
         for epoch in range(self.epochs):
-            # Train using trainloader
+            # Train using train_loader
             train_losses.append(self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train"))
 
-            # Validate using testloader
-            val_losses.append(self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid"))
-
             if wandb.run:
-                # Log the metrics in a line plot in the "Training" section
-                wandb.log(
-                    {"Training/Loss": wandb.plot.line_series(xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Loss", xname="Epoch")}
-                )
+                # Log only the train loss in the "Training" section
+                wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-                # Log the metrics in separate charts in the "Training" section
-                wandb.log({"Training/Train Loss": train_losses[-1], "Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
+            # Validate using test_loader if we have validation data
+            if len(test_loader) > 0:
+                self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
+                val_losses.append(self.last_val_loss)
 
-            # Store the best model so far based on validation loss
-            if val_losses[-1] < lowest_val_loss:
-                lowest_val_loss = val_losses[-1]
-                best_model = copy.deepcopy(self.model.state_dict())
-                early_stopping_counter = 0
-            else:
-                early_stopping_counter += 1
-                if early_stopping_counter >= self.patience:
-                    logger.info(f"Early stopping at epoch {epoch}")
-                    self.model.load_state_dict(best_model)
-                    # trained_epochs = (epoch - early_stopping_counter + 1)
+                if wandb.run:
+                    # Also log the validation loss in the "Training" section
+                    wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
+
+                    # Log both the train and validation loss in a line plot in the "Training" section
+                    wandb.log(
+                        {
+                            "Training/Loss": wandb.plot.line_series(
+                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Loss", xname="Epoch"
+                            )
+                        }
+                    )
+
+                if self.early_stopping():
                     break
+            else:  # Train full TODO(#38)
+                pass
 
         # Save the model in the tm folder
         # TODO(Jasper): This is placeholder for now but this is deterministic
@@ -250,6 +267,24 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Predictions and labels.
         """
         return self.predict(X)
+
+    def early_stopping(self) -> bool:
+        """Check if early stopping should be done.
+
+        :return: Whether early stopping should be done.
+        """
+        # Store the best model so far based on validation loss
+        if self.last_val_loss < self.lowest_val_loss:
+            self.lowest_val_loss = self.last_val_loss
+            self.best_model = copy.deepcopy(self.model.state_dict())
+            self.early_stopping_counter = 0
+        else:
+            self.early_stopping_counter += 1
+            if self.early_stopping_counter >= self.patience:
+                logger.info("Loading best model")
+                self.model.load_state_dict(self.best_model)
+                return True
+        return False
 
     def __str__(self) -> str:
         """Return the string representation of the model.

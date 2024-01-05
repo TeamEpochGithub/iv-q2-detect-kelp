@@ -1,8 +1,9 @@
 """TargetPipeline class sets up the target pipeline."""
+
 from sklearn.pipeline import Pipeline
 
 
-class TargetPipeline:
+class TargetPipeline(Pipeline):
     """TargetPipeline is the class used to create the target pipeline.
 
     :param raw_target_path: The raw target path
@@ -23,6 +24,9 @@ class TargetPipeline:
         self.processed_path = processed_path
         self.transformation_steps = transformation_steps
         self.column_steps = column_steps
+
+    # Make this the same way as the other steps with _get_steps() and super().__init__(self._get_steps()) in the init
+    # Important the name of the steps can not be the same as any of the arguments of the init. sklearn will throw an error
 
     def get_pipeline(self) -> Pipeline:
         """Get the pipeline.
