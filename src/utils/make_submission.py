@@ -45,11 +45,8 @@ def make_submission(path: str, predictions: np.ndarray[Any, Any], filenames: lis
     logger.info(f"All predictions saved in {loc}.")
     logger.info("Creating submission.zip")
     with zipfile.ZipFile("submission.zip", "w") as zipped:
-        files = Path(loc).rglob("*.tif")  # get all files.
-        for file in files:
-            # Stupid mypy thinks file is a str but it is actually a WindowsPath that does contain file.name flag..
-            # Now I actually have to use split to get the filename
-            kelp_file_name = str(file).split("\\")[-1]
-            zipped.write(file, kelp_file_name)
+        files_zip = Path(loc).rglob("*.tif")  # get all files.
+        for file_zip in files_zip:
+            zipped.write(file_zip, file_zip.name)
 
     logger.info("Submission.zip created! Now let's get that new top score! :)")
