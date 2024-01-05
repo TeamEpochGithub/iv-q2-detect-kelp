@@ -8,7 +8,7 @@ import pandas as pd
 import scipy
 from dash import html
 
-from dashboard.utils import flatten_img, load_tiff, make_fig, unflatten_df
+from dashboard.utils import flatten_img, load_tiff, make_fig
 
 
 def to_feature_df(img: npt.NDArray[np.float64 | np.float32 | np.int32], label: npt.NDArray[np.float64 | np.float32 | np.int32]) -> pd.DataFrame:
@@ -43,11 +43,12 @@ def to_feature_df(img: npt.NDArray[np.float64 | np.float32 | np.int32], label: n
     return img_df
 
 
-def catboost_preds(img_df: pd.DataFrame, smoothing: float) -> tuple[npt.NDArray[np.float64], float]:
+def catboost_preds(img_df: pd.DataFrame, smoothing: float, thresh: float) -> tuple[npt.NDArray[np.float64], float]:
     """Use a catboost model to predict the kelp label from the features.
 
     :param img_df: dataframe of features and labels
     :param smoothing: smoothing factor for the predictions (gaussian std)
+    :param thresh: threshold for the predictions
     """
     from catboost import CatBoostClassifier
 
@@ -64,8 +65,8 @@ def catboost_preds(img_df: pd.DataFrame, smoothing: float) -> tuple[npt.NDArray[
     # smooth with gaussian
     pred = scipy.ndimage.gaussian_filter(pred, smoothing)
 
-    label = img_df["Label"].numpy().reshape(350, 350)
-    pred_bin = pred > 0.2  # threshold found in notebook, changed manually with smoothing
+    label = img_df["Label"].to_numpy().reshape(350, 350)
+    pred_bin = pred > thresh
 
     if (np.sum(pred_bin) + np.sum(label)) == 0:
         return pred, 1
@@ -92,22 +93,23 @@ def features_layout(image_id: str) -> html.Div:
 
     img_df = to_feature_df(x, y)
 
-    rgb = unflatten_df(img_df[["R", "G", "B"]]).astype(np.float32)
+    rgb = img_df[["R", "G", "B"]].to_numpy().reshape(350, 350, -1).astype(np.float32)
     rgb = rgb / 15000.0
 
-    swir_nir_red = unflatten_df(img_df[["SWIR", "NIR", "R"]]).astype(np.float32)
+    swir_nir_red = img_df[["SWIR", "NIR", "R"]].to_numpy().reshape(350, 350, -1).astype(np.float32)
     swir_nir_red = swir_nir_red / 22000.0
 
-    label = unflatten_df(img_df["Label"]).squeeze()
+    label = img_df["Label"].to_numpy().reshape(350, 350)
     alpha = 0.5
     overlay = rgb.copy()
     overlay[label == 1, 0] = (1 - alpha) * overlay[label == 1, 0] + alpha
 
-    pred, dice = catboost_preds(img_df, 0)
+    thresh = 0.2
+    pred, dice = catboost_preds(img_df, smoothing=0, thresh=thresh)
     pred = pred.reshape(350, 350)
 
     overlay_pred = rgb.copy()
-    overlay_pred[pred > 0.2, 0] = (1 - alpha) * overlay_pred[pred > 0.2, 0] + alpha
+    overlay_pred[pred > thresh, 0] = (1 - alpha) * overlay_pred[pred > thresh, 0] + alpha
 
     # Plot each image
     figs = [
@@ -116,7 +118,7 @@ def features_layout(image_id: str) -> html.Div:
         make_fig(overlay_pred, "Pred overlay"),
         make_fig(swir_nir_red, "SWIR/NIR/Red"),
     ]
-    figs_feats = [make_fig(unflatten_df(img_df[feature]).squeeze(), feature) for feature in ["ONIR", "LandCloseness"]]
+    figs_feats = [make_fig(img_df[feature].to_numpy().reshape(350, 350), feature) for feature in ["ONIR", "LandCloseness"]]
     figs.extend(figs_feats)
 
     return html.Div(figs, style={"display": "flex"})

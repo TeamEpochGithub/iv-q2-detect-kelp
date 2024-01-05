@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import rasterio
@@ -60,11 +59,3 @@ def flatten_img(img: npt.NDArray[np.float64 | np.float32 | np.int32]) -> npt.NDA
     """
     img = img.transpose(1, 2, 0)
     return img.reshape(-1, img.shape[2])
-
-
-def unflatten_df(df: pd.DataFrame | pd.Series[int | float]) -> npt.NDArray[np.float64 | np.float32 | np.int32]:
-    """Unflatten a dataframe to have the shape (X, Y, C).
-
-    :param df: pandas dataframe of the image
-    """
-    return df.to_numpy().reshape(350, 350, -1)
