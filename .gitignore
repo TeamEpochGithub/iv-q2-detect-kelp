@@ -204,3 +204,6 @@ plots/images/all
 plots/images/predictions
 plots/images/test
 plots/images/train
+
+# Unignore Configs
+!conf/

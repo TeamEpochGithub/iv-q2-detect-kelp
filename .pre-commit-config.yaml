@@ -41,6 +41,11 @@ repos:
           - -d
           - md013
           - scan
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.9.1
+    hooks:
+      - id: sphinx-lint
+        args: [ --enable=default-role ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.9
     hooks:

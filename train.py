@@ -1,9 +1,11 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import re
 import time
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import hydra
 import numpy as np
@@ -26,13 +28,46 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 @dataclass
+class WandBLogCodeConfig:
+    """Schema for the code logging to Weights & Biases.
+
+    :param enabled: Whether to log the code to Weights & Biases.
+    :param exclude: Regex of files to exclude from logging.
+    """
+
+    enabled: bool
+    exclude: str
+
+
+@dataclass
+class WandBConfig:
+    """Schema for the Weights & Biases config yaml file.
+
+    :param enabled: Whether to log to Weights & Biases.
+    :param log_code: Whether to log the code to Weights & Biases.
+    """
+
+    enabled: bool
+    log_config: bool
+    log_code: WandBLogCodeConfig
+
+
+@dataclass
 class TrainConfig:
-    """Schema for the train config yaml file."""
+    """Schema for the train config yaml file.
+
+    :param model: Model pipeline.
+    :param test_size: Test size.
+    :param raw_data_path: Path to the raw data.
+    :param raw_target_path: Path to the raw target.
+    :param wandb: Whether to log to Weights & Biases and other settings.
+    """
 
     model: Any
     test_size: float
-    raw_data_path: str = "data/raw/train_satellite"
-    raw_target_path: str = "data/raw/train_kelp"
+    raw_data_path: str
+    raw_target_path: str
+    wandb: WandBConfig
 
 
 # Set up the config store, necessary for type checking of config yaml
@@ -48,25 +83,42 @@ def run_train(cfg: TrainConfig) -> None:
     if missing:
         raise ValueError(f"Missing keys in config file\n{missing}")
 
-    wandb.init(
-        project="detect-kelp",
-        group="train",
-        settings=wandb.Settings(start_method="thread", code_dir="."),
-        dir=hydra.core.hydra_config.HydraConfig.get().runtime.output_dir,
-    )
-
-    wandb.config = omegaconf.OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
-
-    # Store the config as an artefact of W&B
-    artifact = wandb.Artifact("train_config", type="config")
-    config_path = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir) / ".hydra/config.yaml"
-    artifact.add_file(str(config_path), "train.yaml")
-    wandb.log_artifact(artifact)
-
-    # Coloured logs
     import coloredlogs
 
     coloredlogs.install()
+
+    outputs_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+
+    if cfg.wandb.enabled:
+        # Initialize W&B
+        wandb.init(
+            project="detect-kelp",
+            group="train",
+            settings=wandb.Settings(start_method="thread", code_dir="."),
+            dir=outputs_dir,
+        )
+        wandb.config = omegaconf.OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+
+        if wandb.run is None:  # Can't happen after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
+            return
+
+        if cfg.wandb.log_config:
+            # Store the config as an artefact of W&B
+            artifact = wandb.Artifact("train_config", type="config")
+            config_path = outputs_dir / ".hydra/config.yaml"
+            artifact.add_file(str(config_path), "train.yaml")
+            wandb.log_artifact(artifact)
+
+        # Log code to W&B
+        if cfg.wandb.log_code.enabled:
+            logger.info("Uploading code files to Weights & Biases")
+
+            wandb.run.log_code(
+                root=".",
+                exclude_fn=cast(
+                    Callable[[str, str], bool], lambda abs_path, root: re.match(cfg.wandb.log_code.exclude, Path(abs_path).relative_to(root).as_posix()) is not None
+                ),
+            )
 
     # Print section separator
     print_section_separator("Q2 Detect Kelp States -- Training")
@@ -81,8 +133,8 @@ def run_train(cfg: TrainConfig) -> None:
     # Save the pipeline to an HTML file, next to the log file in the hydra output
     set_config(display="diagram")
     pipeline_html = estimator_html_repr(model_pipeline)
-    out_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
-    with open(f"{out_dir}/pipeline.html", "w", encoding="utf-8") as f:
+
+    with open(outputs_dir / "pipeline.html", "w", encoding="utf-8") as f:
         f.write(pipeline_html)
 
     # Read in the raw data
@@ -124,7 +176,8 @@ def run_train(cfg: TrainConfig) -> None:
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params_flat)
 
-    wandb.finish()
+    if cfg.wandb.enabled:
+        wandb.finish()
 
 
 if __name__ == "__main__":
