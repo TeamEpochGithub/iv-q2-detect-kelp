@@ -111,6 +111,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         # Train model
         logger.info("Training the model")
+        # TODO(#38): Add early stopping for train full
         self.lowest_val_loss = np.inf
         if len(testloader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
