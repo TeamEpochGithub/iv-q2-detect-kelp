@@ -56,7 +56,7 @@ def run_submit(cfg: DictConfig) -> None:
 
     # Check if model is cached already, if not give an error
     if not glob.glob(f"tm/{model_hash}.pt"):
-        logger.error(f"Model {model_hash} not found. Please train the model first.")
+        logger.error(f"Model {model_hash} not found. Please train the model first and ensure the test_size is also the same.")
         raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
 
     if scaler_hash is not None and not glob.glob(f"tm/{scaler_hash}.scaler"):
