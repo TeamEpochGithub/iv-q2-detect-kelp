@@ -13,6 +13,9 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import albumentations as A
+import albumentations.augmentations.functional as F
+from albumentations.pytorch import ToTensorV2
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
@@ -100,9 +103,28 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
         # np.round is there to make sure we dont miss a sample due to int to float conversion
-        train_dataset = Dask2TorchDataset(X_train, y_train)
+
+        # define transfroms here for now will be in the config after it works here
+        from albumentations.core.transforms_interface import ImageOnlyTransform
+
+        class PermuteChannels(ImageOnlyTransform):
+            def __init__(self, permutation, always_apply=False, p=1.0):
+                super().__init__(always_apply, p)
+                self.permutation = permutation
+
+            def apply(self, img, **params):
+                return img[..., self.permutation]
+        transfroms = A.Compose(
+                [
+                    PermuteChannels((2, 1, 0)),
+                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
+                    A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
+                    A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5)
+                ]
+            )
+        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=transfroms)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
-        test_dataset = Dask2TorchDataset(X_test, y_test)
+        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=transfroms)
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets

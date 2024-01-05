@@ -15,11 +15,12 @@ class Dask2TorchDataset(Dataset[Any]):
     :param y: Labels.
     """
 
-    def __init__(self, X: da.Array, y: da.Array | None) -> None:
+    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: Any = None) -> None:
         """Initialize the Dask2TorchDataset.
 
         :param X: Input features.
         :param y: Labels.
+        :param transforms: Transforms/Augmentations to apply to the data.
         """
         self.memX: npt.NDArray[np.float_] = np.array([])
         self.daskX = X
@@ -32,6 +33,8 @@ class Dask2TorchDataset(Dataset[Any]):
         else:
             self.daskY = None
             self.memY = None
+
+        self.transforms = transforms
 
     def __len__(self) -> int:
         """Return the length of the dataset.
@@ -62,9 +65,15 @@ class Dask2TorchDataset(Dataset[Any]):
                 y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
                 y_arr = self.memY[in_mem_idxs]
+            # Apply the transforms
+            if self.transforms is not None:
+                x_arr, y_arr = self.transforms(image=x_arr, mask=y_arr)
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
         # If y does not exist, return only x
+        # Apply the transforms
+        if self.transforms is not None:
+            x_arr = self.transforms(image=x_arr)
         return torch.from_numpy(x_arr)
 
     def create_cache(self, size: int) -> None:
