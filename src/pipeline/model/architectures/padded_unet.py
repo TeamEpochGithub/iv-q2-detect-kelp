@@ -31,6 +31,6 @@ class PaddedUnet(nn.Module):
         # pad the input image
         x_padded = self.padding(x)
         # pass the padded image through the model
-        y_padded = self.model(x_padded).squeeze()
+        y_padded = self.model(x_padded).squeeze(axis=1)
         # remove the padding and return
         return y_padded[:, 1:-1, 1:-1]

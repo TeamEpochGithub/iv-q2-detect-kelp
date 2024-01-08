@@ -5,8 +5,8 @@ defaults:
 pipeline:
   feature_pipeline:
     processed_path: data/processed
+    is_train: "MISSING"
     transformation_pipeline:
-
     column_pipeline:
       columns:
 
