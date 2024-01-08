@@ -1,12 +1,11 @@
 """TorchBlock class."""
 import copy
 from collections.abc import Callable
-from typing import Self
+from typing import Any, Self
 
 import dask.array as da
 import numpy as np
 import torch
-from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
 from torch.optim import Optimizer
@@ -131,10 +130,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # train full TODO(#38)
                 pass
 
-        # Save the model in the tm folder
-        # TODO(Epoch): This is placeholder for now but this is deterministic
-        self.save_model()
-
         return self
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
@@ -193,23 +188,25 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 pbar.set_postfix(loss=sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
-    def save_model(self) -> None:
-        """Save the model in the tm folder."""
-        block_hash = (
-            str(hash(str(self.model)))[:6]
-            + str(hash(str(self.optimizer)))[:6]
-            + str(hash(str(self.criterion)))[:6]
-            + str(hash(str(self.scheduler)))[:6]
-            + "_"
-            + str(hash(self.epochs))[:6]
-            + str(hash(self.batch_size))[:6]
-            + str(hash(self.patience))[:6]
-        )
-        logger.info(f"Saving model to tm/{block_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{block_hash}.pt")
-        logger.info(f"Model saved to tm/{block_hash}.pt")
+    def save_model(self, model_hash: str) -> None:
+        """Save the model in the tm folder.
 
-    def predict(self, X: da.Array, cache_size: int = -1) -> list[torch.Tensor]:
+        :param block_hash: Hash of the model pipeline
+        """
+        logger.info(f"Saving model to tm/{model_hash}.pt")
+        torch.save(self.model.state_dict(), f"tm/{model_hash}.pt")
+        logger.info(f"Model saved to tm/{model_hash}.pt")
+
+    def load_model(self, model_hash: str) -> None:
+        """Load the model from the tm folder.
+
+        :param block_hash: Hash of the model pipeline
+        """
+        logger.info(f"Loading model from tm/{model_hash}.pt")
+        self.model.load_state_dict(torch.load(f"tm/{model_hash}.pt"))
+        logger.info(f"Model loaded from tm/{model_hash}.pt")
+
+    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -218,8 +215,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
+        logger.info("Loading test images into RAM...")
         X_dataset.create_cache(cache_size)
-        X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0]))
+        logger.info("Done loading test images into RAM - Starting predictions")
+        X_dataloader = DataLoader(X_dataset, batch_size=1, shuffle=False, collate_fn=lambda batch: (batch[0]))
         self.model.eval()
         preds = []
         with torch.no_grad(), tqdm(X_dataloader, unit="batch", disable=False) as tepoch:
@@ -227,12 +226,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 X_batch = data
                 X_batch = X_batch.to(self.device).float()
                 # forward pass
-                y_pred = self.model(X_batch)
+                y_pred = self.model(X_batch).cpu().numpy()
                 preds.append(y_pred)
         logger.info("Done predicting")
-        return preds
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> list[torch.Tensor]:
+        return np.array(preds)
+
+    def transform(self, X: da.Array, y: da.Array | None = None) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
