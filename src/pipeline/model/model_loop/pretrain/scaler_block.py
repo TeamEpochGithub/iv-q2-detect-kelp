@@ -2,6 +2,7 @@
 
 from typing import Self
 
+import dask
 import dask.array as da
 import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -67,15 +68,18 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :return: Transformed data
         """
         logger.info("Transforming the data using the scaler")
-        # Reshape the data to 2D
-        # Flatten and rechunk all the data so all pixels per channels are a single row
-        # The shape is (C, N*H*W) after reshaping
-        X_reshaped = X.transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
-        X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
-        # Apply the scaler
-        X_reshaped = self.scaler.transform(X_reshaped)
-        X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
-        X = X.rechunk()
-        logger.info("Transformed the data using the scaler")
 
+        # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
+        # ignores type error because this is literally the example from the dask docs
+        with dask.config.set(**{"array.slicing.split_large_chunks": False}):  # type: ignore[arg-type]
+            # Reshape the data to 2D
+            # Flatten and rechunk all the data so all pixels per channels are a single row
+            # The shape is (C, N*H*W) after reshaping
+            X_reshaped = X.transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
+            X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
+            # Apply the scaler
+            X_reshaped = self.scaler.transform(X_reshaped)
+            X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
+            X = X.rechunk()
+        logger.info("Transformed the data using the scaler")
         return X
