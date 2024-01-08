@@ -1,12 +1,13 @@
 """Module to convert a dask array to a torch dataset."""
 from typing import Any
-
+import time
+import asyncio
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
 import torch
 from torch.utils.data import Dataset
-
+import concurrent.futures
 
 class Dask2TorchDataset(Dataset[Any]):
     """Class to convert a dask array to a torch dataset.
@@ -65,15 +66,25 @@ class Dask2TorchDataset(Dataset[Any]):
                 y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
                 y_arr = self.memY[in_mem_idxs]
-            # Apply the transforms
+
+            # Apply the transforms with dask.delayed to parallelize it
             if self.transforms is not None:
-                x_arr, y_arr = self.transforms(image=x_arr, mask=y_arr)
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    loop = asyncio.get_event_loop()
+                    futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1,2,0), y_arr[i]) for i in range(len(x_arr))]
+                    looper = asyncio.gather(*futures)
+                augmentation_results = loop.run_until_complete(looper)
+                for i in range(len(x_arr)):
+                    x_arr[i] = augmentation_results[i][0].transpose(2,0,1)
+                    y_arr[i] = augmentation_results[i][1]
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
         # If y does not exist, return only x
         # Apply the transforms
         if self.transforms is not None:
-            x_arr = self.transforms(image=x_arr)
+            for i in range(len(x_arr)):
+                transformed_dict = self.transforms(image=x_arr[i].transpose(1,2,0))
+                x_arr[i] = transformed_dict['image'].transpose(2,0,1)
         return torch.from_numpy(x_arr)
 
     def create_cache(self, size: int) -> None:
@@ -90,3 +101,14 @@ class Dask2TorchDataset(Dataset[Any]):
         if self.daskY is not None:
             self.memY = self.daskY[:idx].compute()
             self.daskY = self.daskY[idx:]
+
+
+    def apply_augmentation(self, image, mask) -> dict:
+        """Apply the augmentation to the data.
+
+        :param x: Input features.
+        :param y: Labels.
+        :return: augmented data
+        """
+        transformed_dict = self.transforms(image=image, mask=mask)
+        return transformed_dict['image'], transformed_dict['mask']

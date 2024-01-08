@@ -107,19 +107,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # define transfroms here for now will be in the config after it works here
         from albumentations.core.transforms_interface import ImageOnlyTransform
 
-        class PermuteChannels(ImageOnlyTransform):
-            def __init__(self, permutation, always_apply=False, p=1.0):
-                super().__init__(always_apply, p)
-                self.permutation = permutation
 
-            def apply(self, img, **params):
-                return img[..., self.permutation]
         transfroms = A.Compose(
                 [
-                    PermuteChannels((2, 1, 0)),
-                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
-                    A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
-                    A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5)
+                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5)
                 ]
             )
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=transfroms)

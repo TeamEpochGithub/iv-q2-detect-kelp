@@ -18,7 +18,7 @@ class PaddedUnet(nn.Module):
         :param out_channels: number of output channels
         """
         super().__init__()
-        self.model = Unet(in_channels=in_channels, classes=out_channels, activation="sigmoid")
+        self.model = Unet(in_channels=in_channels, classes=out_channels, activation="sigmoid", encoder_depth=2, decoder_channels=(32, 16))
         # create a padding layer to pad the input image from 350x350 to 352x352
         self.padding = nn.ZeroPad2d((1, 1, 1, 1))
 
@@ -31,6 +31,6 @@ class PaddedUnet(nn.Module):
         # pad the input image
         x_padded = self.padding(x)
         # pass the padded image through the model
-        y_padded = self.model(x_padded).squeeze()
+        y_padded = self.model(x_padded).squeeze(1)
         # remove the padding and return
         return y_padded[:, 1:-1, 1:-1]
