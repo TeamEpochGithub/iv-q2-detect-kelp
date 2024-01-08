@@ -5,7 +5,6 @@ defaults:
 pipeline:
   feature_pipeline:
     processed_path: data/processed
-    is_train: "MISSING" # Set to true for training, false for inference
     transformation_pipeline:
       transformations:
 
