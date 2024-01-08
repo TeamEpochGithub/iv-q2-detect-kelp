@@ -1,6 +1,7 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
-
-
+import glob
+import logging
+import os
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,13 +18,16 @@ import wandb
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
+from src.utils.hashing import hash_model, hash_scaler
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
+# Makes hydra give full error messages
+os.environ["HYDRA_FULL_ERROR"] = "1"
 
 
 @dataclass
-class WandBLogCodeConfig:
+class WandBSaveCodeConfig:
     """Schema for the code logging to Weights & Biases.
 
     :param enabled: Whether to log the code to Weights & Biases.
@@ -44,7 +48,7 @@ class WandBConfig:
 
     enabled: bool
     log_config: bool
-    log_code: WandBLogCodeConfig
+    save_code: WandBSaveCodeConfig
 
 
 @dataclass
@@ -71,7 +75,7 @@ cs.store(name="base_train", node=TrainConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="train")
-def run_train(cfg: DictConfig) -> None:
+def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States -- Training")
 
@@ -82,16 +86,30 @@ def run_train(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
-    outputs_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     if cfg.wandb.enabled:
-        setup_wandb(cfg, Path(__file__).stem, outputs_dir)
+        setup_wandb(cfg, Path(__file__).stem, output_dir)
 
         if wandb.run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
             return
 
+    # Hash representation of model pipeline only based on model and test size
+    model_hash = hash_model(cfg)
+
+    # Hash representation of scaler based on pretrain, feature_pipeline and test_size
+    scaler_hash = hash_scaler(cfg)
+
+    # Check if model is cached already, if so do not call fit.
+    # This is done to avoid retraining the model if it is already cached.
+    if glob.glob(f"tm/{model_hash}.pt"):
+        logger.info(f"Trained model already cached at tm/{model_hash}.pt, skipping training")
+        return
+    if scaler_hash is None:
+        logging.warning("No scaler found in config, training without scaler")
+
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, outputs_dir)
+    model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
@@ -114,15 +132,26 @@ def run_train(cfg: DictConfig) -> None:
                 name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": -1}
                 for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
             },
-            "pretrain_pipeline_step": {
-                "train_indices": train_indices,
-            },
         }
     }
+
+    # Add pretrain indices if it exists. Stupid mypy doesn't understand hasattr
+    if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step"):
+        fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {"train_indices": train_indices}  # type: ignore[dict-item]
+
     fit_params_flat = flatten_dict(fit_params)
 
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params_flat)
+    # Get the model and scaler
+    model = next(iter(model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values()))
+    # Save the model
+    model.save_model(model_hash)
+
+    # Get the ScalerBlock if it exists
+    if scaler_hash is not None:
+        scaler = model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step
+        scaler.save_scaler(scaler_hash)
 
     if wandb.run:
         wandb.finish()

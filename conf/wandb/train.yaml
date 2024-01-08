@@ -1,5 +1,5 @@
 enabled: True
 log_config: True
-log_code:
+save_code:
   enabled: True
-  exclude: ^(dashboard/|data/|docs/|external/|notebooks/|tests/|venv/)
+  exclude: ^(dashboard/|data/|docs/|external/|notebooks/|tests/|venv/|.venv/)

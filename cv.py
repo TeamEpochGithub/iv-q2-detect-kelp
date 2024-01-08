@@ -1,4 +1,5 @@
 """cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
+import os
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,6 +18,8 @@ from src.utils.flatten_dict import flatten_dict
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
+# Makes hydra give full error messages
+os.environ["HYDRA_FULL_ERROR"] = "1"
 
 
 @dataclass
@@ -35,12 +38,11 @@ cs.store(name="base_cv", node=CVConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="cv")
-def run_cv(cfg: DictConfig) -> None:
+def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of DictConfig
     """Do cv on a model pipeline with K fold split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
-    outputs_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    # Coloured logs
     import coloredlogs
 
     coloredlogs.install()
@@ -51,7 +53,7 @@ def run_cv(cfg: DictConfig) -> None:
     # TODO(Jeffrey): Add logging to W&B
 
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, outputs_dir)
+    model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
