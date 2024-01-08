@@ -31,7 +31,8 @@ def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    pipeline_cfg["feature_pipeline"]["is_train"] = is_train
+    if not is_train:
+        pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
     model_pipeline = instantiate(pipeline_cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
