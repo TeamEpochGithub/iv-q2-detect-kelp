@@ -15,6 +15,7 @@ from sklearn.utils import estimator_html_repr
 
 import wandb
 from src.logging_utils.logger import logger
+from wandb.sdk.lib import RunDisabled
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -76,43 +77,52 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     return X, y, x_processed
 
 
-def setup_wandb(cfg: DictConfig, script_name: str, output_dir: Path) -> None:
+def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
     """Initialize Weights & Biases and log the config and code.
 
     :param cfg: The config object. Created with Hydra or OmegaConf.
-    :param script_name: The name of the script, e.g. train, cv, etc.
+    :param job_type: The type of job, e.g. Training, CV, etc.
     :param output_dir: The directory to the Hydra outputs.
+    :param name: The name of the run.
+    :param group: The namer of the group of the run.
     """
-    logger.info("Initializing Weights & Biases")
-    wandb.init(
+    logger.debug("Initializing Weights & Biases")
+    run = wandb.init(
         project="detect-kelp",
-        group=script_name,
+        name=name,
+        group=group,
+        job_type=job_type,
+        tags=cfg.wandb.tags,
+        notes=cfg.wandb.notes,
         settings=wandb.Settings(start_method="thread", code_dir="."),
         dir=output_dir,
+        reinit=True,
     )
+
+    if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
+        raise RuntimeError("Failed to initialize Weights & Biases")
+
     wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
 
     if cfg.wandb.log_config:
-        logger.info("Uploading config files to Weights & Biases")
+        logger.debug("Uploading config files to Weights & Biases")
         # Store the config as an artefact of W&B
-        artifact = wandb.Artifact(script_name + "_config", type="config")
+        artifact = wandb.Artifact(job_type + "_config", type="config")
         config_path = output_dir / ".hydra/config.yaml"
-        artifact.add_file(str(config_path), script_name + ".yaml")
+        artifact.add_file(str(config_path), job_type + ".yaml")
         wandb.log_artifact(artifact)
 
     # Log code to W&B
     if cfg.wandb.save_code.enabled:
-        logger.info("Uploading code files to Weights & Biases")
+        logger.debug("Uploading code files to Weights & Biases")
 
-        if wandb.run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
-            return
-
-        wandb.run.log_code(
+        run.log_code(
             root=".",
             exclude_fn=cast(Callable[[str, str], bool], lambda abs_path, root: re.match(cfg.wandb.save_code.exclude, Path(abs_path).relative_to(root).as_posix()) is not None),
         )
 
     logger.info("Done initializing Weights & Biases")
+    return run
 
 
 def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, list[str]]:

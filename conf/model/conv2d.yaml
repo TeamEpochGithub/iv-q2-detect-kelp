@@ -55,7 +55,7 @@ pipeline:
           scheduler: None
           criterion:
             _target_: src.modules.dice_loss.DiceLoss
-          epochs: 10
+          epochs: 3
           batch_size: 32
           patience: 10
 

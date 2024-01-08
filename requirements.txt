@@ -233,4 +233,5 @@ zict==3.0.0
 zipp==3.17.0
 wandb~=0.16.1
 annotated-types~=0.6.0
+randomname~=0.2.1
 -e ./

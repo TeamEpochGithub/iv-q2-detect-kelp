@@ -15,6 +15,7 @@ from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
 import wandb
+from src.config.wandb_config import WandBConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
@@ -24,31 +25,6 @@ from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setu
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-
-
-@dataclass
-class WandBSaveCodeConfig:
-    """Schema for the code logging to Weights & Biases.
-
-    :param enabled: Whether to log the code to Weights & Biases.
-    :param exclude: Regex of files to exclude from logging.
-    """
-
-    enabled: bool
-    exclude: str
-
-
-@dataclass
-class WandBConfig:
-    """Schema for the Weights & Biases config yaml file.
-
-    :param enabled: Whether to log to Weights & Biases.
-    :param log_code: Whether to log the code to Weights & Biases.
-    """
-
-    enabled: bool
-    log_config: bool
-    save_code: WandBSaveCodeConfig
 
 
 @dataclass
@@ -85,14 +61,10 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Check for missing keys in the config file
     setup_config(cfg)
-
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     if cfg.wandb.enabled:
-        setup_wandb(cfg, Path(__file__).stem, output_dir)
-
-        if wandb.run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
-            return
+        setup_wandb(cfg, "Training", output_dir)
 
     # Hash representation of model pipeline only based on model and test size
     model_hash = hash_model(cfg)

@@ -74,7 +74,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.lowest_val_loss = np.inf
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
-        """Train the model.
+        """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
         :param y: Labels.
@@ -120,6 +120,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         train_losses: list[float] = []
         val_losses: list[float] = []
 
+        if wandb.run:
+            wandb.define_metric("Training/Train Loss", summary="min")
+            wandb.define_metric("Training/Validation Loss", summary="min")
+
         # TODO(Tolga): Add early stopping for train full
         # https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/issues/38
         self.lowest_val_loss = np.inf
@@ -147,7 +151,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
-                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Loss", xname="Epoch"
+                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
                             )
                         }
                     )

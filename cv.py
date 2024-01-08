@@ -6,16 +6,19 @@ from pathlib import Path
 from typing import Any
 
 import hydra
+import randomname
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
+import wandb
+from src.config.wandb_config import WandBConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
-from src.utils.setup import setup_config, setup_pipeline, setup_train_data
+from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
@@ -28,8 +31,9 @@ class CVConfig:
 
     model: Any
     n_splits: int
-    raw_data_path: str = "data/raw/train_satellite"
-    raw_target_path: str = "data/raw/train_kelp"
+    raw_data_path: str
+    raw_target_path: str
+    wandb: WandBConfig
 
 
 # Set up the config store, necessary for type checking of config yaml
@@ -41,7 +45,6 @@ cs.store(name="base_cv", node=CVConfig)
 def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of DictConfig
     """Do cv on a model pipeline with K fold split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
-    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     import coloredlogs
 
@@ -49,8 +52,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
     # Check for missing keys in the config file
     setup_config(cfg)
-
-    # TODO(Jeffrey): Add logging to W&B
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
@@ -62,8 +64,15 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
+
+    # Set up Weights & Biases variables
+    wandb_group_name = randomname.get_name()
+    # fold_wandb_run: wandb.sdk.wandb_run.Run | RunDisabled | None = None
+
     for i, (train_indices, test_indices) in enumerate(kf.split(x_processed, stratification_key)):
         print_section_separator(f"CV - Fold {i}")
+        if cfg.wandb.enabled:
+            setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         logger.info("Creating clean pipeline for this fold")
@@ -87,6 +96,9 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
         # Fit the pipeline
         model_pipeline.fit(X, y, **fit_params_flat)
+
+        if wandb.run is not None:
+            wandb.run.finish()
 
 
 if __name__ == "__main__":
