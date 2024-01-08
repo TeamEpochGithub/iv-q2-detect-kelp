@@ -33,7 +33,7 @@ class FeaturePipeline(Pipeline):
         self.processed_path = processed_path
         self.transformation_pipeline = transformation_pipeline
         self.column_pipeline = column_pipeline
-        
+
         # Create hash
         if self.processed_path:
             self.transformation_hash = hash(self.transformation_pipeline)
