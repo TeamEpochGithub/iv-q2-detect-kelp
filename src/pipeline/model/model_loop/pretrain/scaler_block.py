@@ -56,5 +56,6 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         # Apply the scaler
         X_reshaped = self.scaler.transform(X_reshaped)
         X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
+        X = X.rechunk()
         logger.info("Transformed the data")
         return X
