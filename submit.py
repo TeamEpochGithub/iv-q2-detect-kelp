@@ -11,9 +11,9 @@ from omegaconf import DictConfig
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.hashing import hash_model, hash_scaler
+from src.utils.hashing import hash_models, hash_scalers
 from src.utils.make_submission import make_submission
-from src.utils.setup import setup_config, setup_pipeline, setup_test_data
+from src.utils.setup import setup_config, setup_ensemble, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -23,8 +23,9 @@ class SubmitConfig:
     """Schema for the train config yaml file."""
 
     model: Any
+    ensemble: Any
     test_size: float
-    raw_data_path: str = "data/raw/train_satellite"
+    raw_data_path: str = "data/raw/test_satellite"
     raw_target_path: str = "data/raw/train_kelp"
 
 
@@ -49,34 +50,47 @@ def run_submit(cfg: DictConfig) -> None:
     setup_config(cfg)
 
     # Hash representation of model pipeline only based on model and test size
-    model_hash = hash_model(cfg)
+    model_hashes = hash_models(cfg)
 
     # Hash representation of scaler based on pretrain, feature_pipeline and test_size
-    scaler_hash = hash_scaler(cfg)
+    scaler_hashes = hash_scalers(cfg)
 
-    # Check if model is cached already, if not give an error
-    if not glob.glob(f"tm/{model_hash}.pt"):
-        logger.error(f"Model {model_hash} not found. Please train the model first and ensure the test_size is also the same.")
-        raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
+    # Check if models are cached already, if not give an error
+    for model_hash in model_hashes:
+        if not glob.glob(f"tm/{model_hash}.pt"):
+            logger.error(f"Model {model_hash} not found. Please train the model first and ensure the test_size is also the same.")
+            raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
 
-    if scaler_hash is not None and not glob.glob(f"tm/{scaler_hash}.scaler"):
-        # Check if scaler is cached already, if not give an error
-        logger.error(f"Scaler {scaler_hash} not found. Please train the model first.")
-        raise FileNotFoundError(f"Scaler {scaler_hash} not found. Please train the model first.")
+    # Check if scalers are cached already, if not give an error
+    for scaler_hash in scaler_hashes:
+        if scaler_hash is not None and not glob.glob(f"tm/{scaler_hash}.scaler"):
+            logger.error(f"Scaler {scaler_hash} not found. Please train the model first.")
+            raise FileNotFoundError(f"Scaler {scaler_hash} not found. Please train the model first.")
 
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir, is_train=False)
+    if "model" in cfg:
+        model_pipeline = setup_pipeline(cfg.model, log_dir, is_train=False)
+    elif "ensemble" in cfg:
+        model_pipeline = setup_ensemble(cfg.ensemble, log_dir, is_train=False)
+    else:
+        raise ValueError("Either model or ensemble must be specified in the config file.")
 
     # Load the test data
-    feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
+    if "model" in cfg:
+        feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
+    elif "ensemble" in cfg:
+        # Take first feature pipeline from ensemble TODO
+        feature_pipeline = model_pipeline.models["0"].named_steps.feature_pipeline_step
     X, _, filenames = setup_test_data(cfg.raw_data_path, feature_pipeline)
 
-    # Load the model from the model hash
-    next(iter(model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(model_hash)
+    # Load the model from the model hashes
+    for i, model_hash in enumerate(model_hashes):
+        next(iter(model_pipeline.models[str(i)].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(model_hash)
 
-    # Load the scaler from the scaler hash
-    if scaler_hash is not None:
-        model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.load_scaler(scaler_hash)
+    # Load the scalers from the scaler hashes
+    for i, scaler_hash in enumerate(scaler_hashes):
+        if scaler_hash is not None:
+            model_pipeline.models[str(i)].named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.load_scaler(scaler_hash)
 
     # Predict on the test data
     predictions = model_pipeline.transform(X)

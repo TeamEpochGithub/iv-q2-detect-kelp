@@ -260,8 +260,4 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return False
 
     def __str__(self) -> str:
-        """Return the string representation of the model.
-
-        :return: String representation of the model.
-        """
-        return "TorchBlock"
+        return str(self.model)

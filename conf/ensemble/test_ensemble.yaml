@@ -1,0 +1,7 @@
+defaults:
+  - /model/conv2d@models.0
+  - /model/conv2d@models.1
+
+_target_: src.pipeline.ensemble.ensemble.EnsemblePipeline
+
+weights: [0.5, 0.5]

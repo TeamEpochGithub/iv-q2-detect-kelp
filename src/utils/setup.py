@@ -19,8 +19,22 @@ def setup_config(cfg: DictConfig) -> None:
     """
     # Check for missing keys in the config file
     missing = OmegaConf.missing_keys(cfg)
-    if missing:
-        raise ValueError(f"Missing keys in config file\n{missing}")
+
+    # If both model and ensemble are specified, raise an error
+    if cfg.get("model") and cfg.get("ensemble"):
+        raise ValueError("Both model and ensemble specified in config.")
+
+    # If neither model nor ensemble are specified, raise an error
+    if not cfg.get("model") and not cfg.get("ensemble"):
+        raise ValueError("Neither model nor ensemble specified in config.")
+
+    # If model and ensemble are in missing raise an error
+    if "model" in missing and "ensemble" in missing:
+        raise ValueError("Both model and ensemble are missing from config.")
+
+    # If any other keys except model and ensemble are missing, raise an error
+    if len(missing) > 1:
+        raise ValueError(f"Missing keys in config: {missing}")
 
 
 def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None) -> Pipeline:
@@ -43,6 +57,27 @@ def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None
         f.write(pipeline_html)
 
     return model_pipeline
+
+
+def setup_ensemble(ensemble_pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None) -> Pipeline:
+    """Instantiate the pipeline and log it to HTML.
+
+    :param ensemble_pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
+    :param log_dir: The directory to save the pipeline to.
+    :param is_train: Whether the pipeline is for training or not.
+    """
+    logger.info("Instantiating the pipeline")
+    ensemble_pipeline = instantiate(ensemble_pipeline_cfg)
+
+    logger.debug(f"Pipeline: \n{ensemble_pipeline}")
+
+    logger.info("Saving pipeline to HTML")
+    set_config(display="diagram")
+    pipeline_html = estimator_html_repr(ensemble_pipeline)
+    with open(f"{log_dir}/pipeline.html", "w", encoding="utf-8") as f:
+        f.write(pipeline_html)
+
+    return ensemble_pipeline
 
 
 def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, dask.array.Array]:
