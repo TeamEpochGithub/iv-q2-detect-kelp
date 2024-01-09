@@ -1,5 +1,7 @@
 """ModelPipeline is the class used to create the model pipeline."""
 
+from dataclasses import dataclass
+
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline
@@ -8,6 +10,7 @@ from src.pipeline.model.post_processing.post_processing import PostProcessingPip
 from src.pipeline.model.target.target import TargetPipeline
 
 
+@dataclass
 class ModelPipeline(Pipeline):
     """ModelPipeline is the class used to create the model pipeline.
 
@@ -17,24 +20,13 @@ class ModelPipeline(Pipeline):
     :param post_processing_pipeline: The post processing pipeline
     """
 
-    def __init__(
-        self,
-        feature_pipeline: FeaturePipeline | None = None,
-        target_pipeline: TargetPipeline | None = None,
-        model_loop_pipeline: ModelLoopPipeline | None = None,
-        post_processing_pipeline: PostProcessingPipeline | None = None,
-    ) -> None:
-        """Initialize the class.
+    feature_pipeline: FeaturePipeline | None = None
+    target_pipeline: TargetPipeline | None = None
+    model_loop_pipeline: ModelLoopPipeline | None = None
+    post_processing_pipeline: PostProcessingPipeline | None = None
 
-        :param feature_pipeline: The feature pipeline
-        :param target_pipeline: The target pipeline
-        :param model_loop_pipeline: The model loop pipeline
-        :param post_processing_pipeline: The post processing pipeline
-        """
-        self.feature_pipeline = feature_pipeline
-        self.target_pipeline = target_pipeline
-        self.model_loop_pipeline = model_loop_pipeline
-        self.post_processing_pipeline = post_processing_pipeline
+    def __post_init__(self) -> None:
+        """Post init function."""
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
@@ -55,22 +47,16 @@ class ModelPipeline(Pipeline):
 
         return steps
 
-    def __str__(self) -> str:
-        """__str__ returns string representation of the class.
+    def load_models(self, model_hashes: list[str]) -> None:
+        """Load the models from the model hashes.
 
-        :return: String representation of the class
+        :param model_hashes: The model hashes
         """
-        return "ModelPipeline"
+        # self.model_loop_pipeline.load_models(model_hashes)
 
-    def __repr__(self) -> str:
-        """Representation of the class.
+    def load_scalers(self, scaler_hashes: list[str | None]) -> None:
+        """Load the scalers from the scaler hashes.
 
-        :return: Representation of the class
+        :param scaler_hashes: The scaler hashes
         """
-        return (
-            "ModelPipeline("
-            f"feature_pipeline={self.feature_pipeline.__repr__()},"
-            f"target_pipeline={self.target_pipeline.__repr__()},"
-            f"model_loop_pipeline={self.model_loop_pipeline.__repr__()},"
-            f"post_processing_pipeline={self.post_processing_pipeline.__repr__()})"
-        )
+        # self.model_loop_pipeline.load_scalers(scaler_hashes)

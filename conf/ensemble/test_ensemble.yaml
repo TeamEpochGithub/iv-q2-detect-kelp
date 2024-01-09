@@ -3,6 +3,7 @@ defaults:
   - /model/conv2d@models.conv2d2
 
 _target_: src.pipeline.ensemble.ensemble.EnsemblePipeline
+_convert_: 'partial'
 
 weights:
   - 0.5

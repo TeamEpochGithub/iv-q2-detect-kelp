@@ -51,8 +51,17 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    if not is_train:
-        pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+    cfg = pipeline_cfg
+
+    if "model" in cfg:
+        pipeline_cfg = cfg.model
+        if not is_train:
+            pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+    elif "ensemble" in cfg:
+        pipeline_cfg = cfg.ensemble
+        if not is_train:
+            for model in pipeline_cfg.models.values():
+                model.feature_pipeline.processed_path = "data/test"
     model_pipeline = instantiate(pipeline_cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
@@ -64,27 +73,6 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
         f.write(pipeline_html)
 
     return model_pipeline
-
-
-def setup_ensemble(ensemble_pipeline_cfg: DictConfig, log_dir: Path, is_train: bool | None) -> Pipeline:
-    """Instantiate the pipeline and log it to HTML.
-
-    :param ensemble_pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
-    :param log_dir: The directory to save the pipeline to.
-    :param is_train: Whether the pipeline is for training or not.
-    """
-    logger.info("Instantiating the pipeline")
-    ensemble_pipeline = instantiate(ensemble_pipeline_cfg)
-
-    logger.debug(f"Pipeline: \n{ensemble_pipeline}")
-
-    logger.info("Saving pipeline to HTML")
-    set_config(display="diagram")
-    pipeline_html = estimator_html_repr(ensemble_pipeline)
-    with open(f"{log_dir}/pipeline.html", "w", encoding="utf-8") as f:
-        f.write(pipeline_html)
-
-    return ensemble_pipeline
 
 
 def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, dask.array.Array]:
@@ -160,25 +148,16 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     return run
 
 
-def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, list[str]]:
+def setup_test_data(data_path: str) -> tuple[dask.array.Array, list[str]]:
     """Lazily read the raw data with dask, and find the shape after processing the test data.
 
     :param data_path: Path to the raw data.
-    :param feature_pipeline: The feature pipeline.
 
-    :return: X, x_processed, filenames
+    :return: X, filenames
     """
     logger.info("Lazily reading the raw test data")
     X = imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
     filenames = [file for file in os.listdir(data_path) if file.endswith(".tif")]
     logger.info(f"Raw test data shape: {X.shape}")
 
-    # Lazily process the features to know the shape in advance
-    # Suppress logger messages while getting the indices to avoid clutter in the log file
-    logger.info("Finding shape of processed data")
-    logger.setLevel("ERROR")
-    x_processed = feature_pipeline.transform(X)
-    logger.setLevel("INFO")
-    logger.info(f"Processed data shape: {x_processed.shape}")
-
-    return X, x_processed, filenames
+    return X, filenames

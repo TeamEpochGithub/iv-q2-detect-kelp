@@ -1,6 +1,7 @@
 """Pipeline step that copies a band."""
 
 import time
+from dataclasses import dataclass
 from typing import Self
 
 import dask
@@ -10,18 +11,14 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 
 
+@dataclass
 class BandCopy(BaseEstimator, TransformerMixin):
     """BandCopy is a transformer that copies a band.
 
     :param band: The band to copy
     """
 
-    def __init__(self, band: int) -> None:
-        """BandCopy is a transformer that copies a band.
-
-        :param band: The band to copy
-        """
-        self.band = band
+    band: int
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """Fit the transformer.
@@ -50,17 +47,3 @@ class BandCopy(BaseEstimator, TransformerMixin):
         X = X.rechunk()
         logger.debug(f"dask concat time: {time.time() - start_time}s")
         return X
-
-    def __str__(self) -> str:
-        """Return the name of the transformer.
-
-        :return: The name of the transformer
-        """
-        return f"BandCopy_{self.band}"
-
-
-if __name__ == "__main__":
-    # Test the band copy
-    band_copy = BandCopy(1)
-    X = da.from_array([[1, 2], [3, 4]])
-    X = band_copy.transform(X)

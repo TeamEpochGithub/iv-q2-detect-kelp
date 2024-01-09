@@ -13,7 +13,7 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.make_submission import make_submission
 from src.utils.script.hash_check import check_hash
-from src.utils.setup import setup_config, setup_ensemble, setup_pipeline, setup_test_data
+from src.utils.setup import setup_config, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -26,12 +26,14 @@ cs.store(name="base_submit", node=SubmitConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="submit")
-def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig instead of DictConfig
+# TODO(Jeffrey): Use SubmitConfig instead of DictConfig
+def run_submit(cfg: DictConfig) -> None:
     """Run the main script for submitting the predictions."""
     # Print section separator
     print_section_separator("Q2 Detect Kelp States -- Submit")
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
+    # Set up logging
     import coloredlogs
 
     coloredlogs.install()
@@ -43,22 +45,12 @@ def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig inst
     model_hashes, scaler_hashes = check_hash(cfg)
 
     # Preload the pipeline and save it to HTML
-    if "model" in cfg:
-        model_pipeline = setup_pipeline(cfg.model, output_dir, is_train=False)
-    elif "ensemble" in cfg:
-        model_pipeline = setup_ensemble(cfg.ensemble, output_dir, is_train=False)
+    model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
 
     # Load the test data
-    if "model" in cfg:
-        feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
-    elif "ensemble" in cfg:
-        # Take first feature pipeline from ensemble TODO
-        model1 = next(iter(model_pipeline.models.values()))
-        feature_pipeline = model1.named_steps.feature_pipeline_step
-    X, _, filenames = setup_test_data(cfg.raw_data_path, feature_pipeline)
+    X, filenames = setup_test_data(cfg.raw_data_path)
 
     # Load the model from the model hashes
-
     model_keys = list(model_pipeline.models.keys())
     for i, model_hash in enumerate(model_hashes):
         next(iter(model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(
