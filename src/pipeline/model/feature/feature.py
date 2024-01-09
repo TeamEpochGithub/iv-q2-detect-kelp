@@ -21,7 +21,6 @@ class FeaturePipeline(Pipeline):
         processed_path: str | None = None,
         transformation_pipeline: TransformationPipeline | None = None,
         column_pipeline: ColumnPipeline | None = None,
-        is_train: bool | None = None,
     ) -> None:
         """Initialize the class.
 
@@ -34,11 +33,10 @@ class FeaturePipeline(Pipeline):
         self.processed_path = processed_path
         self.transformation_pipeline = transformation_pipeline
         self.column_pipeline = column_pipeline
-        self.is_train = "train" if is_train else "test"
 
         # Create hash
         if self.processed_path:
-            self.transformation_hash = self.is_train + "-" + hash(self.transformation_pipeline)
+            self.transformation_hash = hash(self.transformation_pipeline)
 
         super().__init__(self._get_steps(), memory=self._get_memory())
 
