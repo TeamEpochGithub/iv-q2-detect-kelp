@@ -86,6 +86,7 @@ def run_cv(cfg: DictConfig) -> None:
         fit_params_flat = flatten_dict(fit_params)
 
         # Fit the pipeline
+        print_section_separator("Preprocessing - Transformations")
         model_pipeline.fit(X, y, **fit_params_flat)
 
 
