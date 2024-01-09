@@ -1,0 +1,92 @@
+defaults:
+  - pipeline/default
+  - _self_
+
+pipeline:
+  feature_pipeline:
+    processed_path: data/processed
+    is_train: "MISSING"
+    transformation_pipeline:
+    column_pipeline:
+      columns:
+
+        # NDVI
+        - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+          column_block:
+            _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
+            a: 1 # NIR
+            b: 2 # Red
+          cache_block:
+            _target_: src.pipeline.caching.column.CacheColumnBlock
+            data_path: data/processed/cache
+            column: -1
+
+        # NDWI
+        - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+          column_block:
+            _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
+            a: 3 # Green
+            b: 1 # NIR
+          cache_block:
+            _target_: src.pipeline.caching.column.CacheColumnBlock
+            data_path: data/processed/cache
+            column: -1
+
+        # ONIR
+        - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+          column_block:
+            _target_: src.pipeline.model.feature.column.offset.Offset
+            band: 1 # NIR
+          cache_block:
+            _target_: src.pipeline.caching.column.CacheColumnBlock
+            data_path: data/processed/cache
+            column: -1
+
+        # ODVI
+        - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+          column_block:
+            _target_: src.pipeline.model.feature.column.offset_diff.OffsetDiff
+            a: 1 # NIR
+            b: 2 # Red
+          cache_block:
+            _target_: src.pipeline.caching.column.CacheColumnBlock
+            data_path: data/processed/cache
+            column: -1
+
+  target_pipeline:
+
+  model_loop_pipeline:
+    pretrain_pipeline:
+        # Pretrain block
+          _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
+          scaler:
+            _target_: dask_ml.preprocessing.StandardScaler
+
+    model_blocks_pipeline:
+      model_blocks:
+
+        # Pytorch model
+        - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+          model:
+            _target_: src.pipeline.model.architectures.padded_model.PaddedModel
+            padding: 1
+            model: # from segmentation_models_pytorch import Unet
+              _target_: segmentation_models_pytorch.Unet
+              encoder_name: resnet34
+              in_channels: 8
+              classes: 1
+          optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
+            _target_: functools.partial
+            _args_:
+              - _target_: hydra.utils.get_class
+                path: torch.optim.Adam
+            lr: 0.0001
+          scheduler: None
+          criterion:
+            _target_: src.modules.dice_loss.DiceLoss
+          epochs: 29
+          batch_size: 64
+          patience: 20
+
+  # Post processing pipeline
+  post_processing_pipeline:

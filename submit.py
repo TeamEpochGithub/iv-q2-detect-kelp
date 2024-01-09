@@ -1,14 +1,15 @@
 """Submit.py is the main script for running inference on the test set and creating a submission."""
 import glob
+import os
 import warnings
-from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
 
 import hydra
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from omegaconf import DictConfig
 
+from src.config.submit_config import SubmitConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.hashing import hash_models, hash_scalers
@@ -17,17 +18,8 @@ from src.utils.setup import setup_config, setup_ensemble, setup_pipeline, setup_
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-
-@dataclass
-class SubmitConfig:
-    """Schema for the train config yaml file."""
-
-    model: Any
-    ensemble: Any
-    test_size: float
-    raw_data_path: str = "data/raw/test_satellite"
-    raw_target_path: str = "data/raw/train_kelp"
-
+# Makes hydra give full error messages
+os.environ["HYDRA_FULL_ERROR"] = "1"
 
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()
@@ -35,13 +27,12 @@ cs.store(name="base_submit", node=SubmitConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="submit")
-def run_submit(cfg: DictConfig) -> None:
+def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig instead of DictConfig
     """Run the main script for submitting the predictions."""
     # Print section separator
     print_section_separator("Q2 Detect Kelp States -- Submit")
-    log_dir = hydra.core.hydra_config.HydraConfig.get().runtime.output_dir
+    output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    # Coloured logs
     import coloredlogs
 
     coloredlogs.install()
@@ -69,11 +60,9 @@ def run_submit(cfg: DictConfig) -> None:
 
     # Preload the pipeline and save it to HTML
     if "model" in cfg:
-        model_pipeline = setup_pipeline(cfg.model, log_dir, is_train=False)
+        model_pipeline = setup_pipeline(cfg.model, output_dir, is_train=False)
     elif "ensemble" in cfg:
-        model_pipeline = setup_ensemble(cfg.ensemble, log_dir, is_train=False)
-    else:
-        raise ValueError("Either model or ensemble must be specified in the config file.")
+        model_pipeline = setup_ensemble(cfg.ensemble, output_dir, is_train=False)
 
     # Load the test data
     if "model" in cfg:
@@ -85,10 +74,12 @@ def run_submit(cfg: DictConfig) -> None:
     X, _, filenames = setup_test_data(cfg.raw_data_path, feature_pipeline)
 
     # Load the model from the model hashes
-    
+
     model_keys = list(model_pipeline.models.keys())
     for i, model_hash in enumerate(model_hashes):
-        next(iter(model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(model_hash)
+        next(iter(model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(
+            model_hash
+        )
 
     # Load the scalers from the scaler hashes
     for i, scaler_hash in enumerate(scaler_hashes):
@@ -99,7 +90,7 @@ def run_submit(cfg: DictConfig) -> None:
     predictions = model_pipeline.transform(X)
 
     # Make submission
-    make_submission(log_dir, predictions, filenames, threshold=0.5)
+    make_submission(output_dir, predictions, filenames, threshold=0.25)
 
 
 if __name__ == "__main__":
