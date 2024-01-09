@@ -1,5 +1,4 @@
 """Submit.py is the main script for running inference on the test set and creating a submission."""
-import glob
 import os
 import warnings
 from pathlib import Path
@@ -12,8 +11,8 @@ from omegaconf import DictConfig
 from src.config.submit_config import SubmitConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.hashing import hash_models, hash_scalers
 from src.utils.make_submission import make_submission
+from src.utils.script.hash_check import check_hash
 from src.utils.setup import setup_config, setup_ensemble, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -40,23 +39,8 @@ def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig inst
     # Check for missing keys in the config file
     setup_config(cfg)
 
-    # Hash representation of model pipeline only based on model and test size
-    model_hashes = hash_models(cfg)
-
-    # Hash representation of scaler based on pretrain, feature_pipeline and test_size
-    scaler_hashes = hash_scalers(cfg)
-
-    # Check if models are cached already, if not give an error
-    for model_hash in model_hashes:
-        if not glob.glob(f"tm/{model_hash}.pt"):
-            logger.error(f"Model {model_hash} not found. Please train the model first and ensure the test_size is also the same.")
-            raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
-
-    # Check if scalers are cached already, if not give an error
-    for scaler_hash in scaler_hashes:
-        if scaler_hash is not None and not glob.glob(f"tm/{scaler_hash}.scaler"):
-            logger.error(f"Scaler {scaler_hash} not found. Please train the model first.")
-            raise FileNotFoundError(f"Scaler {scaler_hash} not found. Please train the model first.")
+    # Check if the model and scaler hashes are cached already, if not give an error
+    model_hashes, scaler_hashes = check_hash(cfg)
 
     # Preload the pipeline and save it to HTML
     if "model" in cfg:

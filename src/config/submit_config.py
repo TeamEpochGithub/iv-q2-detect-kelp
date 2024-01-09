@@ -14,7 +14,7 @@ class SubmitConfig:
     """
 
     model: Any
-    ensembel: Any
+    ensemble: Any
     test_size: float
     raw_data_path: str
     raw_target_path: str
