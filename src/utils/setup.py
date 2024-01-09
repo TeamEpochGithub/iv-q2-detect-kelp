@@ -68,9 +68,7 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.setLevel("ERROR")
     with open(os.devnull, "w") as null_file:
         sys.stdout = null_file
-
-    x_processed = feature_pipeline.fit_transform(X)
-
+        x_processed = feature_pipeline.fit_transform(X)
     sys.stdout = sys.__stdout__
     logger.setLevel("INFO")
     logger.info(f"Processed data shape: {x_processed.shape}")
@@ -96,7 +94,7 @@ def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.ar
     logger.setLevel("ERROR")
     with open(os.devnull, "w") as null_file:
         sys.stdout = null_file
-    x_processed = feature_pipeline.transform(X)
+        x_processed = feature_pipeline.transform(X)
     sys.stdout = sys.__stdout__
     logger.setLevel("INFO")
     logger.info(f"Processed data shape: {x_processed.shape}")

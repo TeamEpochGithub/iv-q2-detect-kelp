@@ -48,6 +48,7 @@ def run_cv(cfg: DictConfig) -> None:
     setup_config(cfg)
 
     # Preload the pipeline and save it to HTML
+    print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg.model.pipeline, log_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
@@ -73,11 +74,15 @@ def run_cv(cfg: DictConfig) -> None:
                     name: {"train_indices": train_indices, "test_indices": test_indices}
                     for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
                 },
-                "pretrain_pipeline_step": {
-                    "train_indices": train_indices,
-                },
             }
         }
+        # Add pretrain indices if it exists for the scalerblock
+        if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step") and hasattr(
+            model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.named_steps, "ScalerBlock"
+        ):
+            fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {}
+            fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"]["ScalerBlock"] = {"train_indices": train_indices}  # type: ignore[index]
+
         fit_params_flat = flatten_dict(fit_params)
 
         # Fit the pipeline
