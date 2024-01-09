@@ -37,7 +37,8 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    pipeline_cfg["feature_pipeline"]["is_train"] = is_train
+    if not is_train:
+        pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
     model_pipeline = instantiate(pipeline_cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
@@ -112,13 +113,12 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
         artifact.add_file(str(config_path), job_type + ".yaml")
         wandb.log_artifact(artifact)
 
-    # Log code to W&B
-    if cfg.wandb.save_code.enabled:
+    if cfg.wandb.log_code.enabled:
         logger.debug("Uploading code files to Weights & Biases")
 
         run.log_code(
             root=".",
-            exclude_fn=cast(Callable[[str, str], bool], lambda abs_path, root: re.match(cfg.wandb.save_code.exclude, Path(abs_path).relative_to(root).as_posix()) is not None),
+            exclude_fn=cast(Callable[[str, str], bool], lambda abs_path, root: re.match(cfg.wandb.log_code.exclude, Path(abs_path).relative_to(root).as_posix()) is not None),
         )
 
     logger.info("Done initializing Weights & Biases")

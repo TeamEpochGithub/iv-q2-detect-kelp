@@ -1,9 +1,7 @@
 """cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
 import os
 import warnings
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import hydra
 import randomname
@@ -14,7 +12,7 @@ from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
 import wandb
-from src.config.wandb_config import WandBConfig
+from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
@@ -23,17 +21,6 @@ from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setu
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-
-
-@dataclass
-class CVConfig:
-    """Schema for the cv config yaml file."""
-
-    model: Any
-    n_splits: int
-    raw_data_path: str
-    raw_target_path: str
-    wandb: WandBConfig
 
 
 # Set up the config store, necessary for type checking of config yaml
@@ -65,15 +52,15 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     kf = StratifiedKFold(n_splits=cfg.n_splits)
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
 
-    # Set up Weights & Biases variables
+    # Set up Weights & Biases group name
     wandb_group_name = randomname.get_name()
-    # fold_wandb_run: wandb.sdk.wandb_run.Run | RunDisabled | None = None
 
     for i, (train_indices, test_indices) in enumerate(kf.split(x_processed, stratification_key)):
         print_section_separator(f"CV - Fold {i}")
+        logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
+
         if cfg.wandb.enabled:
             setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
-        logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = instantiate(cfg.model.pipeline)

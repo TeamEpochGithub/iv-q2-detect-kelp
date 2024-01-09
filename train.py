@@ -3,9 +3,7 @@ import glob
 import logging
 import os
 import warnings
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import hydra
 import numpy as np
@@ -15,7 +13,7 @@ from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
 import wandb
-from src.config.wandb_config import WandBConfig
+from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
@@ -25,25 +23,6 @@ from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setu
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-
-
-@dataclass
-class TrainConfig:
-    """Schema for the train config yaml file.
-
-    :param model: Model pipeline.
-    :param test_size: Test size.
-    :param raw_data_path: Path to the raw data.
-    :param raw_target_path: Path to the raw target.
-    :param wandb: Whether to log to Weights & Biases and other settings.
-    """
-
-    model: Any
-    test_size: float
-    raw_data_path: str
-    raw_target_path: str
-    wandb: WandBConfig
-
 
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()

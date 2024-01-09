@@ -234,4 +234,6 @@ zipp==3.17.0
 wandb~=0.16.1
 annotated-types~=0.6.0
 randomname~=0.2.1
+open-clip-torch==2.23.0
+sentence-transformers==2.2.2
 -e ./

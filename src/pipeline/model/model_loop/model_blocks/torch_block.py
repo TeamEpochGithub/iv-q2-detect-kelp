@@ -249,7 +249,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info("Loading test images into RAM...")
         X_dataset.create_cache(cache_size)
         logger.info("Done loading test images into RAM - Starting predictions")
-        X_dataloader = DataLoader(X_dataset, batch_size=1, shuffle=False, collate_fn=lambda batch: (batch[0]))
+        X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: batch)
         self.model.eval()
         preds = []
         with torch.no_grad(), tqdm(X_dataloader, unit="batch", disable=False) as tepoch:
@@ -258,7 +258,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 X_batch = X_batch.to(self.device).float()
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
-                preds.append(y_pred)
+                preds.extend(y_pred)
         logger.info("Done predicting")
 
         return np.array(preds)
