@@ -1,13 +1,16 @@
 """TorchBlock class."""
 import copy
-from collections.abc import Callable
-from typing import Any, Self
+from collections.abc import Callable, Iterator
+from typing import Annotated, Any, Self
 
 import dask.array as da
 import numpy as np
 import torch
+import wandb
+from annotated_types import Gt
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
+from torch.nn import Parameter
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
@@ -30,17 +33,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO(Epoch): We dont know if we are gonna use a torch scheduler or timm or smth else
-    # TODO(@Jeffrey): Idk what type a loss function or optimizer is
+    # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Callable[..., Optimizer],
+        optimizer: Callable[[Iterator[Parameter]], Optimizer],
         scheduler: LRScheduler | None,
         criterion: nn.Module,
-        epochs: int = 10,
-        batch_size: int = 32,
-        patience: int = 5,
+        epochs: Annotated[int, Gt(0)] = 10,
+        batch_size: Annotated[int, Gt(0)] = 32,
+        patience: Annotated[int, Gt(0)] = 5,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -68,8 +70,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
+        # Early stopping
+        self.last_val_loss = np.inf
+        self.lowest_val_loss = np.inf
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
-        """Train the model.
+        """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
         :param y: Labels.
@@ -103,38 +109,64 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Setting cache size to -1 will load all samples into memory
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
-        # np.round is there to make sure we dont miss a sample due to int to float conversion
+        # np.round is there to make sure we don't miss a sample due to int to float conversion
         train_dataset = Dask2TorchDataset(X_train, y_train)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         test_dataset = Dask2TorchDataset(X_test, y_test)
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
-        trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        testloader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
         # Train model
         logger.info("Training the model")
-        # TODO(#38): Add early stopping for train full
+
+        train_losses: list[float] = []
+        val_losses: list[float] = []
+
+        if wandb.run:
+            wandb.define_metric("Training/Train Loss", summary="min")
+            wandb.define_metric("Training/Validation Loss", summary="min")
+
+        # TODO(Tolga): Add early stopping for train full
+        # https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/issues/38
         self.lowest_val_loss = np.inf
-        if len(testloader) == 0:
+        if len(test_loader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
+
         for epoch in range(self.epochs):
-            # Train using trainloader
-            train_loss = self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
+            # Train using train_loader
+            train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
+            train_losses.append(train_loss)
 
-            # Validate using testloader if we have validation data
-            if len(testloader) > 0:
-                self.val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
-                logger.debug(f"Epoch {epoch} Valid Loss: {self.val_loss}")
+            if wandb.run:
+                # Log only the train loss in the "Training" section
+                wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-            if len(testloader) > 0:
-                # not train full
+            # Validate using test_loader if we have validation data
+            if len(test_loader) > 0:
+                self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
+                logger.debug(f"Epoch {epoch} Valid Loss: {self.last_val_loss}")
+                val_losses.append(self.last_val_loss)
+
+                if wandb.run:
+                    # Also log the validation loss in the "Training" section
+                    wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
+
+                    # Log both the train and validation loss in a line plot in the "Training" section
+                    wandb.log(
+                        {
+                            "Training/Loss": wandb.plot.line_series(
+                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
+                            )
+                        }
+                    )
+
                 if self.early_stopping():
                     break
-            else:
-                # train full TODO(#38)
+            else:  # Train full TODO(#38)
                 pass
 
         return self
@@ -256,14 +288,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Whether early stopping should be done.
         """
         # Store the best model so far based on validation loss
-        if self.val_loss < self.lowest_val_loss:
-            self.lowest_val_loss = self.val_loss
+        if self.last_val_loss < self.lowest_val_loss:
+            self.lowest_val_loss = self.last_val_loss
             self.best_model = copy.deepcopy(self.model.state_dict())
             self.early_stopping_counter = 0
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
-                logger.info("Loading best model")
+                logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
                 self.model.load_state_dict(self.best_model)
                 return True
         return False

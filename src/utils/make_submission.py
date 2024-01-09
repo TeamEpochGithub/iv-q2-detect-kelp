@@ -11,7 +11,7 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 
 
-def make_submission(path: str, predictions: np.ndarray[Any, Any], filenames: list[str], threshold: float = 0.5) -> None:
+def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: list[str], threshold: float = 0.5) -> None:
     """Create a submission file of the predictions (store single-band TIF files with predictions of each image in test_predictions).
 
     :param path: Path to the submission folder
@@ -22,7 +22,8 @@ def make_submission(path: str, predictions: np.ndarray[Any, Any], filenames: lis
     print_section_separator("Making submission")
     logger.info("Creating submission.zip")
     # Create a submission file of the predictions (store single-band TIF files with predictions of each image in test_predictions)
-    loc = path + "/test_predictions/"
+    loc: str = (path / "test_predictions").as_posix()
+
     # Create the dir
     if not os.path.exists(loc):
         os.makedirs(loc)
