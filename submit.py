@@ -73,7 +73,7 @@ def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig inst
     predictions = model_pipeline.transform(X)
 
     # Make submission
-    make_submission(output_dir, predictions, filenames, threshold=0.5)
+    make_submission(output_dir, predictions, filenames, threshold=0.25)
 
 
 if __name__ == "__main__":
