@@ -1,13 +1,19 @@
 """Common functions used at the start of the main scripts train.py, cv.py, and submit.py."""
 import os
+import re
+from collections.abc import Callable
+from pathlib import Path
+from typing import cast
 
 import dask.array
+import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.pipeline import Pipeline
 from sklearn.utils import estimator_html_repr
+from wandb.sdk.lib import RunDisabled
 
 from src.logging_utils.logger import logger
 
@@ -23,11 +29,11 @@ def setup_config(cfg: DictConfig) -> None:
         raise ValueError(f"Missing keys in config file\n{missing}")
 
 
-def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None) -> Pipeline:
+def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> Pipeline:
     """Instantiate the pipeline and log it to HTML.
 
     :param pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
-    :param log_dir: The directory to save the pipeline to.
+    :param output_dir: The directory to save the pipeline to.
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
@@ -40,7 +46,7 @@ def setup_pipeline(pipeline_cfg: DictConfig, log_dir: str, is_train: bool | None
     logger.info("Saving pipeline to HTML")
     set_config(display="diagram")
     pipeline_html = estimator_html_repr(model_pipeline)
-    with open(f"{log_dir}/pipeline.html", "w", encoding="utf-8") as f:
+    with open(output_dir / "pipeline.html", "w", encoding="utf-8") as f:
         f.write(pipeline_html)
 
     return model_pipeline
@@ -70,6 +76,53 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.info(f"Processed data shape: {x_processed.shape}")
 
     return X, y, x_processed
+
+
+def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
+    """Initialize Weights & Biases and log the config and code.
+
+    :param cfg: The config object. Created with Hydra or OmegaConf.
+    :param job_type: The type of job, e.g. Training, CV, etc.
+    :param output_dir: The directory to the Hydra outputs.
+    :param name: The name of the run.
+    :param group: The namer of the group of the run.
+    """
+    logger.debug("Initializing Weights & Biases")
+    run = wandb.init(
+        project="detect-kelp",
+        name=name,
+        group=group,
+        job_type=job_type,
+        tags=cfg.wandb.tags,
+        notes=cfg.wandb.notes,
+        settings=wandb.Settings(start_method="thread", code_dir="."),
+        dir=output_dir,
+        reinit=True,
+    )
+
+    if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
+        raise RuntimeError("Failed to initialize Weights & Biases")
+
+    wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+
+    if cfg.wandb.log_config:
+        logger.debug("Uploading config files to Weights & Biases")
+        # Store the config as an artefact of W&B
+        artifact = wandb.Artifact(job_type + "_config", type="config")
+        config_path = output_dir / ".hydra/config.yaml"
+        artifact.add_file(str(config_path), job_type + ".yaml")
+        wandb.log_artifact(artifact)
+
+    if cfg.wandb.log_code.enabled:
+        logger.debug("Uploading code files to Weights & Biases")
+
+        run.log_code(
+            root=".",
+            exclude_fn=cast(Callable[[str, str], bool], lambda abs_path, root: re.match(cfg.wandb.log_code.exclude, Path(abs_path).relative_to(root).as_posix()) is not None),
+        )
+
+    logger.info("Done initializing Weights & Biases")
+    return run
 
 
 def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, list[str]]:

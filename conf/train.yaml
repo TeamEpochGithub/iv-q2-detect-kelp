@@ -1,7 +1,8 @@
 defaults:
   - base_train
   - hydra/logging
-  - model: FUnet
+  - model: conv2d
+  - wandb: train
 
 raw_data_path: data/raw/train_satellite
 raw_target_path: data/raw/train_kelp
