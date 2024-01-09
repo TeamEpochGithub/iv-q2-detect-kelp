@@ -254,7 +254,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
-                logger.info("Loading best model")
+                logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
                 self.model.load_state_dict(self.best_model)
                 return True
         return False
