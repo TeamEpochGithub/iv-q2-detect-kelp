@@ -6,6 +6,7 @@ import dask.array as da
 from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
+from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
 
 
@@ -44,10 +45,25 @@ class ColumnPipeline(Pipeline):
         :param fit_params: Fit parameters
         :return: Fitted and transformed data
         """
+        logger.info("Preprocessing of transformations complete")
+        print_section_separator("Preprocessing - Columns")
         logger.info("Fitting column pipeline")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
         logger.info(f"Fitted column pipeline in {time.time() - start_time} seconds")
+        return X
+
+    def transform(self, X: da.Array) -> da.Array:
+        """Transform the data.
+
+        :param X: Data to transform
+        :return: Transformed data
+        """
+        print_section_separator("Preprocessing - Columns")
+        logger.info("Transforming column pipeline")
+        start_time = time.time()
+        X = super().transform(X)
+        logger.info(f"Transform of columns complete in {time.time() - start_time} seconds")
         return X
 
     def __repr__(self) -> str:

@@ -26,7 +26,7 @@ def hash_scaler(cfg: DictConfig) -> str | None:
     # Check if scaler is in the config, if not we return None
     pretrain = cfg.get("model", {}).get("pipeline", {}).get("model_loop_pipeline", {}).get("pretrain_pipeline")
     has_pretrain = pretrain is not None
-    has_scaler = False if not has_pretrain else pretrain.get("scaler") is not None
+    has_scaler = False if not has_pretrain else next(iter(pretrain.steps)).get("scaler") is not None
     if has_scaler:
         scaler_hash = hash(
             str(cfg["model"]["pipeline"]["model_loop_pipeline"]["pretrain_pipeline"]) + str(cfg["model"]["pipeline"]["feature_pipeline"]) + str(cfg["test_size"])

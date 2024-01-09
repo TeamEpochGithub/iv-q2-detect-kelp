@@ -14,6 +14,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.logging_utils.logger import logger
+from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
 
@@ -78,6 +79,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Fitted model.
         """
         # TODO(Epoch): Add scheduler to the loop if it is not none
+        # Train the model with self.model named model, print model name to print_section_separator
+        # Print the model name to print_section_separator
+        print_section_separator(f"Training model: {self.model.__class__.__name__}")
+        logger.debug(f"Training model: {self.model.__class__.__name__}")
 
         train_indices.sort()
         test_indices.sort()
@@ -116,11 +121,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
         for epoch in range(self.epochs):
             # Train using trainloader
-            self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
+            train_loss = self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
+            logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
 
             # Validate using testloader if we have validation data
             if len(testloader) > 0:
                 self.val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
+                logger.debug(f"Epoch {epoch} Valid Loss: {self.val_loss}")
 
             if len(testloader) > 0:
                 # not train full
@@ -213,6 +220,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
+        print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
+        logger.debug(f"Training model: {self.model.__class__.__name__}")
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
         logger.info("Loading test images into RAM...")

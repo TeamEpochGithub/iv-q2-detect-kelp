@@ -1,5 +1,6 @@
 """Common functions used at the start of the main scripts train.py, cv.py, and submit.py."""
 import os
+import sys
 
 import dask.array
 from dask_image.imread import imread
@@ -62,13 +63,17 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.info(f"Raw target shape: {y.shape}")
 
     # Lazily process the features to know the shape in advance
-    # Suppress logger messages while getting the indices to avoid clutter in the log file
+    # Suppress logger and print messages while getting the indices to avoid clutter in the log file
     logger.info("Finding shape of processed data")
     logger.setLevel("ERROR")
+    with open(os.devnull, "w") as null_file:
+        sys.stdout = null_file
+
     x_processed = feature_pipeline.fit_transform(X)
+
+    sys.stdout = sys.__stdout__
     logger.setLevel("INFO")
     logger.info(f"Processed data shape: {x_processed.shape}")
-
     return X, y, x_processed
 
 
@@ -89,7 +94,10 @@ def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.ar
     # Suppress logger messages while getting the indices to avoid clutter in the log file
     logger.info("Finding shape of processed data")
     logger.setLevel("ERROR")
+    with open(os.devnull, "w") as null_file:
+        sys.stdout = null_file
     x_processed = feature_pipeline.transform(X)
+    sys.stdout = sys.__stdout__
     logger.setLevel("INFO")
     logger.info(f"Processed data shape: {x_processed.shape}")
 
