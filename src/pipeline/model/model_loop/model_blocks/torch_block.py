@@ -6,6 +6,7 @@ from typing import Annotated, Any, Self
 import dask.array as da
 import numpy as np
 import torch
+import wandb
 from annotated_types import Gt
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
@@ -15,7 +16,6 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
