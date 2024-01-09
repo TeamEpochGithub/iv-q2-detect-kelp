@@ -12,7 +12,7 @@ from src.pipeline.model.model import ModelPipeline
 class EnsemblePipeline(Pipeline):
     """EnsemblePipeline is the class used to create the ensemble pipeline."""
 
-    models: list[ModelPipeline] = field(default_factory=list)
+    models: dict[str, ModelPipeline] = field(default_factory=dict)
     weights: list[float] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -30,8 +30,8 @@ class EnsemblePipeline(Pipeline):
         steps = []
 
         # Loop through models and add them to the pipeline
-        for model in self.models:
-            steps.append((str(model), model))
+        for (name, model) in self.models.items():
+            steps.append((name, model))
 
         return steps
 
@@ -52,7 +52,7 @@ class EnsemblePipeline(Pipeline):
         :return: The predicted target
         """
         predictions = None
-        for i, model in enumerate(self.models):
+        for i, (name, model) in enumerate(self.models.items()):
             if predictions is None:
                 predictions = model.transform(X) * self.weights[i]
             else:

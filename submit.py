@@ -80,17 +80,20 @@ def run_submit(cfg: DictConfig) -> None:
         feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
     elif "ensemble" in cfg:
         # Take first feature pipeline from ensemble TODO
-        feature_pipeline = model_pipeline.models["0"].named_steps.feature_pipeline_step
+        model1 = next(iter(model_pipeline.models.values()))
+        feature_pipeline = model1.named_steps.feature_pipeline_step
     X, _, filenames = setup_test_data(cfg.raw_data_path, feature_pipeline)
 
     # Load the model from the model hashes
+    
+    model_keys = list(model_pipeline.models.keys())
     for i, model_hash in enumerate(model_hashes):
-        next(iter(model_pipeline.models[str(i)].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(model_hash)
+        next(iter(model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(model_hash)
 
     # Load the scalers from the scaler hashes
     for i, scaler_hash in enumerate(scaler_hashes):
         if scaler_hash is not None:
-            model_pipeline.models[str(i)].named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.load_scaler(scaler_hash)
+            model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.load_scaler(scaler_hash)
 
     # Predict on the test data
     predictions = model_pipeline.transform(X)
