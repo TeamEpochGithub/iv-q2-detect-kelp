@@ -1,7 +1,8 @@
 """TorchBlock class."""
 import copy
+import sys
 from collections.abc import Callable, Iterator
-from typing import Annotated, Any, Self
+from typing import Annotated, Any
 
 import dask.array as da
 import numpy as np
@@ -18,6 +19,11 @@ from tqdm import tqdm
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 class TorchBlock(BaseEstimator, TransformerMixin):
