@@ -38,14 +38,26 @@ class EnsemblePipeline(Pipeline):
 
         return steps
 
-    def fit(self, X: da.Array, y: da.Array) -> Self:
+    def fit(
+        self,
+        X: da.Array,
+        y: da.Array,
+        train_indices: list[int] | None = None,
+        test_indices: list[int] | None = None,
+        cache_size: int = -1,
+        model_hashes: list[str] | None = None,
+    ) -> Self:
         """Fit the model.
 
         :param X: The input data
         :param y: The target data
+        :param train_indices: The train indices
+        :param test_indices: The test indices
+        :param cache_size: The cache size
+        :param model_hashes: The model hashes
         """
-        for model in self.models.values():
-            model.fit(X, y)
+        for i, model in enumerate(self.models.values()):
+            model.fit(X, y, train_indices=train_indices, test_indices=test_indices, cache_size=cache_size, model_hashes=[model_hashes[i]] if model_hashes else None)
         return self
 
     def predict(self, X: da.Array) -> np.ndarray[Any, Any]:
@@ -85,3 +97,19 @@ class EnsemblePipeline(Pipeline):
         """
         for i, model in enumerate(self.models.values()):
             model.load_scaler([scaler_hashes[i]])
+
+    def save_model(self, model_hashes: list[str]) -> None:
+        """Save the model to the model hash.
+
+        :param model_hash: The model hash
+        """
+        for i, model in enumerate(self.models.values()):
+            model.save_model([model_hashes[i]])
+
+    def save_scaler(self, scaler_hashes: list[str]) -> None:
+        """Save the scaler to the scaler hash.
+
+        :param scaler_hash: The scaler hash
+        """
+        for i, model in enumerate(self.models.values()):
+            model.save_scaler([scaler_hashes[i]])

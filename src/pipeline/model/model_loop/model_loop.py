@@ -52,3 +52,19 @@ class ModelLoopPipeline(Pipeline):
         """
         if self.pretrain_pipeline:
             self.pretrain_pipeline.load_scaler(scaler_hash)
+
+    def save_model(self, model_hash: str) -> None:
+        """Save the model to the model hash.
+
+        :param model_hash: The model hash
+        """
+        if self.model_blocks_pipeline:
+            self.model_blocks_pipeline.save_model(model_hash)
+
+    def save_scaler(self, scaler_hash: str) -> None:
+        """Save the scaler to the scaler hash.
+
+        :param scaler_hash: The scaler hash
+        """
+        if self.pretrain_pipeline:
+            self.pretrain_pipeline.save_scaler(scaler_hash)

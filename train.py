@@ -1,6 +1,4 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
-import glob
-import logging
 import os
 import warnings
 from pathlib import Path
@@ -16,8 +14,7 @@ from sklearn.model_selection import train_test_split
 from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.flatten_dict import flatten_dict
-from src.utils.hashing import hash_model, hash_scaler
+from src.utils.script.hash_check import check_hash_train
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -45,27 +42,15 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     if cfg.wandb.enabled:
         setup_wandb(cfg, "Training", output_dir)
 
-    # Hash representation of model pipeline only based on model and test size
-    model_hash = hash_model(cfg)
-
-    # Hash representation of scaler based on pretrain, feature_pipeline and test_size
-    scaler_hash = hash_scaler(cfg)
-
-    # Check if model is cached already, if so do not call fit.
-    # This is done to avoid retraining the model if it is already cached.
-    if glob.glob(f"tm/{model_hash}.pt"):
-        logger.info(f"Trained model already cached at tm/{model_hash}.pt, skipping training")
-        return
-    if scaler_hash is None:
-        logging.warning("No scaler found in config, training without scaler")
+    # Check hashes train
+    model_hashes, scaler_hashes = check_hash_train(cfg)
 
     # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model, output_dir, is_train=True)
+    model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
-    feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
-    X, y, x_processed = setup_train_data(cfg.raw_data_path, cfg.raw_target_path, feature_pipeline)
-    indices = np.arange(x_processed.shape[0])
+    X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
+    indices = np.arange(X.shape[0])
 
     # Split indices into train and test
     if cfg.test_size == 0:
@@ -77,32 +62,22 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     # Set train and test indices for each model block
     # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
     # Then we convert it to a flat dictionary with __ as the separator between each level
+
     fit_params = {
-        "model_loop_pipeline_step": {
-            "model_blocks_pipeline_step": {
-                name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": -1}
-                for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
-            },
-        }
+        "train_indices": train_indices,
+        "test_indices": test_indices,
+        "cache_size": cfg.cache_size,
+        "model_hashes": model_hashes,
     }
 
-    # Add pretrain indices if it exists. Stupid mypy doesn't understand hasattr
-    if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step"):
-        fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {"train_indices": train_indices}  # type: ignore[dict-item]
-
-    fit_params_flat = flatten_dict(fit_params)
-
     # Fit the pipeline
-    model_pipeline.fit(X, y, **fit_params_flat)
-    # Get the model and scaler
-    model = next(iter(model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values()))
-    # Save the model
-    model.save_model(model_hash)
+    model_pipeline.fit(X, y, **fit_params)
 
-    # Get the ScalerBlock if it exists
-    if scaler_hash is not None:
-        scaler = model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step
-        scaler.save_scaler(scaler_hash)
+    # Save the model
+    model_pipeline.save_model(model_hashes)
+
+    # Save the scaler
+    model_pipeline.save_scaler(scaler_hashes)
 
     if wandb.run:
         wandb.finish()

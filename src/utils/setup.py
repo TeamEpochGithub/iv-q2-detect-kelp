@@ -11,7 +11,6 @@ from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
-from sklearn.pipeline import Pipeline
 from sklearn.utils import estimator_html_repr
 from wandb.sdk.lib import RunDisabled
 
@@ -77,7 +76,7 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     return model_pipeline
 
 
-def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, dask.array.Array]:
+def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array, dask.array.Array]:
     """Lazily read the raw data with dask, and find the shape after processing.
 
     :param data_path: Path to the raw data.
@@ -92,15 +91,7 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.info(f"Raw data shape: {X.shape}")
     logger.info(f"Raw target shape: {y.shape}")
 
-    # Lazily process the features to know the shape in advance
-    # Suppress logger messages while getting the indices to avoid clutter in the log file
-    logger.info("Finding shape of processed data")
-    logger.setLevel("ERROR")
-    x_processed = feature_pipeline.fit_transform(X)
-    logger.setLevel("INFO")
-    logger.info(f"Processed data shape: {x_processed.shape}")
-
-    return X, y, x_processed
+    return X, y
 
 
 def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
@@ -128,7 +119,7 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    wandb.config = OmegaConf.to_container(cfg, resolve=True)
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")

@@ -37,3 +37,12 @@ class PretrainPipeline(Pipeline):
         for step in self.steps:
             if hasattr(step, "load_scaler"):
                 step.load_scaler(scaler_hash)
+
+    def save_scaler(self, scaler_hash: str) -> None:
+        """Save the scaler to the scaler hash.
+
+        :param scaler_hash: The scaler hash
+        """
+        for step in self.steps:
+            if hasattr(step, "save_scaler"):
+                step.save_scaler(scaler_hash)
