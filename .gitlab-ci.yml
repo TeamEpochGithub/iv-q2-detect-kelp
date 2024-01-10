@@ -27,7 +27,7 @@ pre-commit_py3.10:
 
 pre-commit_py3.11:
   stage: lint
-  image: python:3.11.7
+  image: python:3.11.7-windowsservercore-1809
   script:
     - pre-commit run --all-files
   allow_failure: true
