@@ -1,7 +1,6 @@
 """A piepline step that divides the data by a number."""
-from dataclasses import dataclass
-from typing import Self
 import sys
+from dataclasses import dataclass
 
 import dask.array as da
 import numpy as np

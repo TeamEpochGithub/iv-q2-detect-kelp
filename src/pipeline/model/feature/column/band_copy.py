@@ -2,7 +2,6 @@
 import sys
 import time
 from dataclasses import dataclass
-from typing import Self
 
 import dask
 import dask.array as da

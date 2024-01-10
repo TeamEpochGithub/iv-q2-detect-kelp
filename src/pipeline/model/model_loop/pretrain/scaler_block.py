@@ -1,8 +1,7 @@
 """Scaler block to fit and transform the data."""
 
-from dataclasses import dataclass
-from typing import Self
 import sys
+from dataclasses import dataclass
 
 import dask
 import dask.array as da
@@ -56,8 +55,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
 
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
         # ignores type error because this is literally the example from the dask docs
-        # type: ignore[arg-type]
-        with dask.config.set(**{"array.slicing.split_large_chunks": False}):
+        with dask.config.set(**{"array.slicing.split_large_chunks": False}):  # type: ignore[arg-type]
             # Reshape the data to 2D
             # Flatten and rechunk all the data so all pixels per channels are a single row
             # The shape is (C, N*H*W) after reshaping
