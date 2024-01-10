@@ -26,6 +26,7 @@ pre-commit_py3.10:
   stage: lint
   image: python:3.10.13
   script:
+    - pip install pre-commit
     - pre-commit run --all-files
   allow_failure: true
 
@@ -33,11 +34,13 @@ pre-commit_py3.11:
   stage: lint
   image: python:3.11.7
   script:
+    - pip install pre-commit
     - pre-commit run --all-files
   allow_failure: true
 
 sphinx_py3.10:
   stage: docs
+  needs: []
   image: python:3.10.13
   script:
     - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
@@ -50,6 +53,7 @@ sphinx_py3.10:
 
 sphinx_py3.11:
   stage: docs
+  needs: []
   image: python:3.11.7
   script:
     - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
@@ -62,6 +66,7 @@ sphinx_py3.11:
 
 pages:
   stage: deploy
+  needs: [sphinx_py3.11]
   script:
     - mv docs/_build/html public
   artifacts:
