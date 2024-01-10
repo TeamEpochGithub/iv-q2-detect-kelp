@@ -1,11 +1,14 @@
 """Model loop pipeline."""
 
+from dataclasses import dataclass
+
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.model_loop.model_blocks.model_blocks import ModelBlocksPipeline
 from src.pipeline.model.model_loop.pretrain.pretrain import PretrainPipeline
 
 
+@dataclass
 class ModelLoopPipeline(Pipeline):
     """Model loop pipeline.
 
@@ -13,14 +16,11 @@ class ModelLoopPipeline(Pipeline):
     :param model_blocks_pipeline: Model blocks pipeline.
     """
 
-    def __init__(self, pretrain_pipeline: PretrainPipeline | None, model_blocks_pipeline: ModelBlocksPipeline | None) -> None:
-        """Model loop pipeline.
+    pretrain_pipeline: PretrainPipeline | None = None
+    model_blocks_pipeline: ModelBlocksPipeline | None = None
 
-        :param pretrain_pipeline: Pretrain pipeline.
-        :param model_blocks_pipeline: Model blocks pipeline.
-        """
-        self.pretrain_pipeline = pretrain_pipeline
-        self.model_blocks_pipeline = model_blocks_pipeline
+    def __post_init__(self) -> None:
+        """Post init function."""
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:

@@ -1,32 +1,21 @@
 """PostProcessingPipeline class."""
-from sklearn.base import BaseEstimator
+from dataclasses import dataclass
+
 from sklearn.pipeline import Pipeline
 
 
+@dataclass
 class PostProcessingPipeline(Pipeline):
     """PostProcessingPipeline is the class used to create the post processing pipeline."""
 
-    def __init__(self) -> None:
-        """Initialize the class."""
-        # TODO(Epoch): Create post processing pipeline
+    def __post_init__(self) -> None:
+        """Post init function."""
+        super().__init__(self._get_steps())
 
-    def get_pipeline(self) -> Pipeline | None:
-        """Get_pipeline returns the post processing pipeline.
+    def _get_steps(self) -> list[tuple[str, Pipeline]]:
+        """Get the pipeline steps.
 
-        :return: Pipeline object
+        :return: list of steps
         """
-        steps: list[tuple[str, BaseEstimator | Pipeline]] = []
-
-        # TODO(Epoch): Add steps to pipeline
-
-        if steps:
-            return Pipeline(steps=steps)
-
-        return None
-
-    def __str__(self) -> str:
-        """Overridden __str__ returns string representation of the class.
-
-        :return: String representation of the class
-        """
-        return "PostProcessingPipeline"
+        # TODO(Jasper): Implement post processing pipeline steps
+        return []

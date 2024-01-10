@@ -1,6 +1,7 @@
 """TorchBlock class."""
 import copy
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from typing import Annotated, Any, Self
 
 import dask.array as da
@@ -20,6 +21,7 @@ from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
 
+@dataclass
 class TorchBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
 
@@ -32,37 +34,18 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
-    def __init__(
-        self,
-        model: nn.Module,
-        optimizer: Callable[[Iterator[Parameter]], Optimizer],
-        scheduler: LRScheduler | None,
-        criterion: nn.Module,
-        epochs: Annotated[int, Gt(0)] = 10,
-        batch_size: Annotated[int, Gt(0)] = 32,
-        patience: Annotated[int, Gt(0)] = 5,
-    ) -> None:
-        """Initialize the TorchBlock.
+    model: nn.Module
+    optimizer: Callable[[Iterator[Parameter]], Optimizer]
+    scheduler: LRScheduler | None
+    criterion: nn.Module
+    epochs: Annotated[int, Gt(0)] = 10
+    batch_size: Annotated[int, Gt(0)] = 32
+    patience: Annotated[int, Gt(0)] = 5
 
-        :param model: Model to train.
-        :param optimizer: Optimizer. As partial function call so that model.parameters() can still be added.
-        :param scheduler: Scheduler.
-        :param criterion: Loss function.
-        :param epochs: Number of epochs.
-        :param batch_size: Batch size.
-        :param patience: Patience for early stopping.
-
-        """
-        self.model = model
-        self.optimizer = optimizer(model.parameters())
-        self.criterion = criterion
-        self.scheduler = scheduler
-
-        # Save model related parameters (Done here so hash changes based on num epochs)
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.patience = patience
+    def __post_init__(self) -> None:
+        """Post init function."""
+        # Set the optimizer
+        self.initialized_optimizer = self.optimizer(self.model.parameters())
 
         # Set the device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -183,9 +166,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             loss = self.criterion(y_pred, y_batch)
 
             # Backward pass
-            self.optimizer.zero_grad()
+            self.initialized_optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            self.initialized_optimizer.step()
 
             # Print tqdm
             losses.append(loss.item())
@@ -289,10 +272,3 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 self.model.load_state_dict(self.best_model)
                 return True
         return False
-
-    def __str__(self) -> str:
-        """Return the model as a string.
-
-        :return: The model as a string.
-        """
-        return str(self.model)

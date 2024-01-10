@@ -1,21 +1,22 @@
 """Model blocks pipeline."""
+from dataclasses import dataclass
+
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.model_loop.model_blocks.torch_block import TorchBlock
 
 
+@dataclass
 class ModelBlocksPipeline(Pipeline):
     """ModelBlocksPipeline class is used to create the model blocks pipeline.
 
     :param model_blocks: list of model blocks
     """
 
-    def __init__(self, model_blocks: list[TorchBlock]) -> None:
-        """Initialize the ModelBlocksPipeline.
+    model_blocks: list[TorchBlock]
 
-        :param model_blocks: list of model blocks
-        """
-        self.model_blocks = model_blocks
+    def __post_init__(self) -> None:
+        """Post init function."""
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, TorchBlock]]:
