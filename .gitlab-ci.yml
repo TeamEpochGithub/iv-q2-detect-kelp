@@ -1,0 +1,53 @@
+stages:
+  - pre-commit
+  - deploy
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    - venv/
+
+
+
+before_script:
+  - python --version  # For debugging
+  - pip install virtualenv
+  - virtualenv venv
+  - source venv/bin/activate
+  - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+
+pre-commit_3.10:
+  stage: pre-commit
+  image: python:3.10.13
+  script:
+    - pre-commit run --all-files
+  allow_failure: true
+
+pre-commit_3.11:
+  stage: pre-commit
+  image: python:3.11.7
+  script:
+    - pre-commit run --all-files
+  allow_failure: true
+
+sphinx_3.10:
+  stage: deploy
+  image: python:3.10.13
+  script:
+    - cd docs
+    - make html
+  allow_failure: true
+
+sphinx_3.11:
+  stage: deploy
+  image: python:3.11.7
+  script:
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+  allow_failure: true
