@@ -70,7 +70,7 @@ pipeline:
             _target_: src.pipeline.model.architectures.padded_model.PaddedModel
             padding: 0
             model: # from segmentation_models_pytorch import Unet
-              _target_: segmentation_models_pytorch.VGG11
+              _target_: segmentation_models_pytorch.Unet
               encoder_name: resnet34
               in_channels: 11
               classes: 1
