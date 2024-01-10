@@ -1,5 +1,3 @@
-default_language_version:
-    python: python3.10
 exclude: ^(external/|venv/|tests/|notebooks/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -58,4 +56,4 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=venv/Scripts/python.exe]
+        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=./venv/Scripts/python.exe]

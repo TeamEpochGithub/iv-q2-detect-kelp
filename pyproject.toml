@@ -109,7 +109,7 @@ dependencies = [
 exclude = ["external/", "venv/"]
 allow_untyped_calls = true
 disable_error_code = ["import-untyped"]
-python-version = "3.10"
+python-version = "3.10.13"
 
 [tool.ruff]
 extend-exclude = ["external/*"]
