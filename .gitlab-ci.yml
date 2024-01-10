@@ -11,10 +11,10 @@ stages:
 #    - .cache/pip
 #    - venv/
 
-#workflow:
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
 
 #before_script:
 #  - pip install virtualenv
@@ -72,5 +72,6 @@ pages:
   artifacts:
     paths:
       - public
-#  only:
-#    - main
+  allow_failure: true
+  only:
+    - main

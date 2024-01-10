@@ -26,13 +26,6 @@ repos:
       - id: python-check-mock-methods
       - id: python-no-log-warn
       - id: python-use-type-annotations
-#  - repo: https://gitlab.com/devopshq/gitlab-ci-linter
-#    rev: v1.0.6
-#    hooks:
-#      - id: gitlab-ci-linter
-#        args:
-#          - '--server'
-#          - 'https://gitlab.ewi.tudelft.nl'
   - repo: https://github.com/jackdewinter/pymarkdown
     rev: v0.9.15
     hooks:
