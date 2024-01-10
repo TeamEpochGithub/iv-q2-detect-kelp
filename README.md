@@ -7,7 +7,7 @@ This is Team Epoch's solution to the [Kelp Wanted: Segmenting Kelp Forests](http
 Install the required packages using:
 
 ```shell
-pip install -r requirements.txt
+pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
 ```
 
 ## Quality Checks

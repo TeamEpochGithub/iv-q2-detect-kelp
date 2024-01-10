@@ -14,13 +14,16 @@ from pygit2 import Repository  # type: ignore[import-untyped, import-not-found]
 # TODO(Jeffrey): Replace this with GitHub URL later
 REPO_URL: Final[str] = f"https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/blob/{Repository('.').head.shorthand}/"
 
-sys.path.insert(0, str(Path("../..").resolve()))
+sys.path.insert(0, Path("../..").resolve().as_posix())
 
 project: Final[str] = "Detect Kelp"
 copyright: Final[str] = "2024, Team Epoch."
 author: Final[str] = "Team Epoch"
 
-source_suffix: Final[dict[str, str]] = {".rst": "restructuredtext"}
+source_suffix: Final[dict[str, str]] = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 root_doc: Final[str] = "index"
 
 extensions: Final[list[str]] = [

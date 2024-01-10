@@ -18,6 +18,7 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
 from src.utils.hashing import hash_model, hash_scaler
+from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -33,6 +34,7 @@ cs.store(name="base_train", node=TrainConfig)
 def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States - Training")
+    set_torch_seed()
 
     import coloredlogs
 

@@ -1,12 +1,17 @@
 """Block to compute the difference of two bands after ofsetting. See src/pipeline/model/feature/column/offset.py for more details."""
+import sys
 from dataclasses import dataclass
-from typing import Self
 
 import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.pipeline.model.feature.column.offset import compute_offset
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 @dataclass

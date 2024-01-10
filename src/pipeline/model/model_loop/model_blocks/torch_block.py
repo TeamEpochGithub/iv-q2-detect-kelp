@@ -1,8 +1,10 @@
 """TorchBlock class."""
 import copy
+import sys
 from collections.abc import Callable, Iterator
-from typing import Annotated, Any, Self
+from typing import Annotated, Any
 
+import albumentations
 import dask.array as da
 import numpy as np
 import torch
@@ -19,6 +21,11 @@ from tqdm import tqdm
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 class TorchBlock(BaseEstimator, TransformerMixin):
@@ -43,6 +50,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         epochs: Annotated[int, Gt(0)] = 10,
         batch_size: Annotated[int, Gt(0)] = 32,
         patience: Annotated[int, Gt(0)] = 5,
+        transformations: albumentations.Compose = None,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -59,6 +67,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.optimizer = optimizer(model.parameters())
         self.criterion = criterion
         self.scheduler = scheduler
+        self.transforms = transformations
 
         # Save model related parameters (Done here so hash changes based on num epochs)
         self.epochs = epochs
@@ -109,10 +118,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Setting cache size to -1 will load all samples into memory
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
-        # np.round is there to make sure we don't miss a sample due to int to float conversion
-        train_dataset = Dask2TorchDataset(X_train, y_train)
+        # np.round is there to make sure we dont miss a sample due to int to float conversion
+        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transforms)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
-        test_dataset = Dask2TorchDataset(X_test, y_test)
+        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transforms)
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
