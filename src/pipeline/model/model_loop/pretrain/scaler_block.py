@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Self
+import sys
 
 import dask
 import dask.array as da
@@ -9,6 +10,11 @@ import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 @dataclass

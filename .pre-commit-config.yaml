@@ -1,5 +1,3 @@
-default_language_version:
-    python: python3.11
 exclude: ^(external/|venv/|tests/|notebooks/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -29,10 +27,6 @@ repos:
       - id: python-check-mock-methods
       - id: python-no-log-warn
       - id: python-use-type-annotations
-  - repo: https://gitlab.com/devopshq/gitlab-ci-linter
-    rev: v1.0.6
-    hooks:
-      - id: gitlab-ci-linter
   - repo: https://github.com/jackdewinter/pymarkdown
     rev: v0.9.15
     hooks:

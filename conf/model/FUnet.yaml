@@ -5,7 +5,6 @@ defaults:
 pipeline:
   feature_pipeline:
     processed_path: data/processed
-    is_train: "MISSING"
     transformation_pipeline:
     column_pipeline:
       columns:
@@ -73,8 +72,9 @@ pipeline:
             model: # from segmentation_models_pytorch import Unet
               _target_: segmentation_models_pytorch.Unet
               encoder_name: resnet34
-              in_channels: 8
+              in_channels: 11
               classes: 1
+              activation: sigmoid
           optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
             _target_: functools.partial
             _args_:
@@ -84,9 +84,13 @@ pipeline:
           scheduler: None
           criterion:
             _target_: src.modules.dice_loss.DiceLoss
-          epochs: 29
+          epochs: 1
           batch_size: 64
           patience: 20
-
+          transformations:
+            _target_: albumentations.Compose
+            transforms:
+              - _target_: albumentations.VerticalFlip
+                p: 0.2
   # Post processing pipeline
   post_processing_pipeline:
