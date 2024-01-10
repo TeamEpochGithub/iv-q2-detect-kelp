@@ -292,20 +292,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         return self.predict(X)
 
-    def score(self, X: np.ndarray, y: np.ndarray, scorer: Type[Scorer]) -> float:
-        """Score the model.
-
-        :param X: Input features.
-        :param y: Labels.
-        :param scorer: Scorer to use.
-        :return: Score.
-        """
-        y_pred = self.predict(X)
-        score = scorer(y, y_pred)
-        logger.info(f"Score: {score}")
-        wandb.log({"Score": score})
-        return score
-
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.
 

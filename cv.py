@@ -88,10 +88,13 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
         # Fit the pipeline
         print_section_separator("Preprocessing - Transformations")
-        model_pipeline.fit(X, y, **fit_params_flat)
+        predictions = model_pipeline.fit_transform(X, y, **fit_params_flat)
 
-        # Calculate and log the CV Score to wandb
-        model_pipeline.score(X, y, instantiate(cfg.scorer))
+        # Only get the predictions for the test indices
+        predictions = predictions[test_indices]
+        scorer = instantiate(cfg.scorer)
+
+
 
         if wandb.run is not None:
             wandb.run.finish()
