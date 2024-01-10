@@ -15,7 +15,7 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
-  - cd venv/Scripts
+  - cd venv/
   - ls
 
 pre-commit_py3.10:
@@ -27,7 +27,7 @@ pre-commit_py3.10:
 
 pre-commit_py3.11:
   stage: lint
-  image: python:3.11.7-windowsservercore-1809
+  image: python:3.11.7
   script:
     - pre-commit run --all-files
   allow_failure: true
