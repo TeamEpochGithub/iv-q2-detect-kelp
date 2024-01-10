@@ -56,4 +56,42 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=venv/bin/python]
+        additional_dependencies:
+          - numpy==1.26.2
+          - scikit-learn==1.3.2
+          - scikit-image==0.22.0
+          - scipy==1.11.4
+          - tqdm==4.66.1
+          - polars==0.19.19
+          - imagecodecs==2023.9.18
+          - Pillow==10.1.0
+          - opencv-python==4.9.0.80
+          - tifffile==2023.9.26
+          - seaborn==0.13.0
+          - matplotlib==3.8.2
+          - plotly==5.18.0
+          - torch==2.1.2
+          - torchaudio==2.1.2
+          - torchvision==0.16.2
+          - torch-summary==1.4.5
+          - open-clip-torch==2.23.0
+          - dash==2.14.2
+          - dash-bootstrap-components==1.5.0
+          - dash-bootstrap-templates==1.1.1
+          - rasterio==1.3.9
+          - dask==2023.12.0
+          - dask-glm==0.3.2
+          - dask_image==2023.8.1
+          - dask-ml==2023.3.24
+          - distributed==2023.12.0
+          - fsspec==2023.5.0
+          - segmentation-models-pytorch==0.3.3
+          - catboost==1.2.2
+          - albumentations==1.3.1
+          - typing_extensions==4.9.0
+          - annotated-types==0.6.0
+          - pandas-stubs==2.1.1.230928
+          - hydra-core==1.3.2
+          - wandb==0.16.1
+          - randomname==0.2.1
+        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]

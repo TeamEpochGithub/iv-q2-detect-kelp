@@ -42,7 +42,7 @@ sphinx_py3.10:
       - docs/_build/html
   allow_failure: true
 
-sphinx_py3.11:  # Run Sphinx with Python 3.11
+sphinx_py3.11:
   stage: docs
   image: python:3.11.7
   script:
@@ -55,7 +55,6 @@ sphinx_py3.11:  # Run Sphinx with Python 3.11
 
 pages:
   stage: deploy
-  image: python:3.11.7
   script:
     - mv docs/_build/html public
   artifacts:
