@@ -21,88 +21,88 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     # Machine Learning Basics
-    "numpy==1.26.2",
-    "pandas==2.1.4",
-    "scikit-learn==1.3.2",
-    "scikit-image==0.22.0",
-    "scipy==1.11.4",
-    "tqdm==4.66.1",
-    "polars==0.19.19",
+    "numpy>=1.26.2",
+    "pandas>=2.1.4",
+    "scikit-learn>=1.3.2",
+    "scikit-image>=0.22.0",
+    "scipy>=1.11.4",
+    "tqdm>=4.66.1",
+    "polars>=0.19.19",
 
     # Reading Image Data
-    "imagecodecs==2023.9.18",
-    "Pillow==10.1.0",
-    "opencv-python==4.9.0.80",
-    "tifffile==2023.9.26",
+    "imagecodecs>=2023.9.18",
+    "Pillow>=10.1.0",
+    "opencv-python>=4.9.0.80",
+    "tifffile>=2023.9.26",
 
     # Visualizations
-    "seaborn==0.13.0",
-    "matplotlib==3.8.2",
-    "plotly==5.18.0",
+    "seaborn>=0.13.0",
+    "matplotlib>=3.8.2",
+    "plotly>=5.18.0",
 
     # PyTorch
     "torch==2.1.2+cu118",
     "torchaudio==2.1.2+cu118",
     "torchvision==0.16.2+cu118",
-    "torch-summary==1.4.5",
-    "open-clip-torch==2.23.0",
+    "torch-summary>=1.4.5",
+    "open-clip-torch>=2.23.0",
 
     # Dash
-    "dash==2.14.2",
-    "dash-bootstrap-components==1.5.0",
-    "dash-bootstrap-templates==1.1.1",
-    "rasterio==1.3.9",
+    "dash>=2.14.2",
+    "dash-bootstrap-components>=1.5.0",
+    "dash-bootstrap-templates>=1.1.1",
+    "rasterio>=1.3.9",
 
     # Dask
-    "dask==2023.12.0",
-    "dask-glm==0.3.2",
-    "dask_image==2023.8.1",
-    "dask-ml==2023.3.24",
-    "bokeh==3.3.2",
-    "distributed==2023.12.0",
-    "fsspec==2023.5.0",
+    "dask>=2023.12.0",
+    "dask-glm>=0.3.2",
+    "dask_image>=2023.8.1",
+    "dask-ml>=2023.3.24",
+    "bokeh>=3.3.2",
+    "distributed>=2023.12.0",
+    "fsspec>=2023.5.0",
 
     # Pretrained Models
-    "segmentation-models-pytorch==0.3.3",
-    "catboost==1.2.2",
-    "sentence-transformers==2.2.2",
+    "segmentation-models-pytorch>=0.3.3",
+    "catboost>=1.2.2",
+    "sentence-transformers>=2.2.2",
 
     # Data Augmentation
-    "albumentations==1.3.1",
+    "albumentations>=1.3.1",
 
     # Sphinx
-    "Sphinx==7.2.6",
-    "sphinx-autodoc-typehints==1.25.2",
-    "sphinxawesome-theme==5.0.0",
-    "myst-parser==2.0.0",
-    "pygit2==1.13.3",
+    "Sphinx>=7.2.6",
+    "sphinx-autodoc-typehints>=1.25.2",
+    "sphinxawesome-theme>=5.0.0",
+    "myst-parser>=2.0.0",
+    "pygit2>=1.13.3",
 
     # pre-commit & MyPy
-    "pre-commit==3.6.0",
-    "mypy==1.7.1",
-    "typing_extensions==4.9.0",
-    "annotated-types==0.6.0",
-    "pandas-stubs==2.1.1.230928",
-    "traitlets==5.14.1",
+    "pre-commit>=3.6.0",
+    "mypy>=1.7.1",
+    "typing_extensions>=4.9.0",
+    "annotated-types>=0.6.0",
+    "pandas-stubs>=2.1.1.230928",
+    "traitlets>=5.14.1",
 
     # Hydra
-    "hydra-core==1.3.2",
+    "hydra-core>=1.3.2",
 
     # Weights & Biases
-    "wandb==0.16.1",
-    "randomname==0.2.1",
+    "wandb>=0.16.1",
+    "randomname>=0.2.1",
 
     # Logging
-    "coloredlogs==15.0.1",
+    "coloredlogs>=15.0.1",
 
     # Notebooks
-    "notebook==7.0.6",
-    "jupyter==1.0.0",
-    "ipykernel==6.27.1",
+    "notebook>=7.0.6",
+    "jupyter>=1.0.0",
+    "ipykernel>=6.27.1",
 
     # Other
-    "pyngrok==7.0.3",
-    "zarr==2.16.1",
+    "pyngrok>=7.0.3",
+    "zarr>=2.16.1",
 ]
 
 
