@@ -95,4 +95,5 @@ repos:
           - wandb==0.16.1
           - randomname==0.2.1
           - traitlets==5.14.1
+          - coloredlogs==15.0.1
         args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]
