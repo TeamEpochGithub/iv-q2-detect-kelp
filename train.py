@@ -34,10 +34,6 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States -- Training")
 
-    import coloredlogs
-
-    coloredlogs.install()
-
     # Check for missing keys in the config file
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)

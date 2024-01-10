@@ -32,10 +32,6 @@ def run_submit(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use SubmitConfig inst
     print_section_separator("Q2 Detect Kelp States -- Submit")
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    import coloredlogs
-
-    coloredlogs.install()
-
     # Check for missing keys in the config file
     setup_config(cfg)
 

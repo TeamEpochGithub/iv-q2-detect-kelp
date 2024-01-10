@@ -33,10 +33,6 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     """Do cv on a model pipeline with K fold split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
 
-    import coloredlogs
-
-    coloredlogs.install()
-
     # Check for missing keys in the config file
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
