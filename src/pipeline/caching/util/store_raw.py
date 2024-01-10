@@ -21,15 +21,14 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     # Check if the data path is defined
     if not data_path:
         raise CachePipelineError("data_paths is required to store raw data")
-
     # Check if the data exists on disk
     if os.path.exists(data_path):
         # Check if path has any tif files
         if glob.glob(f"{data_path}/*.tif"):
-            logger.info(f"Data already exists on disk at {data_path}" + " and has tif files")
+            logger.info(f"Loading tif data from {data_path}")
             return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
         if glob.glob(f"{data_path}/*.npy"):
-            logger.info(f"Data already exists on disk at {data_path}" + " and has npy files")
+            logger.info(f"Loading npy data from {data_path}")
             return da.from_npy_stack(data_path).astype(np.float32)
 
     # Check if the dask array is defined
