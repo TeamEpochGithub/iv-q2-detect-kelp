@@ -110,7 +110,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         transfroms = A.Compose(
                 [
-                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5)
+                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
+                    A.RandomBrightnessContrast(p=1),
+                    A.RandomGamma(p=1),
+                    A.HorizontalFlip(p=1),
                 ]
             )
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=transfroms)

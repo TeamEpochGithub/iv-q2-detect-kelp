@@ -67,24 +67,22 @@ class Dask2TorchDataset(Dataset[Any]):
             else:
                 y_arr = self.memY[in_mem_idxs]
 
-            # Apply the transforms with dask.delayed to parallelize it
+            # If they exist, apply the augmentations in a paralleized way using asyncio
             if self.transforms is not None:
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     loop = asyncio.get_event_loop()
                     futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1,2,0), y_arr[i]) for i in range(len(x_arr))]
                     looper = asyncio.gather(*futures)
                 augmentation_results = loop.run_until_complete(looper)
+                # Change the values of x_arr and y_arr to the augmented values
                 for i in range(len(x_arr)):
                     x_arr[i] = augmentation_results[i][0].transpose(2,0,1)
                     y_arr[i] = augmentation_results[i][1]
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
+        
+        # If y doesn't exist it must be for submission and for that we dont want to augment the inference data
         # If y does not exist, return only x
-        # Apply the transforms
-        if self.transforms is not None:
-            for i in range(len(x_arr)):
-                transformed_dict = self.transforms(image=x_arr[i].transpose(1,2,0))
-                x_arr[i] = transformed_dict['image'].transpose(2,0,1)
         return torch.from_numpy(x_arr)
 
     def create_cache(self, size: int) -> None:
