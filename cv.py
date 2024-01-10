@@ -8,7 +8,6 @@ import randomname
 import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
-from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
@@ -40,9 +39,6 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    # Preload the pipeline and save it to HTML
-    model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
-
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
@@ -61,7 +57,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
             setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
-        model_pipeline = instantiate(cfg.model.pipeline)
+        model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
         # Set train and test indices for each model block
         # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary

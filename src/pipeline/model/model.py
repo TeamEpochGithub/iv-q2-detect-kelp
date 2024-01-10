@@ -66,7 +66,7 @@ class ModelPipeline(Pipeline):
         :param scaler_hashes: The scaler hashes
         """
         scaler_hash = scaler_hashes[0]
-        if self.model_loop_pipeline:
+        if self.model_loop_pipeline and scaler_hash:
             self.model_loop_pipeline.load_scaler(scaler_hash)
 
     def save_model(self, model_hashes: list[str]) -> None:
@@ -75,7 +75,7 @@ class ModelPipeline(Pipeline):
         :param model_hash: The model hash
         """
         model_hash = model_hashes[0]
-        if self.model_loop_pipeline and model_hash is not None:
+        if self.model_loop_pipeline and model_hash:
             self.model_loop_pipeline.save_model(model_hash)
 
     def save_scaler(self, scaler_hashes: list[str]) -> None:
