@@ -15,7 +15,7 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
-  - cd venv/
+  - cd venv/bin/
   - ls
 
 pre-commit_py3.10:
