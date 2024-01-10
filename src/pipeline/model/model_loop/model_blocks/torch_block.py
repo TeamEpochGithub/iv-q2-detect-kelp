@@ -19,6 +19,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from src.logging_utils.logger import logger
+from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
@@ -92,7 +93,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
-        # TODO(Jasper): Add scheduler to the loop if it is not none
+        # TODO(Epoch): Add scheduler to the loop if it is not none
+        # Train the model with self.model named model, print model name to print_section_separator
+        # Print the model name to print_section_separator
+        print_section_separator(f"Training model: {self.model.__class__.__name__}")
+        logger.debug(f"Training model: {self.model.__class__.__name__}")
 
         train_indices.sort()
         test_indices.sort()
@@ -141,7 +146,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         for epoch in range(self.epochs):
             # Train using train_loader
-            train_losses.append(self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train"))
+            train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
+            logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
+            train_losses.append(train_loss)
 
             if wandb.run:
                 # Log only the train loss in the "Training" section
@@ -150,6 +157,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             # Validate using test_loader if we have validation data
             if len(test_loader) > 0:
                 self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
+                logger.debug(f"Epoch {epoch} Valid Loss: {self.last_val_loss}")
                 val_losses.append(self.last_val_loss)
 
                 if wandb.run:
@@ -253,6 +261,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
+        print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
+        logger.debug(f"Training model: {self.model.__class__.__name__}")
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
         logger.info("Loading test images into RAM...")
