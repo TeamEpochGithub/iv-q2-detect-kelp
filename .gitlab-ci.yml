@@ -1,5 +1,6 @@
 stages:
   - lint
+  - docs
   - deploy
 
 variables:
@@ -15,8 +16,6 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
-  - cd venv/bin/
-  - ls
 
 pre-commit_py3.10:
   stage: lint
@@ -33,21 +32,32 @@ pre-commit_py3.11:
   allow_failure: true
 
 sphinx_py3.10:
-  stage: deploy
+  stage: docs
   image: python:3.10.13
   script:
     - cd docs
     - make html
+  artifacts:
+    paths:
+      - docs/_build/html
   allow_failure: true
 
-pages:  # Run Sphinx with Python 3.11
-  stage: deploy
+sphinx_py3.11:  # Run Sphinx with Python 3.11
+  stage: docs
   image: python:3.11.7
   script:
     - cd docs
     - make html
-    - mv _build/html ../public
+  artifacts:
+    paths:
+      - docs/_build/html
+  allow_failure: true
+
+pages:
+  stage: deploy
+  image: python:3.11.7
+  script:
+    - mv docs/_build/html public
   artifacts:
     paths:
       - public
-  allow_failure: true
