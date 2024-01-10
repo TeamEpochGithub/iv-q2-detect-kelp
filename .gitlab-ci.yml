@@ -3,24 +3,24 @@ stages:
   - docs
   - deploy
 
-variables:
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+#variables:
+#  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-cache:
-  paths:
-    - .cache/pip
-    - venv/
+#cache:
+#  paths:
+#    - .cache/pip
+#    - venv/
 
 #workflow:
 #  rules:
 #    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 #    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
 
-before_script:
-  - pip install virtualenv
-  - virtualenv venv
-  - source venv/bin/activate
-  - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+#before_script:
+#  - pip install virtualenv
+#  - virtualenv venv
+#  - source venv/bin/activate
+#  - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
 
 pre-commit_py3.10:
   stage: lint
@@ -40,6 +40,7 @@ sphinx_py3.10:
   stage: docs
   image: python:3.10.13
   script:
+    - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
     - cd docs
     - make html
   artifacts:
@@ -51,6 +52,7 @@ sphinx_py3.11:
   stage: docs
   image: python:3.11.7
   script:
+    - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
     - cd docs
     - make html
   artifacts:
