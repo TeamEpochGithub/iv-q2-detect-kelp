@@ -36,3 +36,19 @@ class ModelLoopPipeline(Pipeline):
             steps.append(("model_blocks_pipeline_step", self.model_blocks_pipeline))
 
         return steps
+
+    def load_model(self, model_hash: str) -> None:
+        """Load the model from the model hash.
+
+        :param model_hash: The model hash
+        """
+        if self.model_blocks_pipeline:
+            self.model_blocks_pipeline.load_model(model_hash)
+
+    def load_scaler(self, scaler_hash: str) -> None:
+        """Load the scaler from the scaler hash.
+
+        :param scaler_hash: The scaler hash
+        """
+        if self.pretrain_pipeline:
+            self.pretrain_pipeline.load_scaler(scaler_hash)

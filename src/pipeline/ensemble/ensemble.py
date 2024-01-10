@@ -1,8 +1,9 @@
 """EnsemblePipeline is the class used to create the ensemble pipeline."""
 from dataclasses import dataclass, field
-from typing import Self
+from typing import Any, Self
 
 import dask.array as da
+import numpy as np
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.ensemble.error import EnsemblePipelineError
@@ -47,7 +48,7 @@ class EnsemblePipeline(Pipeline):
             model.fit(X, y)
         return self
 
-    def predict(self, X: da.Array) -> da.Array | None:
+    def predict(self, X: da.Array) -> np.ndarray[Any, Any]:
         """Predict the target for each model and average the predictions by weight.
 
         :param X: The input data
@@ -59,12 +60,28 @@ class EnsemblePipeline(Pipeline):
                 predictions = model.transform(X) * self.weights[i]
             else:
                 predictions = predictions + model.transform(X) * self.weights[i]
-        return predictions
+        return np.array(predictions)
 
-    def transform(self, X: da.Array) -> da.Array | None:
+    def transform(self, X: da.Array) -> np.ndarray[Any, Any]:
         """Transform the input data and return averaged predictions.
 
         :param X: The input data
         :return: The transformed data
         """
         return self.predict(X)
+
+    def load_model(self, model_hashes: list[str]) -> None:
+        """Load the models from the model hashes.
+
+        :param model_hashes: The model hashes
+        """
+        for i, model in enumerate(self.models.values()):
+            model.load_model([model_hashes[i]])
+
+    def load_scaler(self, scaler_hashes: list[str]) -> None:
+        """Load the scalers from the scaler hashes.
+
+        :param scaler_hashes: The scaler hashes
+        """
+        for i, model in enumerate(self.models.values()):
+            model.load_scaler([scaler_hashes[i]])

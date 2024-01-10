@@ -47,16 +47,20 @@ class ModelPipeline(Pipeline):
 
         return steps
 
-    def load_models(self, model_hashes: list[str]) -> None:
+    def load_model(self, model_hashes: list[str]) -> None:
         """Load the models from the model hashes.
 
         :param model_hashes: The model hashes
         """
-        # self.model_loop_pipeline.load_models(model_hashes)
+        model_hash = model_hashes[0]
+        if self.model_loop_pipeline:
+            self.model_loop_pipeline.load_model(model_hash)
 
-    def load_scalers(self, scaler_hashes: list[str | None]) -> None:
+    def load_scaler(self, scaler_hashes: list[str]) -> None:
         """Load the scalers from the scaler hashes.
 
         :param scaler_hashes: The scaler hashes
         """
-        # self.model_loop_pipeline.load_scalers(scaler_hashes)
+        scaler_hash = scaler_hashes[0]
+        if self.model_loop_pipeline:
+            self.model_loop_pipeline.load_scaler(scaler_hash)

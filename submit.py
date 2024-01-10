@@ -51,22 +51,20 @@ def run_submit(cfg: DictConfig) -> None:
     X, filenames = setup_test_data(cfg.raw_data_path)
 
     # Load the model from the model hashes
-    model_keys = list(model_pipeline.models.keys())
-    for i, model_hash in enumerate(model_hashes):
-        next(iter(model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values())).load_model(
-            model_hash
-        )
+    model_pipeline.load_model(model_hashes)
 
-    # Load the scalers from the scaler hashes
-    for i, scaler_hash in enumerate(scaler_hashes):
-        if scaler_hash is not None:
-            model_pipeline.models[model_keys[i]].named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.load_scaler(scaler_hash)
+    # Load the scaler from the scaler hashes
+    model_pipeline.load_scaler(scaler_hashes)
 
     # Predict on the test data
     predictions = model_pipeline.transform(X)
 
     # Make submission
-    make_submission(output_dir, predictions, filenames, threshold=0.25)
+    if predictions is not None:
+        make_submission(output_dir, predictions, filenames, threshold=0.25)
+    else:
+        logger.error("Predictions are None")
+        raise ValueError("Predictions are None")
 
 
 if __name__ == "__main__":

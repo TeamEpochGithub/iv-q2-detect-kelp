@@ -16,6 +16,8 @@ from sklearn.utils import estimator_html_repr
 from wandb.sdk.lib import RunDisabled
 
 from src.logging_utils.logger import logger
+from src.pipeline.ensemble.ensemble import EnsemblePipeline
+from src.pipeline.model.model import ModelPipeline
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -43,7 +45,7 @@ def setup_config(cfg: DictConfig) -> None:
         raise ValueError(f"Missing keys in config: {missing}")
 
 
-def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> Pipeline:
+def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> ModelPipeline | EnsemblePipeline:
     """Instantiate the pipeline and log it to HTML.
 
     :param pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
