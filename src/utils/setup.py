@@ -1,6 +1,7 @@
 """Common functions used at the start of the main scripts train.py, cv.py, and submit.py."""
 import os
 import re
+import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import cast
@@ -68,13 +69,15 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.info(f"Raw target shape: {y.shape}")
 
     # Lazily process the features to know the shape in advance
-    # Suppress logger messages while getting the indices to avoid clutter in the log file
+    # Suppress logger and print messages while getting the indices to avoid clutter in the log file
     logger.info("Finding shape of processed data")
     logger.setLevel("ERROR")
-    x_processed = feature_pipeline.fit_transform(X)
-    logger.setLevel("INFO")
+    with open(os.devnull, "w") as null_file:
+        sys.stdout = null_file
+        x_processed = feature_pipeline.fit_transform(X)
+    sys.stdout = sys.__stdout__
+    logger.setLevel("DEBUG")
     logger.info(f"Processed data shape: {x_processed.shape}")
-
     return X, y, x_processed
 
 
@@ -142,8 +145,11 @@ def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.ar
     # Suppress logger messages while getting the indices to avoid clutter in the log file
     logger.info("Finding shape of processed data")
     logger.setLevel("ERROR")
-    x_processed = feature_pipeline.transform(X)
-    logger.setLevel("INFO")
+    with open(os.devnull, "w") as null_file:
+        sys.stdout = null_file
+        x_processed = feature_pipeline.transform(X)
+    sys.stdout = sys.__stdout__
+    logger.setLevel("DEBUG")
     logger.info(f"Processed data shape: {x_processed.shape}")
 
     return X, x_processed, filenames

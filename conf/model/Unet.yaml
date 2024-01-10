@@ -29,8 +29,8 @@ pipeline:
 
   model_loop_pipeline:
     pretrain_pipeline:
-        # Pretrain block
-          _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
+      steps:
+        - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
           scaler:
             _target_: dask_ml.preprocessing.StandardScaler
 
@@ -47,6 +47,7 @@ pipeline:
               encoder_name: resnet34
               in_channels: 8
               classes: 1
+              activation: sigmoid
           optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
             _target_: functools.partial
             _args_:
@@ -57,8 +58,14 @@ pipeline:
           criterion:
             _target_: src.modules.dice_loss.DiceLoss
           epochs: 1
-          batch_size: 16
+          batch_size: 64
           patience: 20
+          transformations:
+            _target_: albumentations.Compose
+            transforms:
+              - _target_: albumentations.VerticalFlip
+                p: 0.2
+
 
   # Post processing pipeline
   post_processing_pipeline:

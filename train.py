@@ -18,6 +18,7 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
 from src.utils.hashing import hash_model, hash_scaler
+from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -32,7 +33,8 @@ cs.store(name="base_train", node=TrainConfig)
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
-    print_section_separator("Q2 Detect Kelp States -- Training")
+    print_section_separator("Q2 Detect Kelp States - Training")
+    set_torch_seed()
 
     import coloredlogs
 
@@ -59,6 +61,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     if scaler_hash is None:
         logging.warning("No scaler found in config, training without scaler")
 
+    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
 
@@ -73,7 +76,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     else:
         train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
-
+    logger.info("Now fitting the pipeline...")
     # Set train and test indices for each model block
     # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
     # Then we convert it to a flat dictionary with __ as the separator between each level
@@ -86,13 +89,17 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
         }
     }
 
-    # Add pretrain indices if it exists. Stupid mypy doesn't understand hasattr
-    if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step"):
-        fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {"train_indices": train_indices}  # type: ignore[dict-item]
+    # Add pretrain indices if it exists for the scalerblock
+    if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step") and hasattr(
+        model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.named_steps, "ScalerBlock"
+    ):
+        fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {}
+        fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"]["ScalerBlock"] = {"train_indices": train_indices}  # type: ignore[index]
 
     fit_params_flat = flatten_dict(fit_params)
 
     # Fit the pipeline
+    print_section_separator("Preprocessing - Transformations")
     model_pipeline.fit(X, y, **fit_params_flat)
     # Get the model and scaler
     model = next(iter(model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.named_steps.values()))
@@ -101,7 +108,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Get the ScalerBlock if it exists
     if scaler_hash is not None:
-        scaler = model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step
+        scaler = next(iter(model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.named_steps.values()))
         scaler.save_scaler(scaler_hash)
 
     if wandb.run:
