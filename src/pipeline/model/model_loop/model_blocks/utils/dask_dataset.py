@@ -74,7 +74,7 @@ class Dask2TorchDataset(Dataset[Any]):
                     futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1,2,0), y_arr[i]) for i in range(len(x_arr))]
                     looper = asyncio.gather(*futures)
                 augmentation_results = loop.run_until_complete(looper)
-                # Change the values of x_arr and y_arr to the augmented values
+                # change the values of x_arr and y_arr to the augmented values
                 for i in range(len(x_arr)):
                     x_arr[i] = augmentation_results[i][0].transpose(2,0,1)
                     y_arr[i] = augmentation_results[i][1]

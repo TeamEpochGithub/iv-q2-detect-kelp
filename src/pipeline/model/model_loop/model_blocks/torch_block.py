@@ -45,6 +45,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         epochs: Annotated[int, Gt(0)] = 10,
         batch_size: Annotated[int, Gt(0)] = 32,
         patience: Annotated[int, Gt(0)] = 5,
+        transformations: A.Compose = None,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -61,6 +62,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.optimizer = optimizer(model.parameters())
         self.criterion = criterion
         self.scheduler = scheduler
+        self.transforms = transformations
 
         # Save model related parameters (Done here so hash changes based on num epochs)
         self.epochs = epochs
@@ -110,20 +112,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # np.round is there to make sure we dont miss a sample due to int to float conversion
 
         # define transfroms here for now will be in the config after it works here
-        from albumentations.core.transforms_interface import ImageOnlyTransform
-
-
-        transfroms = A.Compose(
-                [
-                    A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
-                    A.RandomBrightnessContrast(p=1),
-                    A.RandomGamma(p=1),
-                    A.HorizontalFlip(p=1),
-                ]
-            )
-        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=transfroms)
+        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transforms)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
-        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=transfroms)
+        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transforms)
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
