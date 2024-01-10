@@ -1,5 +1,5 @@
 """The caching tif pipeline is responsible for loading and storing all data to disk."""
-from typing import Self
+import sys
 
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -7,6 +7,11 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 class CacheTIFBlock(BaseEstimator, TransformerMixin):

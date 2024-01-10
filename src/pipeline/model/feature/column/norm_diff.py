@@ -1,10 +1,15 @@
 """Block to compute the normalized difference between two bands. For e.g. NDVI, NDWI, etc."""
+import sys
 from dataclasses import dataclass
-from typing import Self
 
 import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 
 @dataclass
