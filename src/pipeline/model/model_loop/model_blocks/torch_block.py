@@ -43,15 +43,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
     # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
     def __init__(
-        self,
-        model: nn.Module,
-        optimizer: Callable[[Iterator[Parameter]], Optimizer],
-        scheduler: LRScheduler | None,
-        criterion: nn.Module,
-        epochs: Annotated[int, Gt(0)] = 10,
-        batch_size: Annotated[int, Gt(0)] = 32,
-        patience: Annotated[int, Gt(0)] = 5,
-        transformations: albumentations.Compose = None,
+            self,
+            model: nn.Module,
+            optimizer: Callable[[Iterator[Parameter]], Optimizer],
+            scheduler: LRScheduler | None,
+            criterion: nn.Module,
+            epochs: Annotated[int, Gt(0)] = 10,
+            batch_size: Annotated[int, Gt(0)] = 32,
+            patience: Annotated[int, Gt(0)] = 5,
+            transformations: albumentations.Compose = None,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -300,8 +300,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param scorer: Scorer to use.
         :return: Score.
         """
-        preds = self.predict(X)
-        return scorer(y, preds)
+        y_pred = self.predict(X)
+        score = scorer(y, y_pred)
+        logger.info(f"Score: {score}")
+        wandb.log({"Score": score})
+        return score
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.

@@ -1,8 +1,9 @@
 """Schema for the cross validation configuration."""
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Type
 
 from src.config.wandb_config import WandBConfig
+from src.scoring.scorer import Scorer
 
 
 @dataclass
@@ -21,5 +22,5 @@ class CVConfig:
     n_splits: int
     raw_data_path: str
     raw_target_path: str
-    scorer: str
+    scorer: Any
     wandb: WandBConfig

@@ -7,4 +7,5 @@ defaults:
 raw_data_path: data/raw/train_satellite
 raw_target_path: data/raw/train_kelp
 n_splits: 2
-scorer: src.scoring.dice_coefficient.DiceCoefficient
+scorer:
+  _target_: src.scoring.dice_coefficient.DiceCoefficient
