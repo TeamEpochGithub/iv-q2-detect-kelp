@@ -9,7 +9,8 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 from dash_bootstrap_templates import load_figure_template
 
-from dashboard.layouts import default_layout, features_layout
+from dashboard.layouts.default import default_layout
+from dashboard.layouts.features import features_layout
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 load_figure_template("Darkly")

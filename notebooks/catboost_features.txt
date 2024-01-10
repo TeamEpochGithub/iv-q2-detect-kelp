@@ -1,0 +1,12 @@
+SWIR
+NIR
+R
+G
+B
+NDWI
+MNDWI
+NDVI
+LandCloseness
+ONIR
+ODWI
+ODVI

@@ -17,13 +17,17 @@ class FeaturePipeline(Pipeline):
     """
 
     def __init__(
-        self, processed_path: str | None = None, transformation_pipeline: TransformationPipeline | None = None, column_pipeline: ColumnPipeline | None = None
+        self,
+        processed_path: str | None = None,
+        transformation_pipeline: TransformationPipeline | None = None,
+        column_pipeline: ColumnPipeline | None = None,
     ) -> None:
         """Initialize the class.
 
         :param processed_path: path to the processed data
         :param transformation_pipeline: transformation pipeline
         :param column_pipeline: column pipeline
+        :param is_train: whether the pipeline is for training or not
         """
         # Set the parameters
         self.processed_path = processed_path

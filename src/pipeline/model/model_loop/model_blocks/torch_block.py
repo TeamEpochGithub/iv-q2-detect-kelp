@@ -1,14 +1,16 @@
 """TorchBlock class."""
 import copy
-from collections.abc import Callable
-from typing import Self
+from collections.abc import Callable, Iterator
+from typing import Annotated, Any, Self
 
 import dask.array as da
 import numpy as np
 import torch
-from joblib import hash
+import wandb
+from annotated_types import Gt
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
+from torch.nn import Parameter
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
@@ -33,17 +35,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO(Epoch): We dont know if we are gonna use a torch scheduler or timm or smth else
-    # TODO(@Jeffrey): Idk what type a loss function or optimizer is
+    # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
     def __init__(
         self,
         model: nn.Module,
-        optimizer: Callable[..., Optimizer],
+        optimizer: Callable[[Iterator[Parameter]], Optimizer],
         scheduler: LRScheduler | None,
         criterion: nn.Module,
-        epochs: int = 10,
-        batch_size: int = 32,
-        patience: int = 5,
+        epochs: Annotated[int, Gt(0)] = 10,
+        batch_size: Annotated[int, Gt(0)] = 32,
+        patience: Annotated[int, Gt(0)] = 5,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -71,8 +72,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Setting model to device: {self.device}")
         self.model.to(self.device)
 
+        # Early stopping
+        self.last_val_loss = np.inf
+        self.lowest_val_loss = np.inf
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
-        """Train the model.
+        """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
         :param y: Labels.
@@ -81,7 +86,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
-        # TODO(Epoch): Add scheduler to the loop if it is not none
+        # TODO(Jasper): Add scheduler to the loop if it is not none
 
         train_indices.sort()
         test_indices.sort()
@@ -122,34 +127,55 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
-        trainloader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        testloader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
 
         # Train model
         logger.info("Training the model")
-        # TODO(#38): Add early stopping for train full
+
+        train_losses: list[float] = []
+        val_losses: list[float] = []
+
+        if wandb.run:
+            wandb.define_metric("Training/Train Loss", summary="min")
+            wandb.define_metric("Training/Validation Loss", summary="min")
+
+        # TODO(Tolga): Add early stopping for train full
+        # https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/q2-detect-kelp/-/issues/38
         self.lowest_val_loss = np.inf
-        if len(testloader) == 0:
+        if len(test_loader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
+
         for epoch in range(self.epochs):
-            # Train using trainloader
-            self._train_one_epoch(trainloader, desc=f"Epoch {epoch} Train")
+            # Train using train_loader
+            train_losses.append(self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train"))
 
-            # Validate using testloader if we have validation data
-            if len(testloader) > 0:
-                self.val_loss = self._val_one_epoch(testloader, desc=f"Epoch {epoch} Valid")
+            if wandb.run:
+                # Log only the train loss in the "Training" section
+                wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-            if len(testloader) > 0:
-                # not train full
+            # Validate using test_loader if we have validation data
+            if len(test_loader) > 0:
+                self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
+                val_losses.append(self.last_val_loss)
+
+                if wandb.run:
+                    # Also log the validation loss in the "Training" section
+                    wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
+
+                    # Log both the train and validation loss in a line plot in the "Training" section
+                    wandb.log(
+                        {
+                            "Training/Loss": wandb.plot.line_series(
+                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
+                            )
+                        }
+                    )
+
                 if self.early_stopping():
                     break
-            else:
-                # train full TODO(#38)
+            else:  # Train full TODO(#38)
                 pass
-
-        # Save the model in the tm folder
-        # TODO(Epoch): This is placeholder for now but this is deterministic
-        self.save_model()
 
         return self
 
@@ -209,23 +235,25 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 pbar.set_postfix(loss=sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
-    def save_model(self) -> None:
-        """Save the model in the tm folder."""
-        block_hash = (
-            str(hash(str(self.model)))[:6]
-            + str(hash(str(self.optimizer)))[:6]
-            + str(hash(str(self.criterion)))[:6]
-            + str(hash(str(self.scheduler)))[:6]
-            + "_"
-            + str(hash(self.epochs))[:6]
-            + str(hash(self.batch_size))[:6]
-            + str(hash(self.patience))[:6]
-        )
-        logger.info(f"Saving model to tm/{block_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{block_hash}.pt")
-        logger.info(f"Model saved to tm/{block_hash}.pt")
+    def save_model(self, model_hash: str) -> None:
+        """Save the model in the tm folder.
 
-    def predict(self, X: da.Array, cache_size: int = -1) -> list[torch.Tensor]:
+        :param block_hash: Hash of the model pipeline
+        """
+        logger.info(f"Saving model to tm/{model_hash}.pt")
+        torch.save(self.model.state_dict(), f"tm/{model_hash}.pt")
+        logger.info(f"Model saved to tm/{model_hash}.pt")
+
+    def load_model(self, model_hash: str) -> None:
+        """Load the model from the tm folder.
+
+        :param block_hash: Hash of the model pipeline
+        """
+        logger.info(f"Loading model from tm/{model_hash}.pt")
+        self.model.load_state_dict(torch.load(f"tm/{model_hash}.pt"))
+        logger.info(f"Model loaded from tm/{model_hash}.pt")
+
+    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -234,8 +262,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
+        logger.info("Loading test images into RAM...")
         X_dataset.create_cache(cache_size)
-        X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0]))
+        logger.info("Done loading test images into RAM - Starting predictions")
+        X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: batch)
         self.model.eval()
         preds = []
         with torch.no_grad(), tqdm(X_dataloader, unit="batch", disable=False) as tepoch:
@@ -243,12 +273,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 X_batch = data
                 X_batch = X_batch.to(self.device).float()
                 # forward pass
-                y_pred = self.model(X_batch)
-                preds.append(y_pred)
+                y_pred = self.model(X_batch).cpu().numpy()
+                preds.extend(y_pred)
         logger.info("Done predicting")
-        return preds
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> list[torch.Tensor]:
+        return np.array(preds)
+
+    def transform(self, X: da.Array, y: da.Array | None = None) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
@@ -263,14 +294,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Whether early stopping should be done.
         """
         # Store the best model so far based on validation loss
-        if self.val_loss < self.lowest_val_loss:
-            self.lowest_val_loss = self.val_loss
+        if self.last_val_loss < self.lowest_val_loss:
+            self.lowest_val_loss = self.last_val_loss
             self.best_model = copy.deepcopy(self.model.state_dict())
             self.early_stopping_counter = 0
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
-                logger.info("Loading best model")
+                logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
                 self.model.load_state_dict(self.best_model)
                 return True
         return False

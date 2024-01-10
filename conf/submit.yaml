@@ -1,0 +1,8 @@
+defaults:
+  - base_submit
+  - hydra/logging
+  - model: FUnet
+
+raw_data_path: data/raw/test_satellite
+raw_target_path: data/raw/train_kelp
+test_size: 0.2
