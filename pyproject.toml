@@ -28,6 +28,9 @@ dependencies = [
     "scipy==1.11.4",
     "tqdm==4.66.1",
     "polars==0.19.19",
+
+    # Reading Image Data
+    "imagecodecs==2023.9.18",
     "Pillow==10.1.0",
     "opencv-python==4.9.0.80",
     "tifffile==2023.9.26",
@@ -42,7 +45,6 @@ dependencies = [
     "torchaudio==2.1.2+cu118",
     "torchvision==0.16.2+cu118",
     "torch-summary==1.4.5",
-    "segmentation-models-pytorch==0.3.3",
     "open-clip-torch==2.23.0",
 
     # Dash
@@ -58,6 +60,15 @@ dependencies = [
     "dask-ml==2023.3.24",
     "bokeh==3.3.2",
     "distributed==2023.12.0",
+    "fsspec==2023.5.0",
+
+    # Pretrained Models
+    "segmentation-models-pytorch==0.3.3",
+    "catboost==1.2.2",
+    "sentence-transformers==2.2.2",
+
+    # Data Augmentation
+    "albumentations==1.3.1",
 
     # Sphinx
     "Sphinx==7.2.6",
@@ -66,17 +77,21 @@ dependencies = [
     "myst-parser==2.0.0",
     "pygit2==1.13.3",
 
-    # Pre-commit & MyPy
+    # pre-commit & MyPy
     "pre-commit==3.6.0",
     "mypy==1.7.1",
     "typing_extensions==4.9.0",
     "annotated-types==0.6.0",
     "pandas-stubs==2.1.1.230928",
 
-    # Hydra, Weights & Biases, & logging
+    # Hydra
     "hydra-core==1.3.2",
+
+    # Weights & Biases
     "wandb==0.16.1",
     "randomname==0.2.1",
+
+    # Logging
     "coloredlogs==15.0.1",
 
     # Notebooks
@@ -86,12 +101,7 @@ dependencies = [
 
     # Other
     "pyngrok==7.0.3",
-    "fsspec==2023.5.0",
     "zarr==2.16.1",
-    "imagecodecs==2023.9.18",
-    "catboost==1.2.2",
-    "albumentations==1.3.1",
-    "sentence-transformers==2.2.2",
 ]
 
 
