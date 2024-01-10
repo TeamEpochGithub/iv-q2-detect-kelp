@@ -41,20 +41,11 @@ def run_submit(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
-    # Check if the model and scaler hashes are cached already, if not give an error
-    model_hashes, scaler_hashes = check_hash_submit(cfg)
-
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
 
     # Load the test data
     X, filenames = setup_test_data(cfg.raw_data_path)
-
-    # Load the model from the model hashes
-    model_pipeline.load_model(model_hashes)
-
-    # Load the scaler from the scaler hashes
-    model_pipeline.load_scaler(scaler_hashes)
 
     # Predict on the test data
     predictions = model_pipeline.transform(X)

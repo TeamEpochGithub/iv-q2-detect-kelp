@@ -58,6 +58,16 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
         pipeline_cfg = cfg.model
         if not is_train:
             pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+        
+        # Add test size to the config
+        cfg_dict = OmegaConf.to_container(pipeline_cfg, resolve=True)
+        for model_block in cfg_dict["model_loop_pipeline"]["model_blocks_pipeline"]["model_blocks"]:
+            if "test_size" in cfg:
+                model_block["test_size"] = cfg.test_size 
+            else:
+                model_block["test_size"] = -1
+        pipeline_cfg = OmegaConf.create(cfg_dict)
+
     elif "ensemble" in cfg:
         pipeline_cfg = cfg.ensemble
         if not is_train:

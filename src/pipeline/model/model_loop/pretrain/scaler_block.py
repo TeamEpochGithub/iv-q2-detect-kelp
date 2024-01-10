@@ -1,5 +1,6 @@
 """Scaler block to fit and transform the data."""
 
+from pathlib import Path
 import sys
 from dataclasses import dataclass
 
@@ -9,6 +10,7 @@ import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
+from joblib import hash
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -25,13 +27,24 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
 
     scaler: BaseEstimator
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int]) -> Self:
+    def __post_init__(self) -> None:
+        """Post init function."""
+        self.set_hash("")
+        super().__init__()
+
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], save_scaler: bool = True) -> Self:
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W)
         :param y: Target data. Shape should be (N, H, W)
         :return: Fitted scaler
         """
+
+        # Check if the scaler exists
+        if Path(f"tm/{self.prev_hash}.scaler").exists():
+            logger.info("Scaler already exists, loading it")
+            return self
+
         logger.info("Fitting scaler")
         # Save the original shape
         # Reshape X so that it is 2D
@@ -43,6 +56,10 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         # Fit the scaler on the data
         self.scaler.fit(X_reshaped)
         logger.info("Fitted scaler")
+
+        if save_scaler:
+            self.save_scaler()
+
         return self
 
     def transform(self, X: da.Array) -> da.Array:
@@ -51,6 +68,11 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param X: Data to transform. Shape should be (N, C, H, W)
         :return: Transformed data
         """
+
+        # Load the scaler if it exists
+        if not hasattr(self.scaler, 'scale_'):
+            self.load_scaler()
+
         logger.info("Transforming the data using the scaler")
 
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
@@ -68,20 +90,37 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         logger.info("Transformed the data using the scaler")
         return X
 
-    def save_scaler(self, scaler_hash: str) -> None:
+    def set_hash(self, prev_hash: str) -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        scaler_hash = hash(str(self.scaler) + prev_hash)
+
+        self.prev_hash = scaler_hash
+
+        return scaler_hash
+
+    def save_scaler(self) -> None:
         """Save the scaler using joblib.
 
         :param scaler_hash: Hash of the scaler.
         """
-        logger.info(f"Saving scaler from tm/{scaler_hash}.scaler")
-        joblib.dump(self.scaler, f"tm/{scaler_hash}.scaler")
-        logger.info(f"Saved scaler from tm/{scaler_hash}.scaler")
+        logger.info(f"Saving scaler to tm/{self.prev_hash}.scaler")
+        joblib.dump(self.scaler, f"tm/{self.prev_hash}.scaler")
+        logger.info(f"Saved scaler to tm/{self.prev_hash}.scaler")
 
-    def load_scaler(self, scaler_hash: str) -> None:
+    def load_scaler(self) -> None:
         """Load the scaler using joblib.
 
         :param scaler_hash: Hash of the scaler.
         """
-        logger.info(f"Loading scaler from tm/{scaler_hash}.scaler")
-        self.scaler = joblib.load(f"tm/{scaler_hash}.scaler")
-        logger.info(f"Loaded scaler from tm/{scaler_hash}.scaler")
+        # Check if the scaler exists
+        if not Path(f"tm/{self.prev_hash}.scaler").exists():
+            logger.debug(f"Scaler from tm/{self.prev_hash}.scaler does not exist, error if saving scaler was set to true")
+            return
+
+        logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
+        self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")
+        logger.info(f"Loaded scaler from tm/{self.prev_hash}.scaler")

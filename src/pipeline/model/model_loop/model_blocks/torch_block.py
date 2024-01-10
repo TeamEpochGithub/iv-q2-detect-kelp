@@ -1,5 +1,6 @@
 """TorchBlock class."""
 import copy
+from pathlib import Path
 import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from joblib import hash
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
@@ -48,10 +50,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
+    test_size: float = 0.2 # Hashing purposes
     transformations: albumentations.Compose = None
 
     def __post_init__(self) -> None:
         """Post init function."""
+
+        # Set the hash
+        self.set_hash("")
+
         # Set the optimizer
         self.initialized_optimizer = self.optimizer(self.model.parameters())
 
@@ -64,7 +71,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
@@ -74,6 +81,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
+
+        # Check if the model exists
+        if Path(f"tm/{self.prev_hash}.pt").exists():
+            logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
+            return self
+
         # TODO(Jasper): Add scheduler to the loop if it is not none
 
         train_indices.sort()
@@ -152,6 +165,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             else:  # Train full TODO(#38)
                 pass
 
+        logger.info("Done training the model")
+        if save_model:
+            self.save_model()
+
         return self
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
@@ -210,23 +227,29 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 pbar.set_postfix(loss=sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
-    def save_model(self, model_hash: str) -> None:
+    def save_model(self) -> None:
         """Save the model in the tm folder.
 
         :param block_hash: Hash of the model pipeline
         """
-        logger.info(f"Saving model to tm/{model_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{model_hash}.pt")
-        logger.info(f"Model saved to tm/{model_hash}.pt")
+        logger.info(f"Saving model to tm/{self.prev_hash}.pt")
+        torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
+        logger.info(f"Model saved to tm/{self.prev_hash}.pt")
 
-    def load_model(self, model_hash: str) -> None:
+    def load_model(self) -> None:
         """Load the model from the tm folder.
 
         :param block_hash: Hash of the model pipeline
         """
-        logger.info(f"Loading model from tm/{model_hash}.pt")
-        self.model.load_state_dict(torch.load(f"tm/{model_hash}.pt"))
-        logger.info(f"Model loaded from tm/{model_hash}.pt")
+
+        # Load the model if it exists
+        if not Path(f"tm/{self.prev_hash}.pt").exists():
+            logger.debug(f"Model does not exist at tm/{self.prev_hash}.pt, error if saving model was set to true")
+            return
+
+        logger.info(f"Loading model from tm/{self.prev_hash}.pt")
+        self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
+        logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
     def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
@@ -235,6 +258,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
+
+        # Load the model if it exists
+        self.load_model()
+
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
         logger.info("Loading test images into RAM...")
@@ -280,3 +307,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 self.model.load_state_dict(self.best_model)
                 return True
         return False
+
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        torch_block_hash = hash(str(self) + prev_hash)
+
+        self.prev_hash = torch_block_hash
+
+        return torch_block_hash

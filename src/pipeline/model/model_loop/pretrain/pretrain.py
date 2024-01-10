@@ -4,6 +4,8 @@ from typing import Any
 
 from sklearn.pipeline import Pipeline
 
+from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
+
 
 @dataclass
 class PretrainPipeline(Pipeline):
@@ -12,13 +14,14 @@ class PretrainPipeline(Pipeline):
     :param steps: list of steps
     """
 
-    steps: list[Any]
+    steps: list[ScalerBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
+        self.set_hash("")
         super().__init__(self._get_steps())
 
-    def _get_steps(self) -> list[tuple[str, Any]]:
+    def _get_steps(self) -> list[tuple[str, ScalerBlock]]:
         """Get the pipeline steps.
 
         :return: list of steps
@@ -29,20 +32,16 @@ class PretrainPipeline(Pipeline):
         # else:
         return [(str(step), step) for step in self.steps]
 
-    def load_scaler(self, scaler_hash: str) -> None:
-        """Load the scaler from the scaler hash.
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
 
-        :param scaler_hash: The scaler hash
+        :param prev_hash: Previous hash
+        :return: Hash
         """
+        pretrain_hash = prev_hash
         for step in self.steps:
-            if hasattr(step, "load_scaler"):
-                step.load_scaler(scaler_hash)
+            pretrain_hash = step.set_hash(pretrain_hash)
 
-    def save_scaler(self, scaler_hash: str) -> None:
-        """Save the scaler to the scaler hash.
+        self.prev_hash = pretrain_hash
 
-        :param scaler_hash: The scaler hash
-        """
-        for step in self.steps:
-            if hasattr(step, "save_scaler"):
-                step.save_scaler(scaler_hash)
+        return pretrain_hash

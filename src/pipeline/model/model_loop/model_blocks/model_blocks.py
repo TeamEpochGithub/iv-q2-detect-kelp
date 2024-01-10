@@ -17,6 +17,7 @@ class ModelBlocksPipeline(Pipeline):
 
     def __post_init__(self) -> None:
         """Post init function."""
+        self.set_hash("")
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, TorchBlock]]:
@@ -42,3 +43,18 @@ class ModelBlocksPipeline(Pipeline):
         """
         for model_block in self.model_blocks:
             model_block.save_model(model_hash)
+
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        model_blocks_hash = prev_hash
+
+        for model_block in self.model_blocks:
+            model_blocks_hash = model_block.set_hash(model_blocks_hash)
+
+        self.prev_hash = model_blocks_hash
+
+        return model_blocks_hash

@@ -5,6 +5,7 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.caching.column import CacheColumnBlock
+from joblib import hash
 
 
 @dataclass
@@ -44,3 +45,15 @@ class ColumnBlockPipeline(Pipeline):
         self.path = path
         # Update the steps in the pipeline after changing the path
         self.steps = self._get_steps()
+
+    def set_hash(self, prev_hash: str = "") -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        column_block_hash = hash(str(self.column_block) + prev_hash)
+
+        self.prev_hash = column_block_hash
+
+        return column_block_hash
