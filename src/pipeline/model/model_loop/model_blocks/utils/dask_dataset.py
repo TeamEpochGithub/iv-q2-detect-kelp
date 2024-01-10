@@ -1,6 +1,9 @@
 """Module to convert a dask array to a torch dataset."""
+import asyncio
+import concurrent.futures
 from typing import Any
 
+import albumentations
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
@@ -15,11 +18,12 @@ class Dask2TorchDataset(Dataset[Any]):
     :param y: Labels.
     """
 
-    def __init__(self, X: da.Array, y: da.Array | None) -> None:
+    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: albumentations.Compose = None) -> None:
         """Initialize the Dask2TorchDataset.
 
         :param X: Input features.
         :param y: Labels.
+        :param transforms: Transforms/Augmentations to apply to the data.
         """
         self.memX: npt.NDArray[np.float_] = np.array([])
         self.daskX = X
@@ -32,6 +36,8 @@ class Dask2TorchDataset(Dataset[Any]):
         else:
             self.daskY = None
             self.memY = None
+
+        self.transforms = transforms
 
     def __len__(self) -> int:
         """Return the length of the dataset.
@@ -57,13 +63,26 @@ class Dask2TorchDataset(Dataset[Any]):
             x_arr = self.memX[in_mem_idxs]
 
         if self.daskY is not None and self.memY is not None:
-            # if y exists do the same for y
+            # If y exists do the same for y
             if len(not_in_mem_idxs) > 0:
                 y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
                 y_arr = self.memY[in_mem_idxs]
+
+            # If they exist, apply the augmentations in a paralleized way using asyncio
+            if self.transforms is not None:
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    loop = asyncio.get_event_loop()
+                    futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1, 2, 0), y_arr[i]) for i in range(len(x_arr))]
+                    looper = asyncio.gather(*futures)
+                augmentation_results = loop.run_until_complete(looper)
+                # Change the values of x_arr and y_arr to the augmented values
+                for i in range(len(x_arr)):
+                    x_arr[i] = augmentation_results[i][0].transpose(2, 0, 1)
+                    y_arr[i] = augmentation_results[i][1]
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
+        # If y doesn't exist it must be for submission and for that we dont want to augment the inference data
         # If y does not exist, return only x
         return torch.from_numpy(x_arr)
 
@@ -81,3 +100,13 @@ class Dask2TorchDataset(Dataset[Any]):
         if self.daskY is not None:
             self.memY = self.daskY[:idx].compute()
             self.daskY = self.daskY[idx:]
+
+    def apply_augmentation(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Apply the augmentation to the data.
+
+        :param x: Input features.
+        :param y: Labels.
+        :return: augmented data
+        """
+        transformed_dict = self.transforms(image=image, mask=mask)
+        return transformed_dict["image"], transformed_dict["mask"]
