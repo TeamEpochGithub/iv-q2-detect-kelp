@@ -22,7 +22,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
-
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()
 cs.store(name="base_cv", node=CVConfig)
@@ -88,13 +87,14 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
         # Fit the pipeline
         print_section_separator("Preprocessing - Transformations")
-        predictions = model_pipeline.fit_transform(X, y, **fit_params_flat)
+        model_pipeline.fit(X, y, **fit_params_flat)
 
         # Only get the predictions for the test indices
-        predictions = predictions[test_indices]
+        predictions = model_pipeline.predict(X[test_indices])
         scorer = instantiate(cfg.scorer)
-
-
+        score = scorer(y[test_indices].compute(), predictions)
+        logger.info(f"Score: {score}")
+        wandb.log({"Score": score})
 
         if wandb.run is not None:
             wandb.run.finish()

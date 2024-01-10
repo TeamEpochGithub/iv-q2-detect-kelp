@@ -2,7 +2,7 @@
 import copy
 import sys
 from collections.abc import Callable, Iterator
-from typing import Annotated, Any, Type
+from typing import Annotated, Any
 
 import albumentations
 import dask.array as da
@@ -21,7 +21,6 @@ from tqdm import tqdm
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
-from src.scoring.scorer import Scorer
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -43,15 +42,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
     # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
     def __init__(
-            self,
-            model: nn.Module,
-            optimizer: Callable[[Iterator[Parameter]], Optimizer],
-            scheduler: LRScheduler | None,
-            criterion: nn.Module,
-            epochs: Annotated[int, Gt(0)] = 10,
-            batch_size: Annotated[int, Gt(0)] = 32,
-            patience: Annotated[int, Gt(0)] = 5,
-            transformations: albumentations.Compose = None,
+        self,
+        model: nn.Module,
+        optimizer: Callable[[Iterator[Parameter]], Optimizer],
+        scheduler: LRScheduler | None,
+        criterion: nn.Module,
+        epochs: Annotated[int, Gt(0)] = 10,
+        batch_size: Annotated[int, Gt(0)] = 32,
+        patience: Annotated[int, Gt(0)] = 5,
+        transformations: albumentations.Compose = None,
     ) -> None:
         """Initialize the TorchBlock.
 

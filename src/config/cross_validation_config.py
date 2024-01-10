@@ -1,9 +1,8 @@
 """Schema for the cross validation configuration."""
 from dataclasses import dataclass
-from typing import Any, Type
+from typing import Any
 
 from src.config.wandb_config import WandBConfig
-from src.scoring.scorer import Scorer
 
 
 @dataclass
