@@ -281,6 +281,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         return self.predict(X)
 
+    def score(self, predictions: da.Array, y: da.Array | None = None) -> float:
+"""Score method for sklearn pipeline.
+
+        :param X: Input features.
+        :param y: Labels.
+        :return: Score.
+        """
+        return self.predict(X)
+
+
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.
 
