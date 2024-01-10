@@ -13,7 +13,7 @@ class CVConfig:
     :param n_splits: Number of splits for cross validation.
     :param raw_data_path: Path to the raw data.
     :param raw_target_path: Path to the raw target.
-    :param score: Scoring metric.
+    :param scorer: Scorer object to be instantiated.
     :param wandb: Whether to log to Weights & Biases and other settings.
     """
 
@@ -21,5 +21,5 @@ class CVConfig:
     n_splits: int
     raw_data_path: str
     raw_target_path: str
-    score: str
+    scorer: str
     wandb: WandBConfig

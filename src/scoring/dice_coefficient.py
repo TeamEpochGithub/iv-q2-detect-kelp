@@ -2,8 +2,10 @@
 
 import numpy as np
 
+from src.scoring.scorer import Scorer
 
-class DiceCoefficient:
+
+class DiceCoefficient(Scorer):
     """Dice coefficient metric."""
 
     def __init__(self, name: str = "DiceCoefficient"):

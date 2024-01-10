@@ -2,7 +2,7 @@
 import copy
 import sys
 from collections.abc import Callable, Iterator
-from typing import Annotated, Any
+from typing import Annotated, Any, Type
 
 import albumentations
 import dask.array as da
@@ -20,6 +20,7 @@ from tqdm import tqdm
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+from src.scoring.scorer import Scorer
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -281,15 +282,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         return self.predict(X)
 
-    def score(self, predictions: da.Array, y: da.Array | None = None) -> float:
-"""Score method for sklearn pipeline.
+    def score(self, X: np.ndarray, y: np.ndarray, scorer: Type[Scorer]) -> float:
+        """Score the model.
 
         :param X: Input features.
         :param y: Labels.
+        :param scorer: Scorer to use.
         :return: Score.
         """
-        return self.predict(X)
-
+        preds = self.predict(X)
+        return scorer(y, preds)
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.

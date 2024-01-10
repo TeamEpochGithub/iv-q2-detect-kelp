@@ -85,7 +85,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         model_pipeline.fit(X, y, **fit_params_flat)
 
         # Calculate the CV Score
-        cv_score = model_pipeline.score(X, y, **fit_params_flat)
+        cv_score = model_pipeline.score(X, y, instantiate(cfg.scorer))
 
         if wandb.run is not None:
             wandb.run.finish()
