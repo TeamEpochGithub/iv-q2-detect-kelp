@@ -76,7 +76,7 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
         sys.stdout = null_file
         x_processed = feature_pipeline.fit_transform(X)
     sys.stdout = sys.__stdout__
-    logger.setLevel("INFO")
+    logger.setLevel("DEBUG")
     logger.info(f"Processed data shape: {x_processed.shape}")
     return X, y, x_processed
 
@@ -149,7 +149,7 @@ def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.ar
         sys.stdout = null_file
         x_processed = feature_pipeline.transform(X)
     sys.stdout = sys.__stdout__
-    logger.setLevel("INFO")
+    logger.setLevel("DEBUG")
     logger.info(f"Processed data shape: {x_processed.shape}")
 
     return X, x_processed, filenames
