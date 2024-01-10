@@ -63,7 +63,7 @@ class Dask2TorchDataset(Dataset[Any]):
             x_arr = self.memX[in_mem_idxs]
 
         if self.daskY is not None and self.memY is not None:
-            # if y exists do the same for y
+            # If y exists do the same for y
             if len(not_in_mem_idxs) > 0:
                 y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
@@ -76,7 +76,7 @@ class Dask2TorchDataset(Dataset[Any]):
                     futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1, 2, 0), y_arr[i]) for i in range(len(x_arr))]
                     looper = asyncio.gather(*futures)
                 augmentation_results = loop.run_until_complete(looper)
-                # change the values of x_arr and y_arr to the augmented values
+                # Change the values of x_arr and y_arr to the augmented values
                 for i in range(len(x_arr)):
                     x_arr[i] = augmentation_results[i][0].transpose(2, 0, 1)
                     y_arr[i] = augmentation_results[i][1]
