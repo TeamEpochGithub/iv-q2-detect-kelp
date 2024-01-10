@@ -18,8 +18,8 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.flatten_dict import flatten_dict
 from src.utils.hashing import hash_model, hash_scaler
+from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
-from src.utils.seed_everything import set_seed
 
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
@@ -33,7 +33,7 @@ cs.store(name="base_train", node=TrainConfig)
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
-    set_seed()
+    set_torch_seed()
     print_section_separator("Q2 Detect Kelp States -- Training")
 
     import coloredlogs

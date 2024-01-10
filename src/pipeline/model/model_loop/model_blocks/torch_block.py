@@ -3,6 +3,7 @@ import copy
 from collections.abc import Callable, Iterator
 from typing import Annotated, Any, Self
 
+import albumentations
 import dask.array as da
 import numpy as np
 import torch
@@ -15,9 +16,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import albumentations as A
-import albumentations.augmentations.functional as F
-from albumentations.pytorch import ToTensorV2
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
@@ -45,7 +43,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         epochs: Annotated[int, Gt(0)] = 10,
         batch_size: Annotated[int, Gt(0)] = 32,
         patience: Annotated[int, Gt(0)] = 5,
-        transformations: A.Compose = None,
+        transformations: albumentations.Compose = None,
     ) -> None:
         """Initialize the TorchBlock.
 
@@ -110,8 +108,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
         # np.round is there to make sure we dont miss a sample due to int to float conversion
-
-        # define transfroms here for now will be in the config after it works here
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transforms)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transforms)
