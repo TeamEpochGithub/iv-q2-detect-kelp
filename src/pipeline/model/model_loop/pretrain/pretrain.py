@@ -51,7 +51,6 @@ class PretrainPipeline(Pipeline):
         for step in self.steps:
             if hasattr(step, "save_scaler"):
                 step.save_scaler(scaler_hash)
-        return [(step.__class__.__name__, step) for step in self.steps]
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
         """Fit and transform the data.
