@@ -1,5 +1,7 @@
 """Scaler block to fit and transform the data."""
+
 import sys
+from dataclasses import dataclass
 import time
 
 import dask
@@ -15,18 +17,14 @@ else:
     from typing import Self
 
 
+@dataclass
 class ScalerBlock(BaseEstimator, TransformerMixin):
     """Scaler block to fit and transform the data.
 
     :param scaler: Scaler.
     """
 
-    def __init__(self, scaler: BaseEstimator) -> None:
-        """Initialize the ScalerBlock.
-
-        :param scaler: Scaler.
-        """
-        self.scaler = scaler
+    scaler: BaseEstimator
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int]) -> Self:
         """Fit the scaler.
@@ -48,24 +46,6 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         self.scaler.fit(X_reshaped)
         logger.info("Fitted scaler in %s seconds", time.time() - start_time)
         return self
-
-    def save_scaler(self, scaler_hash: str) -> None:
-        """Save the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
-        logger.info(f"Saving scaler from tm/{scaler_hash}.scaler")
-        joblib.dump(self.scaler, f"tm/{scaler_hash}.scaler")
-        logger.info(f"Saved scaler from tm/{scaler_hash}.scaler")
-
-    def load_scaler(self, scaler_hash: str) -> None:
-        """Load the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
-        logger.info(f"Loading scaler from tm/{scaler_hash}.scaler")
-        self.scaler = joblib.load(f"tm/{scaler_hash}.scaler")
-        logger.info(f"Loaded scaler from tm/{scaler_hash}.scaler")
 
     def transform(self, X: da.Array) -> da.Array:
         """Transform the data.
@@ -89,3 +69,21 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
             X = X.rechunk()
         logger.info("Transformed the data using the scaler")
         return X
+
+    def save_scaler(self, scaler_hash: str) -> None:
+        """Save the scaler using joblib.
+
+        :param scaler_hash: Hash of the scaler.
+        """
+        logger.info(f"Saving scaler from tm/{scaler_hash}.scaler")
+        joblib.dump(self.scaler, f"tm/{scaler_hash}.scaler")
+        logger.info(f"Saved scaler from tm/{scaler_hash}.scaler")
+
+    def load_scaler(self, scaler_hash: str) -> None:
+        """Load the scaler using joblib.
+
+        :param scaler_hash: Hash of the scaler.
+        """
+        logger.info(f"Loading scaler from tm/{scaler_hash}.scaler")
+        self.scaler = joblib.load(f"tm/{scaler_hash}.scaler")
+        logger.info(f"Loaded scaler from tm/{scaler_hash}.scaler")

@@ -1,10 +1,13 @@
 """Column block pipeline."""
+from dataclasses import dataclass
+
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.caching.column import CacheColumnBlock
 
 
+@dataclass
 class ColumnBlockPipeline(Pipeline):
     """ColumnBlockPipeline extends the sklearn Pipeline class.
 
@@ -12,14 +15,11 @@ class ColumnBlockPipeline(Pipeline):
     :param cache_block: cache block
     """
 
-    def __init__(self, column_block: BaseEstimator, cache_block: CacheColumnBlock | None = None) -> None:
-        """Initialize the ColumnBlockPipeline.
+    column_block: BaseEstimator
+    cache_block: CacheColumnBlock | None = None
 
-        :param column_block: column block
-        :param cache_block: cache block
-        """
-        self.column_block = column_block
-        self.cache_block = cache_block
+    def __post_init__(self) -> None:
+        """Post init function."""
         self.path = ""
         super().__init__(self._get_steps())
 
@@ -44,10 +44,3 @@ class ColumnBlockPipeline(Pipeline):
         self.path = path
         # Update the steps in the pipeline after changing the path
         self.steps = self._get_steps()
-
-    def __str__(self) -> str:
-        """Convert the class to a string.
-
-        :return: string representation of the class
-        """
-        return f"ColumnBlockPipeline({self.column_block}, {self.cache_block})"

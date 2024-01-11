@@ -1,5 +1,6 @@
 """A piepline step that divides the data by a number."""
 import sys
+from dataclasses import dataclass
 import time
 
 import dask.array as da
@@ -14,18 +15,14 @@ else:
     from typing import Self
 
 
+@dataclass
 class Divider(BaseEstimator, TransformerMixin):
     """Pipeline step to divide the data by a number.
 
     :param divider: The number to divide by
     """
 
-    def __init__(self, divider: int = 1) -> None:
-        """Initialize the divider.
-
-        :param divider: The number to divide by
-        """
-        self.divider = divider
+    divider: int
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """Fit the transformer.
@@ -47,17 +44,4 @@ class Divider(BaseEstimator, TransformerMixin):
         result = (X / self.divider).astype(np.float32)
         logger.info(f"Divider transform complete in: {time.time() - time_start} seconds.")
         return result
-
-    def __str__(self) -> str:
-        """Return the name of the transformer.
-
-        :return: The name of the transformer
-        """
-        return f"Divider_{self.divider}"
-
-
-if __name__ == "__main__":
-    # Test the divider
-    divider = Divider(2)
-    X = da.from_array(np.array([1, 2, 3, 4, 5]))
-    X = divider.transform(X)
+    

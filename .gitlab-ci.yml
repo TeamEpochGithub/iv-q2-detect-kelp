@@ -1,0 +1,77 @@
+stages:
+  - lint
+  - docs
+  - deploy
+
+#variables:
+#  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+#cache:
+#  paths:
+#    - .cache/pip
+#    - venv/
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "push"
+
+#before_script:
+#  - pip install virtualenv
+#  - virtualenv venv
+#  - source venv/bin/activate
+#  - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+
+pre-commit_py3.10:
+  stage: lint
+  image: python:3.10.13
+  script:
+    - pip install pre-commit
+    - pre-commit run --all-files
+  allow_failure: true
+
+pre-commit_py3.11:
+  stage: lint
+  image: python:3.11.7
+  script:
+    - pip install pre-commit
+    - pre-commit run --all-files
+  allow_failure: true
+
+sphinx_py3.10:
+  stage: docs
+  needs: []
+  image: python:3.10.13
+  script:
+    - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+  allow_failure: true
+
+sphinx_py3.11:
+  stage: docs
+  needs: []
+  image: python:3.11.7
+  script:
+    - pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+    - cd docs
+    - make html
+  artifacts:
+    paths:
+      - docs/_build/html
+  allow_failure: true
+
+pages:
+  stage: deploy
+  needs: [sphinx_py3.11]
+  script:
+    - mv docs/_build/html public
+  artifacts:
+    paths:
+      - public
+  allow_failure: true
+  only:
+    - main

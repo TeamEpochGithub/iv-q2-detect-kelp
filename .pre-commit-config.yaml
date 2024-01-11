@@ -12,7 +12,6 @@ repos:
       - id: check-xml
       - id: check-yaml
       - id: mixed-line-ending
-        args: [--fix=crlf]
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/abravalheri/validate-pyproject
@@ -49,4 +48,44 @@ repos:
     rev: v1.8.0
     hooks:
       - id: mypy
-        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped, --python-executable=venv/Scripts/python.exe]
+        additional_dependencies:
+          - numpy
+          - scikit-learn
+          - scikit-image
+          - scipy
+          - tqdm
+          - polars
+          - imagecodecs
+          - Pillow
+          - opencv-python
+          - tifffile
+          - seaborn
+          - matplotlib
+          - plotly
+          - torch
+          - torchaudio
+          - torchvision
+          - torch-summary
+          - open-clip-torch
+          - dash
+          - dash-bootstrap-components
+          - dash-bootstrap-templates
+          - rasterio
+          - dask
+          - dask-glm
+          - dask_image
+          - dask-ml
+          - distributed
+          - fsspec
+          - segmentation-models-pytorch
+          - catboost
+          - albumentations
+          - typing_extensions
+          - annotated-types
+          - pandas-stubs
+          - traitlets
+          - hydra-core
+          - wandb
+          - randomname
+          - coloredlogs
+        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]
