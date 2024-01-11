@@ -30,14 +30,14 @@ class PaddedModel(nn.Module):
         :return: output tensor
         """
         # Pad the input image if necessary
-        if hasattr(self, "padding"):
+        if self.padding > 0:
             x = self.padding_layer(x)
 
         # Forward pass
         y = self.model(x).squeeze(axis=1)
 
         # Remove the padding if necessary
-        if hasattr(self, "padding"):
+        if self.padding > 0:
             y = y[:, self.padding : -self.padding, self.padding : -self.padding]
 
         return y
