@@ -1,7 +1,11 @@
 """ModelPipeline is the class used to create the model pipeline."""
 
 from dataclasses import dataclass
-from typing import Self
+import sys
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 import dask
 from sklearn.pipeline import Pipeline
