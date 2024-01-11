@@ -76,8 +76,6 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         if not hasattr(self.scaler, 'scale_'):
             self.load_scaler()
 
-        logger.info("Transforming the data using the scaler...")
-
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
         # ignores type error because this is literally the example from the dask docs
         with dask.config.set(**{"array.slicing.split_large_chunks": False}):  # type: ignore[arg-type]
@@ -90,7 +88,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
             X_reshaped = self.scaler.transform(X_reshaped)
             X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
             X = X.rechunk()
-        logger.info("Transformed the data using the scaler")
+        logger.info("Lazily transformed the data using the scaler")
         return X
 
     def set_hash(self, prev_hash: str) -> str:
@@ -121,8 +119,8 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         """
         # Check if the scaler exists
         if not Path(f"tm/{self.prev_hash}.scaler").exists():
-            logger.debug(f"Scaler from tm/{self.prev_hash}.scaler does not exist, error if saving scaler was set to true")
-            return
+            logger.error(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
+            sys.exit(1)
 
         logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
         self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")

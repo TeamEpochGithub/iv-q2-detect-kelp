@@ -253,8 +253,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         # Load the model if it exists
         if not Path(f"tm/{self.prev_hash}.pt").exists():
-            logger.debug(f"Model does not exist at tm/{self.prev_hash}.pt, error if saving model was set to true")
-            return
+            logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
+            sys.exit(1)
 
         logger.info(f"Loading model from tm/{self.prev_hash}.pt")
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
