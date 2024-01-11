@@ -30,7 +30,7 @@ cs.store(name="base_submit", node=SubmitConfig)
 def run_submit(cfg: DictConfig) -> None:
     """Run the main script for submitting the predictions."""
     # Print section separator
-    print_section_separator("Q2 Detect Kelp States -- Submit")
+    print_section_separator("Q2 Detect Kelp States - Submit")
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     # Set up logging
@@ -41,13 +41,16 @@ def run_submit(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
+    
     # Preload the pipeline and save it to HTML
+    print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
 
     # Load the test data
     X, filenames = setup_test_data(cfg.raw_data_path)
 
     # Predict on the test data
+    logger.info("Now transforming the pipeline...")
     predictions = model_pipeline.transform(X)
 
     # Make submission

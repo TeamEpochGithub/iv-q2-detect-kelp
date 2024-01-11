@@ -1,11 +1,13 @@
 """ModelPipeline is the class used to create the model pipeline."""
 
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
+
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
 else:
     from typing import Self
+
 
 import dask
 from sklearn.pipeline import Pipeline
@@ -93,7 +95,7 @@ class ModelPipeline(Pipeline):
         if self.model_loop_pipeline and hasattr(self.model_loop_pipeline.named_steps, "pretrain_pipeline_step"):
             new_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {
                 "train_indices": train_indices, "save_scaler": save}  # type: ignore[dict-item]
-            
+
         flattened = flatten_dict(new_params)
 
         return super().fit(X, y, **flattened)

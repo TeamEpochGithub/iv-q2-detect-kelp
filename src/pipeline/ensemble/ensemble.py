@@ -1,6 +1,13 @@
 """EnsemblePipeline is the class used to create the ensemble pipeline."""
+import sys
 from dataclasses import dataclass, field
-from typing import Any, Self
+from typing import Any
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
+
 
 import dask.array as da
 import numpy as np
@@ -30,13 +37,7 @@ class EnsemblePipeline(Pipeline):
 
         :return: list of steps
         """
-        steps = []
-
-        # Loop through models and add them to the pipeline
-        for name, model in self.models.items():
-            steps.append((name, model))
-
-        return steps
+        return list(self.models.items())
 
     def fit(
         self,

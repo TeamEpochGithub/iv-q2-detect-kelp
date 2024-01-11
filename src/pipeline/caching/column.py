@@ -56,7 +56,6 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
             return X
 
         # Load or store the data column
-        logger.info("Loading or storing column")
         column = store_raw(self.data_path, X[:, self.column])
 
         # Create the new array
