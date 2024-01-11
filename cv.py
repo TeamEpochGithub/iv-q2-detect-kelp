@@ -72,10 +72,10 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         # Fit the pipeline
         model_pipeline.fit(X, y, **fit_params)
 
-        # Only get the predictions for the test indices
+        # Only get the predictions for the test indices #TODO(Hugo): Issue 82
         predictions = model_pipeline.predict(X[test_indices])
         scorer = instantiate(cfg.scorer)
-        score = scorer(y[test_indices].compute(), predictions)
+        score = scorer(y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
         wandb.log({"Score": score})
 
