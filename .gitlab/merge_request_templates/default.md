@@ -17,7 +17,7 @@ Closes #XXX.
 - [ ] Sphinx documentation generation works as expected.
 - [ ] All unit, integration, and system tests pass.
 - [ ] Main scripts run as expected.
-- [ ] `requirements.txt` is up to date.
+- [ ] `requirements.txt` & `pyproject.toml` is up to date.
 
 ## Notes
 

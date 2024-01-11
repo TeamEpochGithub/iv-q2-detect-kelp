@@ -122,10 +122,10 @@ numba==0.58.1
 numcodecs==0.12.1
 numpy==1.26.2
 omegaconf==2.3.0
-opencv-python==4.8.1.78
+opencv-python==4.9.0.80
 overrides==7.4.0
 packaging==23.2
-pandas==2.1.3
+pandas==2.1.4
 pandas-stubs==2.1.1.230928
 pandocfilters==1.5.0
 parso==0.8.3
@@ -212,10 +212,10 @@ torch-summary==1.4.5
 torchviz==0.0.2
 tornado==6.4
 tqdm==4.66.1
-traitlets==5.14.0
+traitlets==5.14.1
 types-python-dateutil==2.8.19.14
 types-pytz==2023.3.1.1
-typing_extensions==4.8.0
+typing_extensions==4.9.0
 tzdata==2023.3
 uri-template==1.3.0
 urllib3==2.1.0
@@ -231,9 +231,9 @@ zarr==2.16.1
 albumentations==1.3.1
 zict==3.0.0
 zipp==3.17.0
-wandb~=0.16.1
-annotated-types~=0.6.0
-randomname~=0.2.1
+wandb==0.16.1
+annotated-types==0.6.0
+randomname==0.2.1
 open-clip-torch==2.23.0
 sentence-transformers==2.2.2
 -e ./
