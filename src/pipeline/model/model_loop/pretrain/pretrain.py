@@ -1,6 +1,6 @@
 """Pretrain pipeline class."""
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
@@ -51,7 +51,6 @@ class PretrainPipeline(Pipeline):
         for step in self.steps:
             if hasattr(step, "save_scaler"):
                 step.save_scaler(scaler_hash)
-        return [(step.__class__.__name__, step) for step in self.steps]
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
         """Fit and transform the data.

@@ -120,10 +120,7 @@ class ModelPipeline(Pipeline):
         if self.model_loop_pipeline:
             new_params = {
                 "model_loop_pipeline_step": {
-                    "pretrain_pipeline_step": {
-                        name: {"train_indices": train_indices}
-                        for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
-                    },
+                    "pretrain_pipeline_step": {name: {"train_indices": train_indices} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps},
                     "model_blocks_pipeline_step": {
                         name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size}
                         for name, _ in self.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps

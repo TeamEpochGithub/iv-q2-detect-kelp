@@ -1,7 +1,6 @@
 """TransformationPipeline."""
-from dataclasses import dataclass
-
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
