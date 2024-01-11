@@ -1,5 +1,6 @@
 """ColumnPipeline is the class used to create the column pipeline."""
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
@@ -10,18 +11,17 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.feature.column.column_block import ColumnBlockPipeline
 
 
+@dataclass
 class ColumnPipeline(Pipeline):
     """ColumnPipeline is the class used to create the column pipeline.
 
     :param columns: The columns
     """
 
-    def __init__(self, columns: list[ColumnBlockPipeline]) -> None:
-        """Initialize the class.
+    columns: list[ColumnBlockPipeline]
 
-        :param columns: The columns
-        """
-        self.columns = columns
+    def __post_init__(self) -> None:
+        """Post init function."""
         self.path = ""
         super().__init__(self._get_steps())
 
@@ -65,20 +65,6 @@ class ColumnPipeline(Pipeline):
         X = super().transform(X)
         logger.info(f"Transform of columns complete in {time.time() - start_time} seconds")
         return X
-
-    def __repr__(self) -> str:
-        """Representation of the ColumnPipeline.
-
-        :return: String representation of the ColumnPipeline
-        """
-        return f"ColumnPipeline(columns={self.columns})"
-
-    def __str__(self) -> str:
-        """__str__ returns string representation of the ColumnPipeline.
-
-        :return: String representation of the ColumnPipeline
-        """
-        return "ColumnPipeline"
 
     def set_path(self, path: str) -> None:
         """Set the path.

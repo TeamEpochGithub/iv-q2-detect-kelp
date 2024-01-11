@@ -8,14 +8,12 @@ import randomname
 import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
-from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.flatten_dict import flatten_dict
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -41,13 +39,8 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
-    # Preload the pipeline and save it to HTML
-    print_section_separator("Setup pipeline")
-    model_pipeline = setup_pipeline(cfg.model.pipeline, output_dir, is_train=True)
-
     # Lazily read the raw data with dask, and find the shape after processing
-    feature_pipeline = model_pipeline.named_steps.feature_pipeline_step
-    X, y, x_processed = setup_train_data(cfg.raw_data_path, cfg.raw_target_path, feature_pipeline)
+    X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
@@ -56,7 +49,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     # Set up Weights & Biases group name
     wandb_group_name = randomname.get_name()
 
-    for i, (train_indices, test_indices) in enumerate(kf.split(x_processed, stratification_key)):
+    for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
         print_section_separator(f"CV - Fold {i}")
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
@@ -64,31 +57,20 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
             setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
-        model_pipeline = instantiate(cfg.model.pipeline)
+        model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
         # Set train and test indices for each model block
         # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
         # Then we convert it to a flat dictionary with __ as the separator between each level
         fit_params = {
-            "model_loop_pipeline_step": {
-                "model_blocks_pipeline_step": {
-                    name: {"train_indices": train_indices, "test_indices": test_indices}
-                    for name, _ in model_pipeline.named_steps.model_loop_pipeline_step.named_steps.model_blocks_pipeline_step.steps
-                },
-            }
+            "train_indices": train_indices,
+            "test_indices": test_indices,
+            "cache_size": cfg.cache_size,
+            "model_hashes": [],
         }
-        # Add pretrain indices if it exists for the scalerblock
-        if hasattr(model_pipeline.named_steps.model_loop_pipeline_step.named_steps, "pretrain_pipeline_step") and hasattr(
-            model_pipeline.named_steps.model_loop_pipeline_step.named_steps.pretrain_pipeline_step.named_steps, "ScalerBlock"
-        ):
-            fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {}
-            fit_params["model_loop_pipeline_step"]["pretrain_pipeline_step"]["ScalerBlock"] = {"train_indices": train_indices}  # type: ignore[index]
-
-        fit_params_flat = flatten_dict(fit_params)
 
         # Fit the pipeline
-        print_section_separator("Preprocessing - Transformations")
-        model_pipeline.fit(X, y, **fit_params_flat)
+        model_pipeline.fit(X, y, **fit_params)
 
         if wandb.run is not None:
             wandb.run.finish()

@@ -2,6 +2,7 @@
 import copy
 import sys
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from typing import Annotated, Any
 
 import albumentations
@@ -28,6 +29,7 @@ else:
     from typing import Self
 
 
+@dataclass
 class TorchBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
 
@@ -40,39 +42,19 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param patience: Patience for early stopping.
     """
 
-    # TODO(Jasper): We dont know if we are gonna use a torch scheduler or timm or smth else
-    def __init__(
-        self,
-        model: nn.Module,
-        optimizer: Callable[[Iterator[Parameter]], Optimizer],
-        scheduler: LRScheduler | None,
-        criterion: nn.Module,
-        epochs: Annotated[int, Gt(0)] = 10,
-        batch_size: Annotated[int, Gt(0)] = 32,
-        patience: Annotated[int, Gt(0)] = 5,
-        transformations: albumentations.Compose = None,
-    ) -> None:
-        """Initialize the TorchBlock.
+    model: nn.Module
+    optimizer: Callable[[Iterator[Parameter]], Optimizer]
+    scheduler: LRScheduler | None
+    criterion: nn.Module
+    epochs: Annotated[int, Gt(0)] = 10
+    batch_size: Annotated[int, Gt(0)] = 32
+    patience: Annotated[int, Gt(0)] = 5
+    transformations: albumentations.Compose = None
 
-        :param model: Model to train.
-        :param optimizer: Optimizer. As partial function call so that model.parameters() can still be added.
-        :param scheduler: Scheduler.
-        :param criterion: Loss function.
-        :param epochs: Number of epochs.
-        :param batch_size: Batch size.
-        :param patience: Patience for early stopping.
-
-        """
-        self.model = model
-        self.optimizer = optimizer(model.parameters())
-        self.criterion = criterion
-        self.scheduler = scheduler
-        self.transforms = transformations
-
-        # Save model related parameters (Done here so hash changes based on num epochs)
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.patience = patience
+    def __post_init__(self) -> None:
+        """Post init function."""
+        # Set the optimizer
+        self.initialized_optimizer = self.optimizer(self.model.parameters())
 
         # Set the device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -125,9 +107,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
         # np.round is there to make sure we dont miss a sample due to int to float conversion
-        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transforms)
+        train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transformations)
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
-        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transforms)
+        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transformations)
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
@@ -206,9 +188,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             loss = self.criterion(y_pred, y_batch)
 
             # Backward pass
-            self.optimizer.zero_grad()
+            self.initialized_optimizer.zero_grad()
             loss.backward()
-            self.optimizer.step()
+            self.initialized_optimizer.step()
 
             # Print tqdm
             losses.append(loss.item())
@@ -314,10 +296,3 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 self.model.load_state_dict(self.best_model)
                 return True
         return False
-
-    def __str__(self) -> str:
-        """Return the string representation of the model.
-
-        :return: String representation of the model.
-        """
-        return "TorchBlock"
