@@ -1,8 +1,13 @@
 """Pretrain pipeline class."""
 from dataclasses import dataclass
+import time
 from typing import Any
 
+import dask.array as da
 from sklearn.pipeline import Pipeline
+
+from src.logging_utils.logger import logger
+from src.logging_utils.section_separator import print_section_separator
 
 
 @dataclass
@@ -46,3 +51,28 @@ class PretrainPipeline(Pipeline):
         for step in self.steps:
             if hasattr(step, "save_scaler"):
                 step.save_scaler(scaler_hash)
+        return [(step.__class__.__name__, step) for step in self.steps]
+
+    def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
+        """Fit and transform the data.
+
+        :param X: Data to fit and transform
+        :param y: Target data
+        :param fit_params: Fit parameters
+        """
+        print_section_separator("Pretrain")
+        start_time = time.time()
+        X = super().fit_transform(X, y, **fit_params)
+        logger.info(f"Fitted pretrain pipeline in {time.time() - start_time} seconds")
+        return X
+
+    def transform(self, X: da.Array) -> da.Array:
+        """Transform the data.
+
+        :param X: Data to transform
+        """
+        print_section_separator("Pretrain")
+        start_time = time.time()
+        X = super().transform(X)
+        logger.info(f"Transformed pretrain pipeline in {time.time() - start_time} seconds")
+        return X

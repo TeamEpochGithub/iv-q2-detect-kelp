@@ -1,10 +1,13 @@
 """A piepline step that divides the data by a number."""
 import sys
 from dataclasses import dataclass
+import time
 
 import dask.array as da
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
+
+from src.logging_utils.logger import logger
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -37,4 +40,8 @@ class Divider(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        return (X / self.divider).astype(np.float32)
+        time_start = time.time()
+        result = (X / self.divider).astype(np.float32)
+        logger.info(f"Divider transform complete in: {time.time() - time_start} seconds.")
+        return result
+    

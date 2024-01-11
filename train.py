@@ -30,8 +30,8 @@ cs.store(name="base_train", node=TrainConfig)
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
+    print_section_separator("Q2 Detect Kelp States - Training")
     set_torch_seed()
-    print_section_separator("Q2 Detect Kelp States -- Training")
 
     import coloredlogs
 
@@ -47,6 +47,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     # Check hashes train
     model_hashes, scaler_hashes = check_hash_train(cfg)
 
+    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
@@ -60,7 +61,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     else:
         train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
-
+    logger.info("Now fitting the pipeline...")
     # Set train and test indices for each model block
     # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
     # Then we convert it to a flat dictionary with __ as the separator between each level

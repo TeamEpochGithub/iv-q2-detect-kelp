@@ -8,7 +8,10 @@ def print_section_separator(title: str, spacing: int = 2) -> None:
     :param title: title of the section
     :param spacing: spacing between the sections
     """
-    separator_length = os.get_terminal_size().columns
+    try:
+        separator_length = os.get_terminal_size().columns
+    except OSError:
+        separator_length = 200
     separator_char = "="
     title_char = " "
     separator = separator_char * separator_length

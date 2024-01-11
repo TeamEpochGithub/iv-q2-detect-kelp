@@ -30,7 +30,7 @@ cs.store(name="base_submit", node=SubmitConfig)
 def run_submit(cfg: DictConfig) -> None:
     """Run the main script for submitting the predictions."""
     # Print section separator
-    print_section_separator("Q2 Detect Kelp States -- Submit")
+    print_section_separator("Q2 Detect Kelp States - Submit")
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     # Set up logging
@@ -44,6 +44,7 @@ def run_submit(cfg: DictConfig) -> None:
     # Check if the model and scaler hashes are cached already, if not give an error
     model_hashes, scaler_hashes = check_hash_submit(cfg)
 
+    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
 
@@ -56,6 +57,7 @@ def run_submit(cfg: DictConfig) -> None:
     # Load the scaler from the scaler hashes
     model_pipeline.load_scaler(scaler_hashes)
 
+    logger.info("Now transforming the pipeline...")
     # Predict on the test data
     predictions = model_pipeline.transform(X)
 

@@ -2,6 +2,7 @@
 
 import sys
 from dataclasses import dataclass
+import time
 
 import dask
 import dask.array as da
@@ -32,7 +33,8 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param y: Target data. Shape should be (N, H, W)
         :return: Fitted scaler
         """
-        logger.info("Fitting scaler")
+        logger.info("Fitting scaler...")
+        start_time = time.time()
         # Save the original shape
         # Reshape X so that it is 2D
         train_indices.sort()
@@ -42,7 +44,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # Fit the scaler on the data
         self.scaler.fit(X_reshaped)
-        logger.info("Fitted scaler")
+        logger.info("Fitted scaler in %s seconds", time.time() - start_time)
         return self
 
     def transform(self, X: da.Array) -> da.Array:
@@ -51,7 +53,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param X: Data to transform. Shape should be (N, C, H, W)
         :return: Transformed data
         """
-        logger.info("Transforming the data using the scaler")
+        logger.info("Transforming the data using the scaler...")
 
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
         # ignores type error because this is literally the example from the dask docs
