@@ -2,11 +2,13 @@
 from dataclasses import dataclass
 
 from sklearn.pipeline import Pipeline
-
+from typing import Any
 
 @dataclass
 class PostProcessingPipeline(Pipeline):
     """PostProcessingPipeline is the class used to create the post processing pipeline."""
+
+    steps: list[Any]
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -18,4 +20,4 @@ class PostProcessingPipeline(Pipeline):
         :return: list of steps
         """
         # TODO(Jasper): Implement post processing pipeline steps
-        return []
+        return [(str(step), step) for step in self.steps]

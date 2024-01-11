@@ -264,7 +264,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         return np.array(preds)
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> np.ndarray[Any, Any]:
+    def transform(self, X: da.Array) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
