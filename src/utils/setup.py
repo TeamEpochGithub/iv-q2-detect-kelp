@@ -1,7 +1,6 @@
 """Common functions used at the start of the main scripts train.py, cv.py, and submit.py."""
 import os
 import re
-import sys
 from collections.abc import Callable
 from pathlib import Path
 from typing import cast

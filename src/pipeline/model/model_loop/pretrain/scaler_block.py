@@ -1,8 +1,8 @@
 """Scaler block to fit and transform the data."""
 
 import sys
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 
 import dask
 import dask.array as da

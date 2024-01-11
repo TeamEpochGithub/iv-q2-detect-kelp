@@ -1,7 +1,7 @@
 """A piepline step that divides the data by a number."""
 import sys
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 
 import dask.array as da
 import numpy as np
@@ -44,4 +44,3 @@ class Divider(BaseEstimator, TransformerMixin):
         result = (X / self.divider).astype(np.float32)
         logger.info(f"Divider transform complete in: {time.time() - time_start} seconds.")
         return result
-    

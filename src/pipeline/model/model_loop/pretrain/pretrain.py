@@ -1,6 +1,6 @@
 """Pretrain pipeline class."""
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
@@ -43,7 +43,7 @@ class PretrainPipeline(Pipeline):
             if hasattr(step, "load_scaler"):
                 step.load_scaler(scaler_hash)
 
-    def save_scaler(self, scaler_hash: str) -> None:
+    def save_scaler(self, scaler_hash: str) -> list[tuple[str, Any]]:
         """Save the scaler to the scaler hash.
 
         :param scaler_hash: The scaler hash
