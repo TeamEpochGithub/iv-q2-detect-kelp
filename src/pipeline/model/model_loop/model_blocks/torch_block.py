@@ -1,9 +1,9 @@
 """TorchBlock class."""
 import copy
-from pathlib import Path
 import sys
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Any
 
 import albumentations
@@ -12,6 +12,7 @@ import numpy as np
 import torch
 import wandb
 from annotated_types import Gt
+from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
 from torch.nn import Parameter
@@ -19,7 +20,6 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from joblib import hash
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -51,12 +51,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
-    test_size: float = 0.2 # Hashing purposes
+    test_size: float = 0.2  # Hashing purposes
     transformations: albumentations.Compose = None
 
     def __post_init__(self) -> None:
         """Post init function."""
-
         # Set the hash
         self.set_hash("")
 
@@ -72,7 +71,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, save_model: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
@@ -82,9 +81,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
-
         # Check if the model exists
-        if Path(f"tm/{self.prev_hash}.pt").exists():
+        if Path(f"tm/{self.prev_hash}.pt").exists() and save_model:
             logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
             return self
 
@@ -250,7 +248,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         :param block_hash: Hash of the model pipeline
         """
-
         # Load the model if it exists
         if not Path(f"tm/{self.prev_hash}.pt").exists():
             logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
@@ -267,7 +264,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
-
         # Load the model if it exists
         self.load_model()
 

@@ -1,10 +1,7 @@
 """Feature processing pipeline."""
 from dataclasses import dataclass
-from typing import Iterable
 
 from joblib import hash
-from numpy import ndarray
-from pandas.core.frame import DataFrame
 from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
@@ -60,8 +57,8 @@ class FeaturePipeline(Pipeline):
             logger.debug("No column steps were provided")
 
         return steps
-    
-    def set_load_from_cache(self, load_from_cache: bool) -> None:
+
+    def set_load_from_cache(self, *, load_from_cache: bool) -> None:
         """set_load_from_cache function sets the load from cache flag for the pipeline.
 
         :param load_from_cache: load from cache flag
@@ -70,7 +67,6 @@ class FeaturePipeline(Pipeline):
 
         # Update the steps in the pipeline after changing the load from cache flag
         super().__init__(self._get_steps(), memory=self._get_memory())
-
 
     def _get_memory(self) -> str | None:
         """_get_memory function returns the memory location for the pipeline.
@@ -83,7 +79,7 @@ class FeaturePipeline(Pipeline):
 
     def set_hash(self, prev_hash: str) -> str:
         """set_hash function sets the hash for the pipeline.
-        
+
         :param prev_hash: previous hash
         :return: hash
         """
@@ -92,7 +88,7 @@ class FeaturePipeline(Pipeline):
             feature_hash = self.transformation_pipeline.set_hash(feature_hash)
         if self.column_pipeline:
             feature_hash = self.column_pipeline.set_hash(feature_hash)
-        
+
         self.prev_hash = feature_hash
 
         return feature_hash

@@ -1,14 +1,14 @@
 """Pretrain pipeline class."""
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
 from sklearn.pipeline import Pipeline
 
-from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
 
 
 @dataclass

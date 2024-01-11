@@ -1,13 +1,12 @@
 """TransformationPipeline."""
-from dataclasses import dataclass
-
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
+from joblib import hash
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
-from joblib import hash
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -43,8 +42,7 @@ class TransformationPipeline(Pipeline):
         """
         transformation_hash = prev_hash
         for transformation in self.transformations:
-            transformation_hash = hash(
-                str(transformation) + transformation_hash)
+            transformation_hash = hash(str(transformation) + transformation_hash)
 
         self.prev_hash = transformation_hash
         return transformation_hash
@@ -60,8 +58,7 @@ class TransformationPipeline(Pipeline):
         logger.info("Fitting transformation pipeline")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
-        logger.info(
-            f"Fitted complete transformation pipeline in {time.time() - start_time} seconds")
+        logger.info(f"Fitted complete transformation pipeline in {time.time() - start_time} seconds")
         return X
 
     def transform(self, X: da.Array) -> da.Array:
@@ -74,6 +71,5 @@ class TransformationPipeline(Pipeline):
         logger.info("Transforming transformation pipeline")
         start_time = time.time()
         X = super().transform(X)
-        logger.info(
-            f"Transform of transformations complete in {time.time() - start_time} seconds")
+        logger.info(f"Transform of transformations complete in {time.time() - start_time} seconds")
         return X

@@ -1,17 +1,17 @@
 """Scaler block to fit and transform the data."""
 
-from pathlib import Path
 import sys
-from dataclasses import dataclass
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
 import dask
 import dask.array as da
 import joblib
+from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
-from joblib import hash
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -33,16 +33,15 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         self.set_hash("")
         super().__init__()
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], save_scaler: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_scaler: bool = True) -> Self:
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W)
         :param y: Target data. Shape should be (N, H, W)
         :return: Fitted scaler
         """
-
         # Check if the scaler exists
-        if Path(f"tm/{self.prev_hash}.scaler").exists():
+        if Path(f"tm/{self.prev_hash}.scaler").exists() and save_scaler:
             logger.info("Scaler already exists, loading it")
             return self
 
@@ -57,7 +56,6 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # Fit the scaler on the data
         self.scaler.fit(X_reshaped)
-        logger.info("Fitted scaler")
 
         if save_scaler:
             self.save_scaler()
@@ -71,9 +69,8 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param X: Data to transform. Shape should be (N, C, H, W)
         :return: Transformed data
         """
-
         # Load the scaler if it exists
-        if not hasattr(self.scaler, 'scale_'):
+        if not hasattr(self.scaler, "scale_"):
             self.load_scaler()
 
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar

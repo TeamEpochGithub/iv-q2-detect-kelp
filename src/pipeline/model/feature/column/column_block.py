@@ -1,11 +1,11 @@
 """Column block pipeline."""
 from dataclasses import dataclass
 
+from joblib import hash
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.caching.column import CacheColumnBlock
-from joblib import hash
 
 
 @dataclass

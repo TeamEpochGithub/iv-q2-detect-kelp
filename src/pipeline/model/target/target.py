@@ -31,7 +31,7 @@ class TargetPipeline(Pipeline):
         """
         # TODO(Jasper): Implement target pipeline steps
         return []
-    
+
     def set_hash(self, prev_hash: str = "") -> str:
         """Set the hash.
 

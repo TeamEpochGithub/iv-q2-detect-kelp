@@ -19,7 +19,7 @@ class PostProcessingPipeline(Pipeline):
         """
         # TODO(Jasper): Implement post processing pipeline steps
         return []
-    
+
     def set_hash(self, prev_hash: str) -> str:
         """Set the hash.
 

@@ -28,22 +28,6 @@ class ModelBlocksPipeline(Pipeline):
         # Use list comprehension to get the steps
         return [(str(model_block), model_block) for model_block in self.model_blocks]
 
-    def load_model(self, model_hash: str) -> None:
-        """Load the model from the model hash.
-
-        :param model_hash: The model hash
-        """
-        for model_block in self.model_blocks:
-            model_block.load_model(model_hash)
-
-    def save_model(self, model_hash: str) -> None:
-        """Save the model to the model hash.
-
-        :param model_hash: The model hash
-        """
-        for model_block in self.model_blocks:
-            model_block.save_model(model_hash)
-
     def set_hash(self, prev_hash: str) -> str:
         """Set the hash.
 

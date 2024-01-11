@@ -12,7 +12,6 @@ else:
 import dask
 from sklearn.pipeline import Pipeline
 
-from src.logging_utils.logger import logger
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
@@ -52,11 +51,9 @@ class ModelPipeline(Pipeline):
         if self.target_pipeline:
             steps.append(("target_pipeline_step", self.target_pipeline))
         if self.model_loop_pipeline:
-            steps.append(("model_loop_pipeline_step",
-                         self.model_loop_pipeline))
+            steps.append(("model_loop_pipeline_step", self.model_loop_pipeline))
         if self.post_processing_pipeline:
-            steps.append(("post_processing_pipeline_step",
-                         self.post_processing_pipeline))
+            steps.append(("post_processing_pipeline_step", self.post_processing_pipeline))
 
         return steps
 
@@ -67,6 +64,7 @@ class ModelPipeline(Pipeline):
         train_indices: list[int] | None = None,
         test_indices: list[int] | None = None,
         cache_size: int = -1,
+        *,
         save: bool = True,
     ) -> Self:
         """Fit the model pipeline.
@@ -76,7 +74,7 @@ class ModelPipeline(Pipeline):
         :param train_indices: The train indices
         :param test_indices: The test indices
         :param cache_size: The cache size
-        :param model_hashes: The model hashes
+        :param save: Whether to save the model or not
         """
         new_params = {}
 
@@ -84,8 +82,7 @@ class ModelPipeline(Pipeline):
             new_params = {
                 "model_loop_pipeline_step": {
                     "model_blocks_pipeline_step": {
-                        name: {"train_indices": train_indices,
-                               "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
+                        name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
                         for name, _ in self.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps
                     },
                 }
@@ -93,8 +90,7 @@ class ModelPipeline(Pipeline):
 
         # Add pretrain indices if it exists. Stupid mypy doesn't understand hasattr
         if self.model_loop_pipeline and hasattr(self.model_loop_pipeline.named_steps, "pretrain_pipeline_step"):
-            new_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {
-                "train_indices": train_indices, "save_scaler": save}  # type: ignore[dict-item]
+            new_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {"train_indices": train_indices, "save_scaler": save}  # type: ignore[dict-item]
 
         flattened = flatten_dict(new_params)
 
@@ -102,7 +98,6 @@ class ModelPipeline(Pipeline):
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hashes of the pipelines."""
-
         model_hash = prev_hash
 
         if self.feature_pipeline:

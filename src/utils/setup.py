@@ -1,10 +1,9 @@
 """Common functions used at the start of the main scripts train.py, cv.py, and submit.py."""
 import os
 import re
-import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import dask.array
 import wandb
@@ -59,12 +58,12 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
         pipeline_cfg = cfg.model
         if not is_train:
             pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
-        
+
         # Add test size to the config
         cfg_dict = OmegaConf.to_container(pipeline_cfg, resolve=True)
-        for model_block in cfg_dict["model_loop_pipeline"]["model_blocks_pipeline"]["model_blocks"]:
+        for model_block in cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
             if "test_size" in cfg:
-                model_block["test_size"] = cfg.test_size 
+                model_block["test_size"] = cfg.test_size
             else:
                 model_block["test_size"] = -1
         pipeline_cfg = OmegaConf.create(cfg_dict)

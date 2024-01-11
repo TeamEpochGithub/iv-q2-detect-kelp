@@ -12,7 +12,6 @@ from src.config.submit_config import SubmitConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.make_submission import make_submission
-from src.utils.script.hash_check import check_hash_submit
 from src.utils.setup import setup_config, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -41,7 +40,6 @@ def run_submit(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
-    
     # Preload the pipeline and save it to HTML
     print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
