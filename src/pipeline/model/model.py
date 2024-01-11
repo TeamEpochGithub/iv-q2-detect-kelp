@@ -8,14 +8,12 @@ if sys.version_info < (3, 11):  # Self was added in Python 3.11
 else:
     from typing import Self
 
-
 import dask
 from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
-from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 from src.pipeline.model.target.target import TargetPipeline
 from src.utils.flatten_dict import flatten_dict
 
@@ -33,7 +31,7 @@ class ModelPipeline(Pipeline):
     feature_pipeline: FeaturePipeline | None = None
     target_pipeline: TargetPipeline | None = None
     model_loop_pipeline: ModelLoopPipeline | None = None
-    post_processing_pipeline: PostProcessingPipeline | None = None
+    post_processing_pipeline: Pipeline | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
