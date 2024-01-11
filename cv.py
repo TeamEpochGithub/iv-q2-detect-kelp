@@ -60,7 +60,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
+            setup_wandb(cfg, "cv", output_dir, name=f"Fold {i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = instantiate(cfg.model.pipeline)
