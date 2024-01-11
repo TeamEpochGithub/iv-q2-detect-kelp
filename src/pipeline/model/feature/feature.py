@@ -1,4 +1,6 @@
 """Feature processing pipeline."""
+from dataclasses import dataclass
+
 from joblib import hash
 from sklearn.pipeline import Pipeline
 
@@ -8,6 +10,7 @@ from src.pipeline.model.feature.column.column import ColumnPipeline
 from src.pipeline.model.feature.transformation.transformation import TransformationPipeline
 
 
+@dataclass
 class FeaturePipeline(Pipeline):
     """Feature pipeline class is used to create the feature pipeline.
 
@@ -16,24 +19,12 @@ class FeaturePipeline(Pipeline):
     :param column_pipeline: column pipeline
     """
 
-    def __init__(
-        self,
-        processed_path: str | None = None,
-        transformation_pipeline: TransformationPipeline | None = None,
-        column_pipeline: ColumnPipeline | None = None,
-    ) -> None:
-        """Initialize the class.
+    processed_path: str | None = None
+    transformation_pipeline: TransformationPipeline | None = None
+    column_pipeline: ColumnPipeline | None = None
 
-        :param processed_path: path to the processed data
-        :param transformation_pipeline: transformation pipeline
-        :param column_pipeline: column pipeline
-        :param is_train: whether the pipeline is for training or not
-        """
-        # Set the parameters
-        self.processed_path = processed_path
-        self.transformation_pipeline = transformation_pipeline
-        self.column_pipeline = column_pipeline
-
+    def __post_init__(self) -> None:
+        """Post init function."""
         # Create hash
         if self.processed_path:
             self.transformation_hash = hash(self.transformation_pipeline)
@@ -71,22 +62,3 @@ class FeaturePipeline(Pipeline):
         if self.processed_path:
             return self.processed_path + "/" + self.transformation_hash + "/pipeline_cache"
         return None
-
-    def __str__(self) -> str:
-        """__str__ returns string representation of the class.
-
-        :return: String representation of the class
-        """
-        return "FeaturePipeline"
-
-    def __repr__(self) -> str:
-        """__repr__ returns the full representation of the class.
-
-        :return: Full representation of the class
-        """
-        return (
-            f"FeaturePipeline("
-            f"processed_path={self.processed_path}, "
-            f"transformation_pipeline={self.transformation_pipeline}, "
-            f"column_pipeline={self.column_pipeline})"
-        )

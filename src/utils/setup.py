@@ -12,11 +12,12 @@ from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
-from sklearn.pipeline import Pipeline
 from sklearn.utils import estimator_html_repr
 from wandb.sdk.lib import RunDisabled
 
 from src.logging_utils.logger import logger
+from src.pipeline.ensemble.ensemble import EnsemblePipeline
+from src.pipeline.model.model import ModelPipeline
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -26,11 +27,25 @@ def setup_config(cfg: DictConfig) -> None:
     """
     # Check for missing keys in the config file
     missing = OmegaConf.missing_keys(cfg)
-    if missing:
-        raise ValueError(f"Missing keys in config file\n{missing}")
+
+    # If both model and ensemble are specified, raise an error
+    if cfg.get("model") and cfg.get("ensemble"):
+        raise ValueError("Both model and ensemble specified in config.")
+
+    # If neither model nor ensemble are specified, raise an error
+    if not cfg.get("model") and not cfg.get("ensemble"):
+        raise ValueError("Neither model nor ensemble specified in config.")
+
+    # If model and ensemble are in missing raise an error
+    if "model" in missing and "ensemble" in missing:
+        raise ValueError("Both model and ensemble are missing from config.")
+
+    # If any other keys except model and ensemble are missing, raise an error
+    if len(missing) > 1:
+        raise ValueError(f"Missing keys in config: {missing}")
 
 
-def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> Pipeline:
+def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> ModelPipeline | EnsemblePipeline:
     """Instantiate the pipeline and log it to HTML.
 
     :param pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
@@ -38,8 +53,17 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    if not is_train:
-        pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+    cfg = pipeline_cfg
+
+    if "model" in cfg:
+        pipeline_cfg = cfg.model
+        if not is_train:
+            pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+    elif "ensemble" in cfg:
+        pipeline_cfg = cfg.ensemble
+        if not is_train:
+            for model in pipeline_cfg.models.values():
+                model.feature_pipeline.processed_path = "data/test"
     model_pipeline = instantiate(pipeline_cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
@@ -53,7 +77,7 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     return model_pipeline
 
 
-def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, dask.array.Array]:
+def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array, dask.array.Array]:
     """Lazily read the raw data with dask, and find the shape after processing.
 
     :param data_path: Path to the raw data.
@@ -68,17 +92,7 @@ def setup_train_data(data_path: str, target_path: str, feature_pipeline: Pipelin
     logger.info(f"Raw data shape: {X.shape}")
     logger.info(f"Raw target shape: {y.shape}")
 
-    # Lazily process the features to know the shape in advance
-    # Suppress logger and print messages while getting the indices to avoid clutter in the log file
-    logger.info("Finding shape of processed data")
-    logger.setLevel("ERROR")
-    with open(os.devnull, "w") as null_file:
-        sys.stdout = null_file
-        x_processed = feature_pipeline.fit_transform(X)
-    sys.stdout = sys.__stdout__
-    logger.setLevel("DEBUG")
-    logger.info(f"Processed data shape: {x_processed.shape}")
-    return X, y, x_processed
+    return X, y
 
 
 def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
@@ -106,7 +120,7 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
+    wandb.config = OmegaConf.to_container(cfg, resolve=True)
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
@@ -128,28 +142,16 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     return run
 
 
-def setup_test_data(data_path: str, feature_pipeline: Pipeline) -> tuple[dask.array.Array, dask.array.Array, list[str]]:
+def setup_test_data(data_path: str) -> tuple[dask.array.Array, list[str]]:
     """Lazily read the raw data with dask, and find the shape after processing the test data.
 
     :param data_path: Path to the raw data.
-    :param feature_pipeline: The feature pipeline.
 
-    :return: X, x_processed, filenames
+    :return: X, filenames
     """
     logger.info("Lazily reading the raw test data")
     X = imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
     filenames = [file for file in os.listdir(data_path) if file.endswith(".tif")]
     logger.info(f"Raw test data shape: {X.shape}")
 
-    # Lazily process the features to know the shape in advance
-    # Suppress logger messages while getting the indices to avoid clutter in the log file
-    logger.info("Finding shape of processed data")
-    logger.setLevel("ERROR")
-    with open(os.devnull, "w") as null_file:
-        sys.stdout = null_file
-        x_processed = feature_pipeline.transform(X)
-    sys.stdout = sys.__stdout__
-    logger.setLevel("DEBUG")
-    logger.info(f"Processed data shape: {x_processed.shape}")
-
-    return X, x_processed, filenames
+    return X, filenames

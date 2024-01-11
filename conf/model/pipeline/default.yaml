@@ -1,4 +1,5 @@
 _target_: src.pipeline.model.model.ModelPipeline
+_convert_: 'partial'
 
 feature_pipeline:
   _target_: src.pipeline.model.feature.feature.FeaturePipeline

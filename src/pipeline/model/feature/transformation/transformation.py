@@ -1,4 +1,6 @@
 """TransformationPipeline."""
+from dataclasses import dataclass
+
 import time
 from typing import Any
 
@@ -10,18 +12,17 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 
 
+@dataclass
 class TransformationPipeline(Pipeline):
     """TransformationPipeline class extends the sklearn Pipeline class.
 
     :param transformations: list of transformations
     """
 
-    def __init__(self, transformations: list[BaseEstimator]) -> None:
-        """Initialize the TransformationPipeline.
+    transformations: list[BaseEstimator]
 
-        :param transformations: list of transformations
-        """
-        self.transformations = transformations
+    def __post_init__(self) -> None:
+        """Post init function."""
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
@@ -58,10 +59,3 @@ class TransformationPipeline(Pipeline):
         X = super().transform(X)
         logger.info(f"Transform of transformations complete in {time.time() - start_time} seconds")
         return X
-
-    def __str__(self) -> str:
-        """__str__ returns string representation of the TransformationPipeline.
-
-        :return: String representation of the TransformationPipeline
-        """
-        return "TransformationPipeline"
