@@ -81,16 +81,15 @@ class ModelPipeline(Pipeline):
         if self.model_loop_pipeline:
             new_params = {
                 "model_loop_pipeline_step": {
+                    "pretrain_pipeline_step": {
+                        name: {"train_indices": train_indices, "save_scaler": save} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                    },
                     "model_blocks_pipeline_step": {
                         name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
                         for name, _ in self.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps
                     },
                 }
             }
-
-        # Add pretrain indices if it exists. Stupid mypy doesn't understand hasattr
-        if self.model_loop_pipeline and hasattr(self.model_loop_pipeline.named_steps, "pretrain_pipeline_step"):
-            new_params["model_loop_pipeline_step"]["pretrain_pipeline_step"] = {"train_indices": train_indices, "save_scaler": save}  # type: ignore[dict-item]
 
         flattened = flatten_dict(new_params)
 
