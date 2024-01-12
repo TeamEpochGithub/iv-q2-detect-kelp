@@ -13,6 +13,8 @@ if sys.version_info < (3, 11):  # Self was added in Python 3.11
 else:
     from typing import Self
 
+from joblib import hash
+
 
 @dataclass
 class ColumnSelection(BaseEstimator, TransformerMixin):
@@ -23,7 +25,11 @@ class ColumnSelection(BaseEstimator, TransformerMixin):
 
     columns: list[int]
 
-    def fit(self, X: da.Array, y: da.Array) -> Self:
+    def __post_init__(self) -> None:
+        """Post init function."""
+        self.set_hash("")
+
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Return self, no fitting necessary.
 
         :param X: Data to fit
@@ -42,3 +48,15 @@ class ColumnSelection(BaseEstimator, TransformerMixin):
         X = X.rechunk({1: -1})
         logger.info("Selected columns in %s seconds", time.time() - start_time)
         return X
+
+    def set_hash(self, prev_hash: str) -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        column_hash = hash(str(self.columns) + prev_hash)
+
+        self.prev_hash = column_hash
+
+        return column_hash

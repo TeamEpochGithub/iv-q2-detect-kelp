@@ -24,6 +24,7 @@ class ColumnPipeline(Pipeline):
         """Post init function."""
         self.path = ""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, ColumnBlockPipeline]]:
         """Get the steps in the pipeline.

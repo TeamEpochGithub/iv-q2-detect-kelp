@@ -30,10 +30,10 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
 
     def __post_init__(self) -> None:
         """Post init function."""
-        self.set_hash("")
         super().__init__()
+        self.set_hash("")
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_scaler: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W)
@@ -41,7 +41,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :return: Fitted scaler
         """
         # Check if the scaler exists
-        if Path(f"tm/{self.prev_hash}.scaler").exists() and save_scaler:
+        if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
             logger.info("Scaler already exists, loading it")
             return self
 
@@ -57,7 +57,7 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         # Fit the scaler on the data
         self.scaler.fit(X_reshaped)
 
-        if save_scaler:
+        if save_pretrain:
             self.save_scaler()
 
         logger.info("Fitted scaler in %s seconds", time.time() - start_time)

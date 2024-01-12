@@ -31,9 +31,9 @@ class FeaturePipeline(Pipeline):
             self.transformation_hash = hash(self.transformation_pipeline)
             self.load_from_cache = True
 
-        self.set_hash("")
-
         super().__init__(self._get_steps(), memory=self._get_memory())
+
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """_get_steps function returns the steps for the pipeline.

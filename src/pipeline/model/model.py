@@ -36,8 +36,8 @@ class ModelPipeline(Pipeline):
 
     def __post_init__(self) -> None:
         """Post init function."""
-        self.set_hash("")
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -82,7 +82,7 @@ class ModelPipeline(Pipeline):
             new_params = {
                 "model_loop_pipeline_step": {
                     "pretrain_pipeline_step": {
-                        name: {"train_indices": train_indices, "save_scaler": save} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                        name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                     },
                     "model_blocks_pipeline_step": {
                         name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}

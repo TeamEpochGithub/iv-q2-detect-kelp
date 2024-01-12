@@ -18,12 +18,12 @@ class PretrainPipeline(Pipeline):
     :param steps: list of steps
     """
 
-    steps: list[ScalerBlock]
+    pretrain_steps: list[ScalerBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
-        self.set_hash("")
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, ScalerBlock]]:
         """Get the pipeline steps.
@@ -34,7 +34,8 @@ class PretrainPipeline(Pipeline):
         # if isinstance(self.steps[0], tuple):
         #     return self.steps
         # else:
-        return [(str(step), step) for step in self.steps]
+
+        return [(str(step), step) for step in self.pretrain_steps]
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hash.
@@ -43,7 +44,7 @@ class PretrainPipeline(Pipeline):
         :return: Hash
         """
         pretrain_hash = prev_hash
-        for step in self.steps:
+        for step in self.pretrain_steps:
             pretrain_hash = step.set_hash(pretrain_hash)
 
         self.prev_hash = pretrain_hash
