@@ -3,7 +3,7 @@ import os
 import re
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import dask.array
 import wandb
@@ -52,28 +52,35 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    cfg = pipeline_cfg
 
-    if "model" in cfg:
-        pipeline_cfg = cfg.model
+    test_size = pipeline_cfg.get("test_size", -1)
+
+    if "model" in pipeline_cfg:
+        model_cfg = pipeline_cfg.model
         if not is_train:
-            pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
+            model_cfg["feature_pipeline"]["processed_path"] = "data/test"
 
         # Add test size to the config
-        cfg_dict = OmegaConf.to_container(pipeline_cfg, resolve=True)
-        for model_block in cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
-            if "test_size" in cfg:
-                model_block["test_size"] = cfg.test_size
-            else:
-                model_block["test_size"] = -1
-        pipeline_cfg = OmegaConf.create(cfg_dict)
+        model_cfg_dict = OmegaConf.to_container(model_cfg, resolve=True)
+        if isinstance(model_cfg_dict, dict):
+            for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
+                model_block["test_size"] = test_size
+        cfg = OmegaConf.create(model_cfg_dict)
 
-    elif "ensemble" in cfg:
-        pipeline_cfg = cfg.ensemble
-        if not is_train:
-            for model in pipeline_cfg.models.values():
-                model.feature_pipeline.processed_path = "data/test"
-    model_pipeline = instantiate(pipeline_cfg)
+    elif "ensemble" in pipeline_cfg:
+        ensemble_cfg = pipeline_cfg.ensemble
+
+        ensemble_cfg_dict = OmegaConf.to_container(ensemble_cfg, resolve=True)
+        if isinstance(ensemble_cfg_dict, dict):
+            for model_cfg_dict in ensemble_cfg.models.values():
+                for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
+                    model_block["test_size"] = test_size
+                if not is_train:
+                    model_cfg_dict.feature_pipeline.processed_path = "data/test"
+
+        cfg = OmegaConf.create(ensemble_cfg_dict)
+
+    model_pipeline = instantiate(cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
 
