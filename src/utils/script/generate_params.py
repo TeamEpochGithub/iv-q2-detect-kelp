@@ -49,10 +49,9 @@ def generate_model_params(
         {
             "model_loop_pipeline_step": {
                 "pretrain_pipeline_step": {
-                    name: {"train_indices": train_indices, "save_pretrain": save}
-                    for name, _ in model_pipeline.get("model_loop_pipeline").get("named_steps").get("pretrain_pipeline_step").get("steps")
+                    name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                 }
-                if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.get("named_steps", {})
+                if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps
                 else {},
                 "model_blocks_pipeline_step": {
                     name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
@@ -82,6 +81,30 @@ def generate_ensemble_params(
     :param save: Whether to save the model or not
     :return: The model parameters
     """
-    new_params: dict[str, str] = {}
+    new_params = (
+        {
+            name: {
+                "model_loop_pipeline_step": {
+                    "pretrain_pipeline_step": {
+                        name: {"train_indices": train_indices, "save_pretrain": save}
+                        for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                    }
+                    if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps
+                    else {},
+                    "model_blocks_pipeline_step": {
+                        name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
+                        for name, _ in model_pipeline.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps
+                    }
+                    if "model_blocks_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps
+                    else {},
+                }
+                if "model_loop_pipeline_step" in model_pipeline.named_steps and model_pipeline.model_loop_pipeline
+                else {}
+            }
+            for name, model_pipeline in ensemble_pipeline.steps
+        }
+        if ensemble_pipeline
+        else {}
+    )
 
     return flatten_dict(new_params)
