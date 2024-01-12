@@ -2,16 +2,16 @@
 
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import dask
 import dask.array as da
 import joblib
-from joblib import hash
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator
 
 from src.logging_utils.logger import logger
+from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -20,18 +20,13 @@ else:
 
 
 @dataclass
-class ScalerBlock(BaseEstimator, TransformerMixin):
+class ScalerBlock(PretrainBlock):
     """Scaler block to fit and transform the data.
 
     :param scaler: Scaler.
     """
 
-    scaler: BaseEstimator
-
-    def __post_init__(self) -> None:
-        """Post init function."""
-        super().__init__()
-        self.set_hash("")
+    scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the scaler.
@@ -86,19 +81,8 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
             X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
             X = X.rechunk()
         logger.info("Lazily transformed the data using the scaler")
+        logger.info(f"Shape of the data after transforming: {X.shape}")
         return X
-
-    def set_hash(self, prev_hash: str) -> str:
-        """set_hash function sets the hash for the pipeline.
-
-        :param prev_hash: previous hash
-        :return: hash
-        """
-        scaler_hash = hash(str(self.scaler) + prev_hash)
-
-        self.prev_hash = scaler_hash
-
-        return scaler_hash
 
     def save_scaler(self) -> None:
         """Save the scaler using joblib.
