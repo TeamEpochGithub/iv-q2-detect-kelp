@@ -22,6 +22,7 @@ class TargetPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -30,3 +31,13 @@ class TargetPipeline(Pipeline):
         """
         # TODO(Jasper): Implement target pipeline steps
         return []
+
+    def set_hash(self, prev_hash: str = "") -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        # TODO(Jasper): Implement target pipeline hash
+        self.prev_hash = prev_hash
+        return prev_hash

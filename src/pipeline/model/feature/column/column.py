@@ -24,6 +24,7 @@ class ColumnPipeline(Pipeline):
         """Post init function."""
         self.path = ""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, ColumnBlockPipeline]]:
         """Get the steps in the pipeline.
@@ -74,3 +75,16 @@ class ColumnPipeline(Pipeline):
         self.path = path
         # Update the steps in the pipeline after changing the path
         self.steps = self._get_steps()
+
+    def set_hash(self, prev_hash: str = "") -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        column_hash = prev_hash
+        for column in self.columns:
+            column_hash = column.set_hash(column_hash)
+
+        self.prev_hash = column_hash
+        return column_hash

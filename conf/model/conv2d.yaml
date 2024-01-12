@@ -28,7 +28,7 @@ target_pipeline:
 
 model_loop_pipeline:
   pretrain_pipeline:
-    steps:
+    pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler

@@ -46,7 +46,8 @@ class EnsemblePipeline(Pipeline):
         train_indices: list[int] | None = None,
         test_indices: list[int] | None = None,
         cache_size: int = -1,
-        model_hashes: list[str] | None = None,
+        *,
+        save: bool = True,
     ) -> Self:
         """Fit the model.
 
@@ -55,10 +56,10 @@ class EnsemblePipeline(Pipeline):
         :param train_indices: The train indices
         :param test_indices: The test indices
         :param cache_size: The cache size
-        :param model_hashes: The model hashes
+        :param save: Whether to save the model or not
         """
-        for i, model in enumerate(self.models.values()):
-            model.fit(X, y, train_indices=train_indices, test_indices=test_indices, cache_size=cache_size, model_hashes=[model_hashes[i]] if model_hashes else None)
+        for model in self.models.values():
+            model.fit(X, y, train_indices=train_indices, test_indices=test_indices, cache_size=cache_size, save=save)
         return self
 
     def predict(self, X: da.Array) -> np.ndarray[Any, Any]:
