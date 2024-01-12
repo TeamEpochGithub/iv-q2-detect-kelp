@@ -14,6 +14,7 @@ from sklearn.model_selection import StratifiedKFold
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.utils.script.generate_params import generate_cv_params
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -59,17 +60,10 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
-        # Set train and test indices for each model block
-        # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
-        # Then we convert it to a flat dictionary with __ as the separator between each level
-        fit_params = {
-            "train_indices": train_indices,
-            "test_indices": test_indices,
-            "cache_size": cfg.cache_size,
-            "save": False,
-        }
+        # Generate the parameters for training
+        fit_params = generate_cv_params(cfg, model_pipeline, train_indices, test_indices)
 
-        # Fit the pipeline
+        # Fit the pipelinem
         model_pipeline.fit(X, y, **fit_params)
 
         if wandb.run is not None:
