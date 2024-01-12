@@ -42,7 +42,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     if cfg.wandb.enabled:
-        setup_wandb(cfg, "Training", output_dir)
+        setup_wandb(cfg, "train", output_dir)
 
     # Preload the pipeline and save it to HTML
     print_section_separator("Setup pipeline")

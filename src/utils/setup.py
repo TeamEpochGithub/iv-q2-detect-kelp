@@ -159,7 +159,8 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
         # Store the config as an artefact of W&B
         artifact = wandb.Artifact(job_type + "_config", type="config")
         config_path = output_dir / ".hydra/config.yaml"
-        artifact.add_file(str(config_path), job_type + ".yaml")
+        artifact.add_file(str(config_path), "config.yaml")
+        artifact.add_file(f"conf/{job_type}.yaml")
         wandb.log_artifact(artifact)
 
     if cfg.wandb.log_code.enabled:
