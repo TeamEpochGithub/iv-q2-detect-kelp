@@ -73,7 +73,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         model_pipeline.fit(X, y, **fit_params)
 
         # Only get the predictions for the test indices #TODO(Hugo): Issue 82
-        predictions = model_pipeline.predict(X[test_indices])
+        predictions = model_pipeline.transform(X[test_indices])
         scorer = instantiate(cfg.scorer)
         score = scorer(y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")

@@ -263,7 +263,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array, cache_size: int = -1, *, load_model_from_disk: bool = True) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -271,7 +271,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Predictions.
         """
         # Load the model if it exists
-        self.load_model()
+        if load_model_from_disk:
+            self.load_model()
 
         print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
         logger.debug(f"Training model: {self.model.__class__.__name__}")
@@ -301,7 +302,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param y: Labels.
         :return: Predictions and labels.
         """
-        return self.predict(X)
+        return self.predict(X, load_model_from_disk=False)
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.
