@@ -66,7 +66,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
             "train_indices": train_indices,
             "test_indices": test_indices,
             "cache_size": cfg.cache_size,
-            "model_hashes": [],
+            "save": False,
         }
 
         # Fit the pipeline

@@ -2,14 +2,16 @@
 
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 import dask
 import dask.array as da
 import joblib
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import BaseEstimator
 
 from src.logging_utils.logger import logger
+from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -18,21 +20,26 @@ else:
 
 
 @dataclass
-class ScalerBlock(BaseEstimator, TransformerMixin):
+class ScalerBlock(PretrainBlock):
     """Scaler block to fit and transform the data.
 
     :param scaler: Scaler.
     """
 
-    scaler: BaseEstimator
+    scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int]) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W)
         :param y: Target data. Shape should be (N, H, W)
         :return: Fitted scaler
         """
+        # Check if the scaler exists
+        if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
+            logger.info("Scaler already exists, loading it")
+            return self
+
         logger.info("Fitting scaler...")
         start_time = time.time()
         # Save the original shape
@@ -44,6 +51,10 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
         # Fit the scaler on the data
         self.scaler.fit(X_reshaped)
+
+        if save_pretrain:
+            self.save_scaler()
+
         logger.info("Fitted scaler in %s seconds", time.time() - start_time)
         return self
 
@@ -53,7 +64,9 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
         :param X: Data to transform. Shape should be (N, C, H, W)
         :return: Transformed data
         """
-        logger.info("Transforming the data using the scaler...")
+        # Load the scaler if it exists
+        if not hasattr(self.scaler, "scale_"):
+            self.load_scaler()
 
         # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
         # ignores type error because this is literally the example from the dask docs
@@ -67,23 +80,29 @@ class ScalerBlock(BaseEstimator, TransformerMixin):
             X_reshaped = self.scaler.transform(X_reshaped)
             X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
             X = X.rechunk()
-        logger.info("Transformed the data using the scaler")
+        logger.info("Lazily transformed the data using the scaler")
+        logger.info(f"Shape of the data after transforming: {X.shape}")
         return X
 
-    def save_scaler(self, scaler_hash: str) -> None:
+    def save_scaler(self) -> None:
         """Save the scaler using joblib.
 
         :param scaler_hash: Hash of the scaler.
         """
-        logger.info(f"Saving scaler from tm/{scaler_hash}.scaler")
-        joblib.dump(self.scaler, f"tm/{scaler_hash}.scaler")
-        logger.info(f"Saved scaler from tm/{scaler_hash}.scaler")
+        logger.info(f"Saving scaler to tm/{self.prev_hash}.scaler")
+        joblib.dump(self.scaler, f"tm/{self.prev_hash}.scaler")
+        logger.info(f"Saved scaler to tm/{self.prev_hash}.scaler")
 
-    def load_scaler(self, scaler_hash: str) -> None:
+    def load_scaler(self) -> None:
         """Load the scaler using joblib.
 
         :param scaler_hash: Hash of the scaler.
         """
-        logger.info(f"Loading scaler from tm/{scaler_hash}.scaler")
-        self.scaler = joblib.load(f"tm/{scaler_hash}.scaler")
-        logger.info(f"Loaded scaler from tm/{scaler_hash}.scaler")
+        # Check if the scaler exists
+        if not Path(f"tm/{self.prev_hash}.scaler").exists():
+            logger.error(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
+            sys.exit(1)
+
+        logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
+        self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")
+        logger.info(f"Loaded scaler from tm/{self.prev_hash}.scaler")

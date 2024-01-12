@@ -14,7 +14,6 @@ from sklearn.model_selection import train_test_split
 from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.script.hash_check import check_hash_train
 from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
@@ -44,11 +43,8 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     if cfg.wandb.enabled:
         setup_wandb(cfg, "Training", output_dir)
 
-    # Check hashes train
-    model_hashes, scaler_hashes = check_hash_train(cfg)
-
-    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
+    print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
@@ -70,17 +66,10 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
         "train_indices": train_indices,
         "test_indices": test_indices,
         "cache_size": cfg.cache_size,
-        "model_hashes": model_hashes,
     }
 
     # Fit the pipeline
     model_pipeline.fit(X, y, **fit_params)
-
-    # Save the model
-    model_pipeline.save_model(model_hashes)
-
-    # Save the scaler
-    model_pipeline.save_scaler(scaler_hashes)
 
     if wandb.run:
         wandb.finish()

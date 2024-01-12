@@ -12,7 +12,6 @@ else:
 import dask
 from sklearn.pipeline import Pipeline
 
-from src.logging_utils.logger import logger
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
@@ -38,6 +37,7 @@ class ModelPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -57,42 +57,6 @@ class ModelPipeline(Pipeline):
 
         return steps
 
-    def load_model(self, model_hashes: list[str]) -> None:
-        """Load the models from the model hashes.
-
-        :param model_hashes: The model hashes
-        """
-        model_hash = model_hashes[0]
-        if self.model_loop_pipeline:
-            self.model_loop_pipeline.load_model(model_hash)
-
-    def load_scaler(self, scaler_hashes: list[str]) -> None:
-        """Load the scalers from the scaler hashes.
-
-        :param scaler_hashes: The scaler hashes
-        """
-        scaler_hash = scaler_hashes[0]
-        if self.model_loop_pipeline and scaler_hash:
-            self.model_loop_pipeline.load_scaler(scaler_hash)
-
-    def save_model(self, model_hashes: list[str]) -> None:
-        """Save the model to the model hash.
-
-        :param model_hash: The model hash
-        """
-        model_hash = model_hashes[0]
-        if self.model_loop_pipeline and model_hash:
-            self.model_loop_pipeline.save_model(model_hash)
-
-    def save_scaler(self, scaler_hashes: list[str]) -> None:
-        """Save the scaler to the scaler hash.
-
-        :param scaler_hash: The scaler hash
-        """
-        scaler_hash = scaler_hashes[0]
-        if self.model_loop_pipeline and scaler_hash is not None:
-            self.model_loop_pipeline.save_scaler(scaler_hash)
-
     def fit(
         self,
         X: dask.array.Array,
@@ -100,7 +64,8 @@ class ModelPipeline(Pipeline):
         train_indices: list[int] | None = None,
         test_indices: list[int] | None = None,
         cache_size: int = -1,
-        model_hashes: list[str] | None = None,
+        *,
+        save: bool = True,
     ) -> Self:
         """Fit the model pipeline.
 
@@ -109,20 +74,18 @@ class ModelPipeline(Pipeline):
         :param train_indices: The train indices
         :param test_indices: The test indices
         :param cache_size: The cache size
-        :param model_hashes: The model hashes
+        :param save: Whether to save the model or not
         """
         new_params = {}
-
-        if model_hashes and not model_hashes[0]:
-            logger.info("Model hashes found. Skipping model fit.")
-            return self
 
         if self.model_loop_pipeline:
             new_params = {
                 "model_loop_pipeline_step": {
-                    "pretrain_pipeline_step": {name: {"train_indices": train_indices} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps},
+                    "pretrain_pipeline_step": {
+                        name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                    },
                     "model_blocks_pipeline_step": {
-                        name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size}
+                        name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
                         for name, _ in self.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps
                     },
                 }
@@ -131,3 +94,20 @@ class ModelPipeline(Pipeline):
         flattened = flatten_dict(new_params)
 
         return super().fit(X, y, **flattened)
+
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hashes of the pipelines."""
+        model_hash = prev_hash
+
+        if self.feature_pipeline:
+            model_hash = self.feature_pipeline.set_hash(model_hash)
+        if self.target_pipeline:
+            model_hash = self.target_pipeline.set_hash(model_hash)
+        if self.model_loop_pipeline:
+            model_hash = self.model_loop_pipeline.set_hash(model_hash)
+        if self.post_processing_pipeline:
+            model_hash = self.post_processing_pipeline.set_hash(model_hash)
+
+        self.prev_hash = model_hash
+
+        return model_hash

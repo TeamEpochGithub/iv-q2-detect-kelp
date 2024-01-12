@@ -22,6 +22,7 @@ class ModelLoopPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -37,34 +38,19 @@ class ModelLoopPipeline(Pipeline):
 
         return steps
 
-    def load_model(self, model_hash: str) -> None:
-        """Load the model from the model hash.
+    def set_hash(self, prev_hash: str = "") -> str:
+        """Set the hash.
 
-        :param model_hash: The model hash
+        :param prev_hash: Previous hash
+        :return: Hash
         """
-        if self.model_blocks_pipeline:
-            self.model_blocks_pipeline.load_model(model_hash)
+        model_loop_hash = prev_hash
 
-    def load_scaler(self, scaler_hash: str) -> None:
-        """Load the scaler from the scaler hash.
-
-        :param scaler_hash: The scaler hash
-        """
         if self.pretrain_pipeline:
-            self.pretrain_pipeline.load_scaler(scaler_hash)
-
-    def save_model(self, model_hash: str) -> None:
-        """Save the model to the model hash.
-
-        :param model_hash: The model hash
-        """
+            model_loop_hash = self.pretrain_pipeline.set_hash(model_loop_hash)
         if self.model_blocks_pipeline:
-            self.model_blocks_pipeline.save_model(model_hash)
+            model_loop_hash = self.model_blocks_pipeline.set_hash(model_loop_hash)
 
-    def save_scaler(self, scaler_hash: str) -> None:
-        """Save the scaler to the scaler hash.
+        self.prev_hash = model_loop_hash
 
-        :param scaler_hash: The scaler hash
-        """
-        if self.pretrain_pipeline:
-            self.pretrain_pipeline.save_scaler(scaler_hash)
+        return model_loop_hash
