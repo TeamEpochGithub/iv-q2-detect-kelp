@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
+from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 
 @dataclass
@@ -18,14 +18,14 @@ class PretrainPipeline(Pipeline):
     :param steps: list of steps
     """
 
-    pretrain_steps: list[ScalerBlock]
+    pretrain_steps: list[PretrainBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
         self.set_hash("")
 
-    def _get_steps(self) -> list[tuple[str, ScalerBlock]]:
+    def _get_steps(self) -> list[tuple[str, PretrainBlock]]:
         """Get the pipeline steps.
 
         :return: list of steps
