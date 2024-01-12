@@ -4,19 +4,17 @@ import sys
 from dataclasses import dataclass
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
-    from typing_extensions import Self
+    pass
 else:
-    from typing import Self
+    pass
 
 
-import dask
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 from src.pipeline.model.target.target import TargetPipeline
-from src.utils.flatten_dict import flatten_dict
 
 
 @dataclass
@@ -56,44 +54,6 @@ class ModelPipeline(Pipeline):
             steps.append(("post_processing_pipeline_step", self.post_processing_pipeline))
 
         return steps
-
-    def fit(
-        self,
-        X: dask.array.Array,
-        y: dask.array.Array,
-        train_indices: list[int] | None = None,
-        test_indices: list[int] | None = None,
-        cache_size: int = -1,
-        *,
-        save: bool = True,
-    ) -> Self:
-        """Fit the model pipeline.
-
-        :param X: The input data
-        :param y: The target data
-        :param train_indices: The train indices
-        :param test_indices: The test indices
-        :param cache_size: The cache size
-        :param save: Whether to save the model or not
-        """
-        new_params = {}
-
-        if self.model_loop_pipeline:
-            new_params = {
-                "model_loop_pipeline_step": {
-                    "pretrain_pipeline_step": {
-                        name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in self.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
-                    },
-                    "model_blocks_pipeline_step": {
-                        name: {"train_indices": train_indices, "test_indices": test_indices, "cache_size": cache_size, "save_model": save}
-                        for name, _ in self.model_loop_pipeline.named_steps.model_blocks_pipeline_step.steps
-                    },
-                }
-            }
-
-        flattened = flatten_dict(new_params)
-
-        return super().fit(X, y, **flattened)
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hashes of the pipelines."""
