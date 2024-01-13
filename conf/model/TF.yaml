@@ -56,14 +56,11 @@ target_pipeline:
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
+        columns: [ 6, 1, 7, 9, 10 ]
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
-      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 1000
-        test_split: 0.2
-      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [0, 1, 2, 11]
 
   model_blocks_pipeline:
     model_blocks:
@@ -73,9 +70,9 @@ model_loop_pipeline:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
           model: # from segmentation_models_pytorch import Unet
-            _target_: segmentation_models_pytorch.UnetPlusPlus
-            encoder_name: resnext50_32x4d
-            in_channels: 4
+            _target_: segmentation_models_pytorch.MAnet
+            encoder_name: resnet34
+            in_channels: 5
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
@@ -83,12 +80,12 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
-          lr: 0.00005
+          lr: 0.0001
         scheduler: None
         criterion:
-          _target_: src.modules.loss.dice_loss.DiceLoss
+          _target_: src.modules.dice_loss.DiceLoss
         epochs: 200
-        batch_size: 32
+        batch_size: 64
         patience: 20
         transformations:
           _target_: albumentations.Compose
