@@ -60,7 +60,7 @@ model_loop_pipeline:
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 1000
+        max_images: 2000
         test_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0, 1, 2, 11]
@@ -74,7 +74,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.UnetPlusPlus
-            encoder_name: resnext50_32x4d
+            encoder_name: resnet34
             in_channels: 4
             classes: 1
             activation: sigmoid
@@ -87,8 +87,8 @@ model_loop_pipeline:
         scheduler: None
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 200
-        batch_size: 32
+        epochs: 100
+        batch_size: 64
         patience: 20
         transformations:
           _target_: albumentations.Compose

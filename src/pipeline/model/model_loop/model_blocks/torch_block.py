@@ -77,6 +77,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
 
+        self.is_trained = False
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
 
@@ -175,10 +177,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
                 if self.early_stopping():
                     break
-            else:  # Train full TODO(#38)
-                pass
+            # Train full TODO(#38)
 
         logger.info("Done training the model")
+        self.is_trained = True
         if save_model:
             self.save_model()
 
@@ -302,7 +304,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param y: Labels.
         :return: Predictions and labels.
         """
-        return self.predict(X, load_model_from_disk=False)
+        return self.predict(X, load_model_from_disk=not self.is_trained)
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.

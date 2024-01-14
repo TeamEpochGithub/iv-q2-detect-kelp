@@ -30,6 +30,11 @@ class GBDT(PretrainBlock):
     max_images: int | None = None
     test_split: float = 0.2
 
+    def __init__(self) -> None:
+        """Initialize the GBDT model."""
+        super().__init__()
+        self.trained_model = None
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the model.
 
@@ -37,7 +42,7 @@ class GBDT(PretrainBlock):
         :param y: The target variable
         :return: The fitted transformer
         """
-        if Path(f"tm/{self.prev_hash}.gbdt").exists():
+        if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
             logger.info(f"GBDT already exists at {f'tm/{self.prev_hash}.gbdt'}")
             return self
 
@@ -71,11 +76,14 @@ class GBDT(PretrainBlock):
         cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
         cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
 
-        # Save the model
-        cbm.save_model(f"tm/{self.prev_hash}.gbdt")
-
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
-        logger.info(f"Saved GBDT to {f'tm/{self.prev_hash}.gbdt'}")
+
+        # Save the model
+        self.trained_model = cbm
+        if save_pretrain:
+            cbm.save_model(f"tm/{self.prev_hash}.gbdt")
+            logger.info(f"Saved GBDT to {f'tm/{self.prev_hash}.gbdt'}")
+
         return self
 
     def transform(self, X: da.Array) -> da.Array:
@@ -89,12 +97,15 @@ class GBDT(PretrainBlock):
         if not Path(f"tm/{self.prev_hash}.gbdt").exists():
             raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
 
-        start_time = time.time()
         logger.info("Transforming with GBDT...")
 
         # Load the model
         cbm = catboost.CatBoostClassifier()
-        cbm.load_model(f"tm/{self.prev_hash}.gbdt")
+        if self.trained_model is not None:
+            cbm = self.trained_model
+        else:
+            cbm.load_model(f"tm/{self.prev_hash}.gbdt")
+            logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
 
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
@@ -107,7 +118,4 @@ class GBDT(PretrainBlock):
             pred = cbm.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
             return np.concatenate([x, pred], axis=1)
 
-        X = X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
-
-        logger.info(f"Transformed withGBDT in {time.time() - start_time} seconds total")
-        return X
+        return X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
