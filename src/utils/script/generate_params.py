@@ -61,7 +61,11 @@ def generate_model_params(
                 else {},
             }
             if "model_loop_pipeline_step" in model_pipeline.named_steps and model_pipeline.model_loop_pipeline
-            else {}
+            else {},
+            "post_processing_pipeline_step":{
+                name: {"test_indices": test_indices}
+                for name, _ in model_pipeline.named_steps.post_processing_pipeline_step.steps
+            }
         }
         if model_pipeline
         else {}
