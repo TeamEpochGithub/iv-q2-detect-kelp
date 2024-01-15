@@ -18,6 +18,7 @@ class ModelBlocksPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, TorchBlock]]:
         """Get the pipeline steps.
@@ -27,18 +28,17 @@ class ModelBlocksPipeline(Pipeline):
         # Use list comprehension to get the steps
         return [(str(model_block), model_block) for model_block in self.model_blocks]
 
-    def load_model(self, model_hash: str) -> None:
-        """Load the model from the model hash.
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
 
-        :param model_hash: The model hash
+        :param prev_hash: Previous hash
+        :return: Hash
         """
-        for model_block in self.model_blocks:
-            model_block.load_model(model_hash)
+        model_blocks_hash = prev_hash
 
-    def save_model(self, model_hash: str) -> None:
-        """Save the model to the model hash.
-
-        :param model_hash: The model hash
-        """
         for model_block in self.model_blocks:
-            model_block.save_model(model_hash)
+            model_blocks_hash = model_block.set_hash(model_blocks_hash)
+
+        self.prev_hash = model_blocks_hash
+
+        return model_blocks_hash

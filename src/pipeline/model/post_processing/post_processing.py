@@ -13,6 +13,7 @@ class PostProcessingPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -21,3 +22,12 @@ class PostProcessingPipeline(Pipeline):
         """
         # TODO(Jasper): Implement post processing pipeline steps
         return [(str(step), step) for step in self.steps]
+
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        # TODO(Jasper): Implement post processing pipeline hash
+        return prev_hash

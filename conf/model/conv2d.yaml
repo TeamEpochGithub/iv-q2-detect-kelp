@@ -28,8 +28,8 @@ target_pipeline:
 
 model_loop_pipeline:
   pretrain_pipeline:
-      # Pretrain block
-        _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
+    pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
 
@@ -52,7 +52,7 @@ model_loop_pipeline:
             lr: 0.001
           scheduler: None
           criterion:
-            _target_: src.modules.dice_loss.DiceLoss
+            _target_: src.modules.loss.dice_loss.DiceLoss
           epochs: 2
           batch_size: 32
           patience: 10

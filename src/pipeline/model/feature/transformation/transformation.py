@@ -1,10 +1,10 @@
 """TransformationPipeline."""
-from dataclasses import dataclass
-
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import dask.array as da
+from joblib import hash
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
@@ -24,6 +24,7 @@ class TransformationPipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
         """Get the transformation pipeline steps.
@@ -32,6 +33,19 @@ class TransformationPipeline(Pipeline):
         """
         # Use list comprehension to get the steps
         return [(str(transformation), transformation) for transformation in self.transformations]
+
+    def set_hash(self, prev_hash: str) -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        transformation_hash = prev_hash
+        for transformation in self.transformations:
+            transformation_hash = hash(str(transformation) + transformation_hash)
+
+        self.prev_hash = transformation_hash
+        return transformation_hash
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
         """Fit and transform the data.

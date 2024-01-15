@@ -8,18 +8,19 @@ import randomname
 import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
+from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.utils.script.generate_params import generate_cv_params
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-
 
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()
@@ -54,23 +55,23 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            setup_wandb(cfg, "CV", output_dir, name=f"Fold {i}", group=wandb_group_name)
+            setup_wandb(cfg, "cv", output_dir, name=f"Fold {i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
-        # Set train and test indices for each model block
-        # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
-        # Then we convert it to a flat dictionary with __ as the separator between each level
-        fit_params = {
-            "train_indices": train_indices,
-            "test_indices": test_indices,
-            "cache_size": cfg.cache_size,
-            "model_hashes": [],
-        }
+        # Generate the parameters for training
+        fit_params = generate_cv_params(cfg, model_pipeline, train_indices, test_indices)
 
-        # Fit the pipeline
+        # Fit the pipelinem
         model_pipeline.fit(X, y, **fit_params)
+
+        # Only get the predictions for the test indices #TODO(Hugo): Issue 82
+        predictions = model_pipeline.transform(X[test_indices])
+        scorer = instantiate(cfg.scorer)
+        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        logger.info(f"Score: {score}")
+        wandb.log({"Score": score})
 
         if wandb.run is not None:
             wandb.run.finish()

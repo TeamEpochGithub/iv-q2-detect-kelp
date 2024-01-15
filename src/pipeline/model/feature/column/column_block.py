@@ -1,6 +1,7 @@
 """Column block pipeline."""
 from dataclasses import dataclass
 
+from joblib import hash
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
@@ -22,6 +23,7 @@ class ColumnBlockPipeline(Pipeline):
         """Post init function."""
         self.path = ""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
         """Get the column block pipeline steps.
@@ -44,3 +46,15 @@ class ColumnBlockPipeline(Pipeline):
         self.path = path
         # Update the steps in the pipeline after changing the path
         self.steps = self._get_steps()
+
+    def set_hash(self, prev_hash: str = "") -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        column_block_hash = hash(str(self.column_block) + prev_hash)
+
+        self.prev_hash = column_block_hash
+
+        return column_block_hash
