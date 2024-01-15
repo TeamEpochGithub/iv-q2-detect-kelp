@@ -61,7 +61,7 @@ model_loop_pipeline:
           _target_: dask_ml.preprocessing.StandardScaler
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
         max_images: 2000
-        test_split: 0.2
+        early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0, 1, 2, 11]
 

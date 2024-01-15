@@ -1,7 +1,7 @@
 defaults:
   - base_submit
   - hydra/logging
-  - model: FUNet
+  - model: conv2d
 
 
 raw_data_path: data/raw/test_satellite
