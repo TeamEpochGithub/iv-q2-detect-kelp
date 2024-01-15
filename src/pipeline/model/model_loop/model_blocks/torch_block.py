@@ -59,6 +59,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Set the hash
         self.set_hash("")
 
+        # Set model is saved to false
+        self.save_model_to_disk = True
+
         # Set the optimizer
         self.initialized_optimizer = self.optimizer(self.model.parameters())
 
@@ -88,6 +91,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Fitted model.
         """
         # Check if the model exists
+        self.save_model_to_disk = save_model
         if Path(f"tm/{self.prev_hash}.pt").exists() and save_model:
             logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
             return self
@@ -103,7 +107,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_indices.sort()
 
         # Rechunk the data
-        logger.info("Rechunking the data")
         X = X.rechunk((1, -1, -1, -1))
         y = y.rechunk((1, -1, -1))
 
@@ -248,6 +251,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Saving model to tm/{self.prev_hash}.pt")
         torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
         logger.info(f"Model saved to tm/{self.prev_hash}.pt")
+        self.model_is_saved = True
 
     def load_model(self) -> None:
         """Load the model from the tm folder.
@@ -263,7 +267,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1, *, load_model_from_disk: bool = True) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -271,7 +275,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Predictions.
         """
         # Load the model if it exists
-        if load_model_from_disk:
+        if self.save_model_to_disk:
             self.load_model()
 
         print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
@@ -302,7 +306,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param y: Labels.
         :return: Predictions and labels.
         """
-        return self.predict(X, load_model_from_disk=False)
+        return self.predict(X)
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.
