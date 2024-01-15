@@ -1,20 +1,19 @@
+"""VisualizationBlock is the class used to create the visualization block."""
+import os
 import sys
 from dataclasses import dataclass
-import time
-
-import dask
-import dask.array as da
-import joblib
-import numpy as np
-import hydra
-import tifffile
-import os
-
-from sklearn.base import BaseEstimator, TransformerMixin
-from tqdm import tqdm
-from src.utils.setup import setup_test_data
 from pathlib import Path
+
+import dask.array as da
+import hydra
+import numpy as np
+import numpy.typing as npt
+import tifffile
+from sklearn.base import BaseEstimator, TransformerMixin
+
 from src.logging_utils.logger import logger
+from src.scoring.dice_coefficient import DiceCoefficient
+from src.utils.setup import setup_test_data
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -24,43 +23,86 @@ else:
 
 @dataclass
 class VisualizationBlock(BaseEstimator, TransformerMixin):
+    """VisualizationBlock is the class used to create the visualization block.
+
+    :param raw_data_path: The path to the raw data
+    """
 
     raw_data_path: str
 
-    def fit(self, X: np.ndarray, y: da.Array, *, test_indices: list[int] = []) -> Self:
+    def fit(self, X: npt.NDArray[np.float64 | np.float32 | np.int32], y: da.Array, *, test_indices: list[int] | None = None) -> Self:
+        """Store the predicted images and their corresponding scores to the output folder.
+
+        :param X: The predicted images
+        :param y: The actual images
+        :param test_indices: The indices of the test images
+
+        :return: self
+        """
         # Since this step comes after te model loop, X is the predictions
         # In this case X will be the predictions of the model
-        # y will be the actual values
+        # y will be the label values
+        if test_indices is None:
+            test_indices = []
         output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
+        test_indices.sort()
         self.preds = X[test_indices]
         self.targets = y[test_indices].compute()
         _, filenames = setup_test_data(self.raw_data_path)
-        f = open(f"{output_dir}/results.csv", "w")
-        f.write("image_key,pred_sum,target_sum,intersection\n")
+        filenames = list(np.array(filenames)[test_indices])
+
         preds_loc = f"{output_dir}/preds"
         if not os.path.exists(preds_loc):
             os.makedirs(preds_loc)
 
-        for i, (pred, filename) in enumerate(tqdm(zip(self.preds, filenames, strict=False))):
+        dice = DiceCoefficient()
+        dice_coefs = []
+        intersections = []
+        sum_targets = []
+        sum_preds = []
+
+        logger.info("Calculating dice coefficients...")
+        for i, (pred, filename) in enumerate(zip(self.preds, filenames, strict=False)):
             files = filename.split("_")
             image_key = files[0]
-            # calculate the sum of preds
-            pred_sum = np.sum(pred)
-            # calculate the sum of targets
-            target_sum = np.sum(self.targets[i])
-            # calculate the intersection (product)
-            intersection = np.sum(pred * self.targets[i])
-            dice = (2 * intersection) / (pred_sum + target_sum)
-            # now write these reuslts to a csv file
-            f.write(f"{image_key},{pred_sum},{target_sum},{intersection},{dice}\n")
-
-            # also write the predicted mask as tifffiles without thresholding
+            # Calculate the intemrediates for later use
+            intersection = np.sum(self.targets[i] * pred)
+            sum_target = np.sum(self.targets[i])
+            sum_pred = np.sum(pred)
+            # Calculate the dice coefficient
+            dice_coef = dice(self.targets[i], pred)
+            # Store the results in to lists
+            dice_coefs.append(dice_coef)
+            intersections.append(intersection)
+            sum_targets.append(sum_target)
+            sum_preds.append(sum_pred)
+            # Also write the predicted mask as tifffiles without thresholding
             tifffile.imwrite(f"{preds_loc}/{image_key}_pred.tif", pred)
+        logger.info("Done calculating dice coefficients. Storing the results")
+        # Sort the lists by dice_coef
+        idxs = np.argsort(dice_coefs)
+        dice_coefs = list(np.array(dice_coefs)[idxs])
+        intersections = list(np.array(intersections)[idxs])
+        sum_targets = list(np.array(sum_targets)[idxs])
+        sum_preds = list(np.array(sum_preds)[idxs])
+        filenames = list(np.array(filenames)[idxs])
 
+        # Write the results to a csv file
+        with open(f"{output_dir}/results.csv", "w") as f:
+            f.write("image_key,sum_targets,sum_preds,intersections,dice_coef\n")
+            for i, (filename, dice_coef) in enumerate(zip(filenames, dice_coefs, strict=False)):
+                files = filename.split("_")
+                image_key = files[0]
+                f.write(f"{image_key}, {sum_targets[i]}, {sum_preds[i]}, {intersections[i]}, {dice_coef}\n")
 
-        f.close()
-        
+            f.close()
+        logger.info("Done storing the results")
         return self
-    
+
     def transform(self, X: da.Array) -> da.Array:
+        """Return the predictions.
+
+        :param X: The predictions
+        :return: The predictions
+        """
         return X

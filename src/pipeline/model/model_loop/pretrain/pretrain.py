@@ -30,7 +30,6 @@ class PretrainPipeline(Pipeline):
 
         :return: list of steps
         """
-
         return [(str(step), step) for step in self.pretrain_steps]
 
     def set_hash(self, prev_hash: str) -> str:

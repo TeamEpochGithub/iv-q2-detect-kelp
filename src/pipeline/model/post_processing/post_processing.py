@@ -1,12 +1,14 @@
 """PostProcessingPipeline class."""
-from dataclasses import dataclass
 import time
-import dask.array as da
-
-from sklearn.pipeline import Pipeline
+from dataclasses import dataclass
 from typing import Any
+
+import dask.array as da
+from sklearn.pipeline import Pipeline
+
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+
 
 @dataclass
 class PostProcessingPipeline(Pipeline):
