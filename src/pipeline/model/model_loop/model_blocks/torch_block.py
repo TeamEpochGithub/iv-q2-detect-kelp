@@ -89,6 +89,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
+        self.is_trained = True
+
         # Check if the model exists
         if Path(f"tm/{self.prev_hash}.pt").exists() and save_model:
             logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
@@ -180,7 +182,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             # Train full TODO(#38)
 
         logger.info("Done training the model")
-        self.is_trained = True
         if save_model:
             self.save_model()
 
