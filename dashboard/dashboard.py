@@ -11,6 +11,7 @@ from dash_bootstrap_templates import load_figure_template
 
 from dashboard.layouts.default import default_layout
 from dashboard.layouts.features import features_layout
+from dashboard.layouts.predictions import predictions_layout
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 load_figure_template("Darkly")
@@ -36,6 +37,7 @@ def create_layout() -> html.Div:
     layouts = {
         "Default": default_layout,
         "Features": features_layout,
+        "Prediction": predictions_layout,
     }
     ids = load_tile_ids()
 
@@ -88,6 +90,7 @@ def update_content(selected_images: Iterable[str], selected_layout: str, n_click
     layouts = {
         "Default": default_layout,
         "Features": features_layout,
+        "Prediction": predictions_layout,
     }
     image_display_content = []
     for image_id in selected_images:
