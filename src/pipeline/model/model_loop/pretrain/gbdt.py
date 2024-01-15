@@ -21,14 +21,18 @@ else:
 
 @dataclass
 class GBDT(PretrainBlock):
-    """Feature column consisting of per-pixel predictions of a GBDT model.
+    """Add feature column consisting of per-pixel predictions of a GBDT model.
 
-    :param max_images: The maximum number of images to use.
-    :param test_split: The test split to use for early stopping.
+    :param max_images: The maximum number of images to use for training. If None, all training images will be used.
+    :param test_split: The test split to use for early stopping. Split will be made amongst training images.
     """
 
     max_images: int | None = None
-    test_split: float = 0.2
+    early_stopping_split: float = 0.2
+
+    def __post_init__(self) -> None:
+        """Initialize the GBDT model."""
+        self.trained_model = None
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the model.
@@ -65,7 +69,7 @@ class GBDT(PretrainBlock):
         logger.info(f"Computed X and y, shape: {X.shape}, {y.shape} in {time.time() - start_time} seconds")
 
         # Split into train and test
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_split)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.early_stopping_split)
 
         # Fit the catboost model
         cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
