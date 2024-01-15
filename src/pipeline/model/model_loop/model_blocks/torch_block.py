@@ -59,7 +59,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Set the hash
         self.set_hash("")
 
-        # Set model is saved to false
+        # Set model is saved to true
         self.save_model_to_disk = True
 
         # Set the optimizer
