@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - model: FUnet
+  - model: minimal
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
