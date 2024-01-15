@@ -80,8 +80,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
 
-        self.is_trained = False
-
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
 
