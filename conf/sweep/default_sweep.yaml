@@ -1,0 +1,12 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args}
+method: bayes
+project: detect-kelp
+program: cv.py
+name: default_sweep
+metric:
+  name: Score
+  goal: maximize
