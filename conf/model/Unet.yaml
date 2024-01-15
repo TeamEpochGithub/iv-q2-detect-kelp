@@ -43,7 +43,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: resnet34
+            encoder_name: efficientnet-b0
             in_channels: 8
             classes: 1
             activation: sigmoid
