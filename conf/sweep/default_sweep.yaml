@@ -5,8 +5,11 @@ command:
   - ${args}
 method: bayes
 project: detect-kelp
-program: cv.py
+program: sweep.py
 name: default_sweep
 metric:
   name: Score
   goal: maximize
+parameters:
+  n_splits:
+    values: [2,3]

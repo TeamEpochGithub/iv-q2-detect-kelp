@@ -7,17 +7,17 @@ from pathlib import Path
 from typing import Any, cast
 
 import dask.array
-import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.utils import estimator_html_repr
-from wandb.sdk.lib import RunDisabled
 
+import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble import EnsemblePipeline
 from src.pipeline.model.model import ModelPipeline
+from wandb.sdk.lib import RunDisabled
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -150,18 +150,16 @@ def setup_wandb(
         name=name,
         group=group,
         job_type=job_type,
-        config=config,
         tags=cfg.wandb.tags,
         notes=cfg.wandb.notes,
         settings=wandb.Settings(start_method="thread", code_dir="."),
         dir=output_dir,
         reinit=True,
+        resume=False,
     )
 
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
-
-    cfg = OmegaConf.create(wandb.config.as_dict())
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")

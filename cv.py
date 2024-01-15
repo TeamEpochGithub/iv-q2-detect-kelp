@@ -5,17 +5,18 @@ from pathlib import Path
 
 import hydra
 import randomname
-import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
+import wandb
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
+from src.utils.script.reset_wandb_env import reset_wandb_env
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -42,6 +43,8 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
+    X = X[:64]
+    y = y[:64]
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
@@ -51,11 +54,16 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     wandb_group_name = randomname.get_name()
 
     for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
+        # https://github.com/wandb/wandb/issues/5119
+        # This is a workaround for the issue where sweeps override the run id annoyingly
+        reset_wandb_env()
+
+        # Print section separator
         print_section_separator(f"CV - Fold {i}")
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            _, cfg = setup_wandb(cfg, "cv", output_dir, name=f"Fold {i}", group=wandb_group_name)
+            _, cfg = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}-{i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
@@ -73,8 +81,8 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         logger.info(f"Score: {score}")
         wandb.log({"Score": score})
 
-        if wandb.run is not None:
-            wandb.run.finish()
+        logger.info("Finishing wandb run")
+        wandb.finish()
 
 
 if __name__ == "__main__":
