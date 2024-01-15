@@ -30,11 +30,6 @@ class GBDT(PretrainBlock):
     max_images: int | None = None
     test_split: float = 0.2
 
-    def __init__(self) -> None:
-        """Initialize the GBDT model."""
-        super().__init__()
-        self.trained_model = None
-
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
         """Fit the model.
 
@@ -101,7 +96,7 @@ class GBDT(PretrainBlock):
 
         # Load the model
         cbm = catboost.CatBoostClassifier()
-        if self.trained_model is not None:
+        if hasattr(self, "trained_model"):
             cbm = self.trained_model
         else:
             cbm.load_model(f"tm/{self.prev_hash}.gbdt")
