@@ -159,7 +159,7 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
         curr_config = "conf/" + job_type + ".yaml"
 
         # Get the model file name
-        model_name = OmegaConf.load(curr_config)["defaults"][2]["model"]
+        model_name = OmegaConf.load(curr_config)["defaults"][2]["model"]  # type: ignore[index]
 
         # Store the config as an artefact of W&B
         artifact = wandb.Artifact(job_type + "_config", type="config")

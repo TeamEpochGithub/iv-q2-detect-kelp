@@ -55,7 +55,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Split indices into train and test
     if cfg.test_size == 0:
-        train_indices, test_indices = np.array(list(indices)), np.array([])
+        train_indices, test_indices = list(indices), []
     else:
         train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
@@ -67,7 +67,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     logger.info("Now fitting the pipeline...")
     model_pipeline.fit(X, y, **fit_params)
 
-    if test_indices.size > 0:
+    if len(test_indices) > 0:
         logger.info("Calculating score on test set...")
         predictions = model_pipeline.transform(X[test_indices])
         scorer = instantiate(cfg.scorer)
