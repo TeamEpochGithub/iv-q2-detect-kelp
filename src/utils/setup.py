@@ -127,7 +127,9 @@ def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array
     return X, y
 
 
-def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
+def setup_wandb(
+    cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None
+) -> tuple[wandb.sdk.wandb_run.Run | RunDisabled | None, DictConfig]:
     """Initialize Weights & Biases and log the config and code.
 
     :param cfg: The config object. Created with Hydra or OmegaConf.
@@ -136,12 +138,19 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     :param name: The name of the run.
     :param group: The namer of the group of the run.
     """
+    config = OmegaConf.to_container(cfg, resolve=True)
+
+    # Check if config is a dict
+    if not isinstance(config, dict):
+        raise TypeError("Config is not a dict")
+
     logger.debug("Initializing Weights & Biases")
     run = wandb.init(
         project="detect-kelp",
         name=name,
         group=group,
         job_type=job_type,
+        config=config,
         tags=cfg.wandb.tags,
         notes=cfg.wandb.notes,
         settings=wandb.Settings(start_method="thread", code_dir="."),
@@ -152,7 +161,7 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True)
+    cfg = OmegaConf.create(wandb.config.as_dict())
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
@@ -172,7 +181,7 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
         )
 
     logger.info("Done initializing Weights & Biases")
-    return run
+    return run, cfg
 
 
 def setup_test_data(data_path: str) -> tuple[dask.array.Array, list[str]]:
