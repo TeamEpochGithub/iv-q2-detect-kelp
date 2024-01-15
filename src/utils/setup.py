@@ -156,11 +156,17 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
+        curr_config = "conf/" + job_type + ".yaml"
+
+        # Get the model file name
+        model_name = OmegaConf.load(curr_config)["defaults"][2]["model"]  # type: ignore[index]
+
         # Store the config as an artefact of W&B
         artifact = wandb.Artifact(job_type + "_config", type="config")
         config_path = output_dir / ".hydra/config.yaml"
         artifact.add_file(str(config_path), "config.yaml")
-        artifact.add_file(f"conf/{job_type}.yaml")
+        artifact.add_file(curr_config)
+        artifact.add_file(f"conf/model/{model_name}.yaml")
         wandb.log_artifact(artifact)
 
     if cfg.wandb.log_code.enabled:

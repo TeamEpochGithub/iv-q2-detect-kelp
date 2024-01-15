@@ -147,27 +147,45 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         if len(test_loader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
 
+        # Train the model
+        self._training_loop(train_loader, test_loader, train_losses, val_losses)
+
+        logger.info("Done training the model")
+        self.is_trained = True
+        if save_model:
+            self.save_model()
+
+        return self
+
+    def _training_loop(
+        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+    ) -> None:
+        """Training loop for the model.
+
+        :param train_loader: Dataloader for the testing data.
+        :param test_loader: Dataloader for the training data. (can be empty)
+        :param train_losses: List of train losses.
+        :param val_losses: List of validation losses.
+        """
         for epoch in range(self.epochs):
             # Train using train_loader
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
 
+            # Log train loss
             if wandb.run:
-                # Log only the train loss in the "Training" section
                 wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-            # Validate using test_loader if we have validation data
+            # Compute validation loss
             if len(test_loader) > 0:
                 self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
                 logger.debug(f"Epoch {epoch} Valid Loss: {self.last_val_loss}")
                 val_losses.append(self.last_val_loss)
 
+                # Log validation loss and plot train/val loss against each other
                 if wandb.run:
-                    # Also log the validation loss in the "Training" section
                     wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
-
-                    # Log both the train and validation loss in a line plot in the "Training" section
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
@@ -176,16 +194,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                         }
                     )
 
+                # TODO(#38): Train full early stopping
                 if self.early_stopping():
+                    # Log the trained epochs - patience to wandb
+                    if wandb.run:
+                        wandb.log({"Epochs": (epoch + 1) - self.patience})
                     break
-            else:  # Train full TODO(#38)
-                pass
-
-        logger.info("Done training the model")
-        if save_model:
-            self.save_model()
-
-        return self
+            elif wandb.run:
+                # Log the trained epochs to wandb if we finished training
+                wandb.log({"Epochs": epoch + 1})
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
         """Train the model for one epoch.
