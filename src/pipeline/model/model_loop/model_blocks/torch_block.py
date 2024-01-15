@@ -59,6 +59,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Set the hash
         self.set_hash("")
 
+        # Set model is saved to true
+        self.save_model_to_disk = True
+
         # Set the optimizer
         self.initialized_optimizer = self.optimizer(self.model.parameters())
 
@@ -89,9 +92,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
-        self.is_trained = True
-
         # Check if the model exists
+        self.save_model_to_disk = save_model
         if Path(f"tm/{self.prev_hash}.pt").exists() and save_model:
             logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
             return self
@@ -107,7 +109,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_indices.sort()
 
         # Rechunk the data
-        logger.info("Rechunking the data")
         X = X.rechunk((1, -1, -1, -1))
         y = y.rechunk((1, -1, -1))
 
@@ -148,27 +149,44 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         if len(test_loader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
 
+        # Train the model
+        self._training_loop(train_loader, test_loader, train_losses, val_losses)
+
+        logger.info("Done training the model")
+        if save_model:
+            self.save_model()
+
+        return self
+
+    def _training_loop(
+        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+    ) -> None:
+        """Training loop for the model.
+
+        :param train_loader: Dataloader for the testing data.
+        :param test_loader: Dataloader for the training data. (can be empty)
+        :param train_losses: List of train losses.
+        :param val_losses: List of validation losses.
+        """
         for epoch in range(self.epochs):
             # Train using train_loader
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
 
+            # Log train loss
             if wandb.run:
-                # Log only the train loss in the "Training" section
                 wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-            # Validate using test_loader if we have validation data
+            # Compute validation loss
             if len(test_loader) > 0:
                 self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
                 logger.debug(f"Epoch {epoch} Valid Loss: {self.last_val_loss}")
                 val_losses.append(self.last_val_loss)
 
+                # Log validation loss and plot train/val loss against each other
                 if wandb.run:
-                    # Also log the validation loss in the "Training" section
                     wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
-
-                    # Log both the train and validation loss in a line plot in the "Training" section
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
@@ -177,15 +195,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                         }
                     )
 
+                # TODO(#38): Train full early stopping
                 if self.early_stopping():
+                    # Log the trained epochs - patience to wandb
+                    if wandb.run:
+                        wandb.log({"Epochs": (epoch + 1) - self.patience})
                     break
-            # Train full TODO(#38)
-
-        logger.info("Done training the model")
-        if save_model:
-            self.save_model()
-
-        return self
+            elif wandb.run:
+                # Log the trained epochs to wandb if we finished training
+                wandb.log({"Epochs": epoch + 1})
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
         """Train the model for one epoch.
@@ -251,6 +269,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Saving model to tm/{self.prev_hash}.pt")
         torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
         logger.info(f"Model saved to tm/{self.prev_hash}.pt")
+        self.model_is_saved = True
 
     def load_model(self) -> None:
         """Load the model from the tm folder.
@@ -266,7 +285,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1, *, load_model_from_disk: bool = True) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -274,7 +293,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :return: Predictions.
         """
         # Load the model if it exists
-        if load_model_from_disk:
+        if self.save_model_to_disk:
             self.load_model()
 
         print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
@@ -305,7 +324,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param y: Labels.
         :return: Predictions and labels.
         """
-        return self.predict(X, load_model_from_disk=not self.is_trained)
+        return self.predict(X)
 
     def early_stopping(self) -> bool:
         """Check if early stopping should be done.

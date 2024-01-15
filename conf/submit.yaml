@@ -3,6 +3,7 @@ defaults:
   - hydra/logging
   - model: FUNet
 
+
 raw_data_path: data/raw/test_satellite
 raw_target_path: data/raw/train_kelp
 test_size: 0
