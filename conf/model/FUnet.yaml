@@ -57,7 +57,7 @@ model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [1, 7, 9, 10]
+        columns: [1,7,8,9,10]
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
@@ -71,8 +71,8 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: resnet34
-            in_channels: 4
+            encoder_name: vgg11
+            in_channels: 5
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
@@ -80,7 +80,7 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.Adam
-          lr: 0.0001
+          lr: 0.001
         scheduler: None
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
@@ -90,12 +90,30 @@ model_loop_pipeline:
         transformations:
           _target_: albumentations.Compose
           transforms:
-          - _target_: albumentations.VerticalFlip
-            p: 0.5
-          - _target_: albumentations.HorizontalFlip
-            p: 0.5
-          - _target_: albumentations.RandomRotate90
-            p: 0.5
+            - _target_: albumentations.VerticalFlip
+              p: 0.5
+            - _target_: albumentations.HorizontalFlip
+              p: 0.5
+            - _target_: albumentations.RandomRotate90
+              p: 0.5
+            - _target_: albumentations.GaussianBlur
+              blur_limit: 7
+              p: 0.1
+            - _target_: albumentations.ElasticTransform
+              alpha: 1
+              sigma: 50
+              alpha_affine: 50
+              p: 0.1
+            - _target_: albumentations.RandomCrop
+              height: 300
+              width: 300
+              p: 0.2
+            - _target_: albumentations.Resize
+              height: 350
+              width: 350
+              p: 1.0
+
+
 # Post processing pipeline
 post_processing_pipeline:
   post_processing_steps:
