@@ -174,8 +174,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     )
 
                 if self.early_stopping():
+                    # Log the trained epochs - patience to wandb
+                    if wandb.run:
+                        wandb.log({"Epochs": (epoch + 1) - self.patience})
                     break
-            else:  # Train full TODO(#38)
+            else:
+                # Log the trained epochs to wandb
+                if wandb.run:
+                    wandb.log({"Epochs": epoch + 1})
+                # Train full TODO(#38)
                 pass
 
         logger.info("Done training the model")
