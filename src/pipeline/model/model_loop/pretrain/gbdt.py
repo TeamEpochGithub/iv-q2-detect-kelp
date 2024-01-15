@@ -92,19 +92,19 @@ class GBDT(PretrainBlock):
         :param y: The target variable
         :return: The transformed data
         """
-        # Verify that the model exists
-        if not Path(f"tm/{self.prev_hash}.gbdt").exists():
-            raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
-
         logger.info("Transforming with GBDT...")
 
         # Load the model
         cbm = catboost.CatBoostClassifier()
-        if hasattr(self, "trained_model"):
-            cbm = self.trained_model
-        else:
+        if self.trained_model is None:
+            # Verify that the model exists
+            if not Path(f"tm/{self.prev_hash}.gbdt").exists():
+                raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
+
             cbm.load_model(f"tm/{self.prev_hash}.gbdt")
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
+        else:
+            cbm = self.trained_model
 
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
