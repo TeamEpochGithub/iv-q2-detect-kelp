@@ -7,6 +7,7 @@ import hydra
 import numpy as np
 from distributed import Client
 from hydra.core.config_store import ConfigStore
+from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
@@ -57,7 +58,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     if cfg.test_size == 0:
         train_indices, test_indices = list(indices), []
     else:
-        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
+        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size, random_state=42)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
     # Generate the parameters for training
@@ -66,6 +67,14 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     # Fit the pipeline
     logger.info("Now fitting the pipeline...")
     model_pipeline.fit(X, y, **fit_params)
+
+    if len(test_indices) > 0:
+        logger.info("Calculating score on test set...")
+        predictions = model_pipeline.transform(X[test_indices])
+        scorer = instantiate(cfg.scorer)
+        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        logger.info(f"Score: {score}")
+        wandb.log({"Score": score})
 
     if wandb.run:
         wandb.finish()
