@@ -100,6 +100,7 @@ class GBDT(PretrainBlock):
             # Verify that the model exists
             if not Path(f"tm/{self.prev_hash}.gbdt").exists():
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
+
             cbm.load_model(f"tm/{self.prev_hash}.gbdt")
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:

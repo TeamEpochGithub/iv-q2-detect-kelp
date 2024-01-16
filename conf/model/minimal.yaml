@@ -5,6 +5,7 @@ defaults:
 feature_pipeline:
   processed_path: data/processed
   transformation_pipeline:
+    transformations: []
   column_pipeline:
     columns: []
 
@@ -35,18 +36,28 @@ model_loop_pipeline:
             in_channels: 4
             classes: 1
             activation: sigmoid
+
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           lr: 0.005
-        scheduler: None
+
+        scheduler:
+          _target_: functools.partial
+          _args_:
+            - _target_: hydra.utils.get_class
+              path: torch.optim.lr_scheduler.CosineAnnealingLR
+          T_max: 30
+
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
+
         epochs: 2
         batch_size: 64
         patience: 5
         transformations:
+
 # Post processing pipeline
 post_processing_pipeline:
