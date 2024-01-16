@@ -83,8 +83,7 @@ model_loop_pipeline:
           lr: 0.001
         scheduler: None
         criterion:
-          _target_: src.modules.loss.dice_loss.DiceLoss
-          threshold: 0.5
+          _target_: src.modules.loss.dice_bce_loss.DiceBCELoss
         epochs: 5
         batch_size: 16
         patience: 10

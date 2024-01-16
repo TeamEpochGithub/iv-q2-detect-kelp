@@ -9,9 +9,7 @@ from torch import nn
 class DiceLoss(nn.Module):
     """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss.
 
-    :param threshold: threshold for converting predictions to binary values
     """
-    threshold: float = -1
 
     def __post_init__(self):
         super(DiceLoss, self).__init__()
@@ -24,9 +22,6 @@ class DiceLoss(nn.Module):
         :param smooth: smoothing factor
         :return: loss
         """
-        # Apply threshold if not -1
-        if self.threshold != -1:
-            inputs = torch.where(inputs > self.threshold, 1, 0)
 
         # flatten label and prediction tensors
         inputs = inputs.reshape(-1)
