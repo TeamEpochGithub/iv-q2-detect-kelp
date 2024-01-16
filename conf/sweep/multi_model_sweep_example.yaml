@@ -11,5 +11,7 @@ metric:
   name: Score
   goal: maximize
 parameters:
-  n_splits:
-    values: [2,3]
+  model:
+    values:
+      - conv2d
+      - conv2d2
