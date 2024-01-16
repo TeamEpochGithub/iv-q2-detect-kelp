@@ -1,6 +1,12 @@
 """EnsemblePipeline is the class used to create the ensemble pipeline."""
+import sys
 from dataclasses import dataclass, field
 from typing import Any
+
+if sys.version_info < (3, 11):  # Self was added in Python 3.11
+    from typing_extensions import Self
+else:
+    from typing import Self
 
 import dask.array as da
 import numpy as np
@@ -53,3 +59,34 @@ class EnsemblePipeline(Pipeline):
         :return: The transformed data
         """
         return self.predict(X)
+
+    def fit(self, X: da.Array, y: da.Array, **fit_params: str) -> Self:
+        """Fit the pipeline.
+
+        :param X: The input data
+        :param y: The target data
+        :param fit_params: The fit parameters
+        :return: The fitted pipeline
+        """
+        for name, model in self.models.items():
+            model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
+            # Remove the model name from the fit params key
+            model_fit_params = {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
+            model.fit(X, y, **model_fit_params)
+        return self
+
+    def fit_transform(self, X: da.Array, y: da.Array, **fit_params: str) -> np.ndarray[Any, Any]:
+        """Fit the pipeline and return averaged predictions.
+
+        :param X: The input data
+        :param y: The target data
+        :param fit_params: The fit parameters
+        :return: The averaged predictions
+        """
+        predictions = None
+        for i, model in enumerate(self.models.values()):
+            if predictions is None:
+                predictions = model.fit_transform(X, y, **fit_params) * self.weights[i]
+            else:
+                predictions = predictions + model.transform(X) * self.weights[i]
+        return np.array(predictions)
