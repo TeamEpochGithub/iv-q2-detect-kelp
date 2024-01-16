@@ -71,7 +71,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: resnet18
+            encoder_name: resnet34
             in_channels: 5
             classes: 1
             activation: sigmoid
@@ -83,7 +83,7 @@ model_loop_pipeline:
           lr: 0.001
         scheduler: None
         criterion:
-          _target_: src.modules.loss.dice_bce_loss.DiceBCELoss
+          _target_: src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss
         epochs: 5
         batch_size: 16
         patience: 10

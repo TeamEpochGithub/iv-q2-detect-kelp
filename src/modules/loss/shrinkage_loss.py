@@ -16,7 +16,7 @@ class ShrinkageLoss(nn.Module):
     def __post_init__(self):
         super(ShrinkageLoss, self).__init__()
 
-    def forward(self, inputs, targets, alpha: int = 2, c: int = 0.2):
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, alpha: int = 2, c: int = 0.2) -> torch.Tensor:
         l1_loss = torch.abs(inputs - targets)
         shrinkage_loss = (l1_loss ** 2) * torch.exp(targets) / \
                          (1 + torch.exp(alpha * (c - l1_loss)))

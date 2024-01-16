@@ -8,7 +8,6 @@ from torch import nn
 @dataclass
 class DiceLoss(nn.Module):
     """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss.
-
     """
 
     def __post_init__(self):

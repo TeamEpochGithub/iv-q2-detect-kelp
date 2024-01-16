@@ -20,6 +20,7 @@ class WeightedBCELoss(nn.Module):
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, epsilon=1e-7) -> torch.Tensor:
         """Forward pass.
+
         :param inputs: input tensor
         :param targets: target tensor
         :return: loss

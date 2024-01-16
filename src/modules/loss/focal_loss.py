@@ -1,8 +1,10 @@
 """Implementation of Focal Loss."""
 from dataclasses import dataclass
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 
 @dataclass
 class FocalLoss(nn.Module):
@@ -13,8 +15,7 @@ class FocalLoss(nn.Module):
     def __post_init__(self):
         super(FocalLoss, self).__init__()
 
-
-    def forward(self, inputs, targets):
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         """
         :param inputs: Predictions from the model after sigmoid activation (probabilities between 0 and 1)
         :param targets: Ground truth labels

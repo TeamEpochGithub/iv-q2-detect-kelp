@@ -24,12 +24,23 @@ criterion:
   gamma: ??? (2.0)
     
 criterion:
-  _target_: src.modules.loss.jaccard.JaccardLoss
+  _target_: src.modules.loss.jaccard_loss.JaccardLoss
   
 criterion:
-  _target_: src.modules.loss.tversky.TverskyLoss
+  _target_: src.modules.loss.tversky_loss.TverskyLoss
   alpha: ??? (0.5)
   beta: ??? (0.5)
   
-    
+criterion:
+  _target_: src.modules.loss.tversky_focal.TverskyFocalLoss
+  alpha: ??? (0.5)
+  beta: ??? (0.5)
+  gamma: ??? (1.0)
+  
+criterion:
+  _target_: src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss
+  per_image: ??? (False)
+ 
+  
+     
 ``` 
