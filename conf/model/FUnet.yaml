@@ -84,7 +84,7 @@ model_loop_pipeline:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           lr: 0.00005
-        scheduler: None
+        scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
         epochs: 100

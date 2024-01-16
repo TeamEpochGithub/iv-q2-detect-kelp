@@ -84,7 +84,7 @@ model_loop_pipeline:
         epochs: 30
         batch_size: 16
         patience: 20
-#        layerwise_lr_decay: 0.9
+        layerwise_lr_decay: 0.9
 
         # Optimizer
         optimizer:
