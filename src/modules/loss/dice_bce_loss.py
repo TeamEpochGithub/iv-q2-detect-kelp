@@ -1,20 +1,21 @@
-"""Implementation of Dice Loss for image segmentation."""
+"""Implementation of Dice Loss + BCE for image segmentation."""
 from dataclasses import dataclass
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 
 @dataclass
-class DiceLoss(nn.Module):
-    """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss.
+class DiceBCELoss(nn.Module):
+    """Dice BCE loss
 
     :param threshold: threshold for converting predictions to binary values
     """
     threshold: float = -1
 
     def __post_init__(self):
-        super(DiceLoss, self).__init__()
+        super(DiceBCELoss, self).__init__()
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> torch.Tensor:
         """Forward pass.
@@ -32,6 +33,6 @@ class DiceLoss(nn.Module):
         inputs = inputs.reshape(-1)
         targets = targets.reshape(-1)
         intersection = (inputs * targets).sum()
-        dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
-
-        return 1 - dice
+        dice = 1 - ((2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth))
+        bce = F.binary_cross_entropy(inputs, targets, reduction='mean')
+        return dice + bce
