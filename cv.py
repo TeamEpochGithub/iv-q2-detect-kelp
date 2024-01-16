@@ -44,7 +44,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
-    kf = StratifiedKFold(n_splits=cfg.n_splits, random_state=42)
+    kf = StratifiedKFold(n_splits=cfg.n_splits)
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
 
     # Set up Weights & Biases group name
