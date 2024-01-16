@@ -155,7 +155,6 @@ def setup_wandb(
         settings=wandb.Settings(start_method="thread", code_dir="."),
         dir=output_dir,
         reinit=True,
-        resume=False,
     )
 
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy

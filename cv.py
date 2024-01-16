@@ -61,7 +61,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            _, cfg = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}-{i}", group=wandb_group_name)
+            _, cfg = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
@@ -69,11 +69,8 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         # Generate the parameters for training
         fit_params = generate_cv_params(cfg, model_pipeline, train_indices, test_indices)
 
-        # Fit the pipelinem
-        model_pipeline.fit(X, y, **fit_params)
-
-        # Only get the predictions for the test indices #TODO(Hugo): Issue 82
-        predictions = model_pipeline.transform(X)
+        # Fit the pipeline and get predictions
+        predictions = model_pipeline.fit_transform(X, y, **fit_params)
         scorer = instantiate(cfg.scorer)
         score = scorer(y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")

@@ -50,7 +50,7 @@ model_loop_pipeline:
               - _target_: hydra.utils.get_class
                 path: torch.optim.Adam
             lr: 0.001
-          scheduler: None
+          scheduler:
           criterion:
             _target_: src.modules.loss.dice_loss.DiceLoss
           epochs: 50
@@ -59,5 +59,5 @@ model_loop_pipeline:
 
 # Post processing pipeline
 post_processing_pipeline:
-  steps:
+  post_processing_steps:
     -_target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
