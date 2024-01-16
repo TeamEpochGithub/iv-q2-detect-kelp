@@ -57,7 +57,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     if cfg.test_size == 0:
         train_indices, test_indices = list(indices), []
     else:
-        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
+        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size, random_state=42)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
     # Generate the parameters for training
