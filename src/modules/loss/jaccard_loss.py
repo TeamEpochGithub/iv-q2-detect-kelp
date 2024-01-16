@@ -7,10 +7,11 @@ from torch import nn
 
 @dataclass
 class JaccardLoss(nn.Module):
-    """Implementation of Jaccard loss for image segmentation. """
+    """Implementation of Jaccard loss for image segmentation."""
 
-    def __post_init__(self):
-        super(JaccardLoss, self).__init__()
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__init__()
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> torch.Tensor:
         """Forward pass.

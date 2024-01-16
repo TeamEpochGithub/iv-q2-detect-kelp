@@ -2,16 +2,16 @@
 from dataclasses import dataclass
 
 import torch
-import torch.nn.functional as F
 from torch import nn
 
 
 @dataclass
 class DiceBCELoss(nn.Module):
-    """Dice BCE loss   """
+    """Dice BCE loss."""
 
-    def __post_init__(self):
-        super(DiceBCELoss, self).__init__()
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__init__()
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> torch.Tensor:
         """Forward pass.
@@ -22,7 +22,7 @@ class DiceBCELoss(nn.Module):
         :return: loss
         """
         # flatten label and prediction tensors
-        bce = F.binary_cross_entropy(inputs, targets, reduction='mean')
+        bce = nn.functional.binary_cross_entropy(inputs, targets, reduction="mean")
         inputs = inputs.reshape(-1)
         targets = targets.reshape(-1)
         intersection = (inputs * targets).sum()

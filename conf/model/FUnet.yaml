@@ -83,7 +83,7 @@ model_loop_pipeline:
           lr: 0.001
         scheduler: None
         criterion:
-          _target_: src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss
+          _target_: src.modules.loss.combo_loss.ComboLoss
         epochs: 5
         batch_size: 16
         patience: 10

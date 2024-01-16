@@ -7,13 +7,15 @@ from torch import nn
 
 @dataclass
 class FocalTverskyLoss(nn.Module):
-    """Implementation of FocalTversky loss for image segmentation. """
+    """Implementation of FocalTversky loss for image segmentation."""
+
     alpha: float = 0.5
     beta: float = 0.5
     gamma: float = 1.0
 
-    def __post_init__(self):
-        super(FocalTverskyLoss, self).__init__()
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__init__()
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> torch.Tensor:
         """Forward pass.
@@ -33,6 +35,5 @@ class FocalTverskyLoss(nn.Module):
         FN = (targets * (1 - inputs)).sum()
 
         Tversky = (TP + smooth) / (TP + self.alpha * FP + self.beta * FN + smooth)
-        FocalTversky = (1 - Tversky) ** self.gamma
 
-        return FocalTversky
+        return (1 - Tversky) ** self.gamma

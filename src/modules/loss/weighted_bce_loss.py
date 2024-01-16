@@ -2,12 +2,13 @@
 from dataclasses import dataclass
 
 import torch
-import torch.nn as nn
+from torch import nn
 
 
 @dataclass
 class WeightedBCELoss(nn.Module):
     """Weighted Binary Cross Entropy Loss.
+
     :param positive_freq: Frequency of positive examples in the dataset.
     :param size_average: If True, loss is averaged over the batch. If False, loss is summed.
     """
@@ -15,10 +16,11 @@ class WeightedBCELoss(nn.Module):
     positive_freq: float = 0.5
     size_average: bool = True
 
-    def __post_init__(self):
-        super(WeightedBCELoss, self).__init__()
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__init__()
 
-    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, epsilon=1e-7) -> torch.Tensor:
+    def forward(self, inputs: torch.Tensor, targets: torch.Tensor, epsilon: float = 1e-7) -> torch.Tensor:
         """Forward pass.
 
         :param inputs: input tensor

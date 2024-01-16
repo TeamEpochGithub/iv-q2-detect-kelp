@@ -7,11 +7,11 @@ from torch import nn
 
 @dataclass
 class DiceLoss(nn.Module):
-    """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss.
-    """
+    """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss."""
 
-    def __post_init__(self):
-        super(DiceLoss, self).__init__()
+    def __post_init__(self) -> None:
+        """Initialize class."""
+        super().__init__()
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor, smooth: int = 1) -> torch.Tensor:
         """Forward pass.
@@ -21,7 +21,6 @@ class DiceLoss(nn.Module):
         :param smooth: smoothing factor
         :return: loss
         """
-
         # flatten label and prediction tensors
         inputs = inputs.reshape(-1)
         targets = targets.reshape(-1)
