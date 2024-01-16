@@ -152,8 +152,6 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True)
-
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
         curr_config = "conf/" + job_type + ".yaml"
