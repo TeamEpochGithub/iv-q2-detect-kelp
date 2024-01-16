@@ -127,9 +127,7 @@ def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array
     return X, y
 
 
-def setup_wandb(
-    cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None
-) -> tuple[wandb.sdk.wandb_run.Run | RunDisabled | None, DictConfig]:
+def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
     """Initialize Weights & Biases and log the config and code.
 
     :param cfg: The config object. Created with Hydra or OmegaConf.
@@ -138,12 +136,6 @@ def setup_wandb(
     :param name: The name of the run.
     :param group: The namer of the group of the run.
     """
-    config = OmegaConf.to_container(cfg, resolve=True)
-
-    # Check if config is a dict
-    if not isinstance(config, dict):
-        raise TypeError("Config is not a dict")
-
     logger.debug("Initializing Weights & Biases")
     run = wandb.init(
         project="detect-kelp",
@@ -184,7 +176,7 @@ def setup_wandb(
         )
 
     logger.info("Done initializing Weights & Biases")
-    return run, cfg
+    return run
 
 
 def setup_test_data(data_path: str) -> tuple[dask.array.Array, list[str]]:
