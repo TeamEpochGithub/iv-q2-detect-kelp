@@ -1,7 +1,7 @@
 defaults:
   - base_cv
   - hydra/logging
-  - model: Unet-v2
+  - model: conv2d
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
