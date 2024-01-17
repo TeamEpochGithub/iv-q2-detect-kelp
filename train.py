@@ -75,8 +75,6 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     logger.info("Now fitting the pipeline...")
     predictions = model_pipeline.fit_transform(X, y, **fit_params)
-    predictions[predictions >= 0.5] = 1
-    predictions[predictions < 0.5] = 0
 
     if len(test_indices) > 0:
         logger.info("Calculating score on test set...")
