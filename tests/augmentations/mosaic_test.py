@@ -12,15 +12,18 @@ class Test(TestCase):
 
         # Create 4 random images and masks where each image has 1 color
 
-        image_1 = np.random.randint(0, 50, (256, 256, 3))
-        image_2 = np.random.randint(50, 150, (256, 256, 3))
-        image_3 = np.random.randint(150, 200, (256, 256, 3))
-        image_4 = np.random.randint(200, 255, (256, 256, 3))
 
-        mask_1 = np.random.randint(0, 50, (256, 256, 1))
-        mask_2 = np.random.randint(50, 150, (256, 256, 1))
-        mask_3 = np.random.randint(150, 200, (256, 256, 1))
-        mask_4 = np.random.randint(200, 255, (256, 256, 1))
+        img_shape = (3, 256, 256)
+        mask_shape = (1, 256, 256)
+        image_1 = np.random.randint(0, 50, img_shape)
+        image_2 = np.random.randint(50, 150, img_shape)
+        image_3 = np.random.randint(150, 200, img_shape)
+        image_4 = np.random.randint(200, 255, img_shape)
+
+        mask_1 = np.random.randint(0, 50, mask_shape)
+        mask_2 = np.random.randint(50, 150, mask_shape)
+        mask_3 = np.random.randint(150, 200, mask_shape)
+        mask_4 = np.random.randint(200, 255, mask_shape)
 
         # Create the images and masks arrays
         images = np.array([image_1, image_2, image_3, image_4])
@@ -32,11 +35,9 @@ class Test(TestCase):
         # Apply the mosaic augmentation
         image, mask = mosaic.mosaic(images, masks, [0, 1, 2, 3])
 
-        true_shape_image = (256, 256, 3)
-        true_shape_mask = (256, 256, 1)
 
-        self.assertEqual(image.shape, true_shape_image)
-        self.assertEqual(mask.shape, true_shape_mask)
+        self.assertEqual(image.shape, img_shape)
+        self.assertEqual(mask.shape, mask_shape)
 
         # Assert that all values are in image
 
