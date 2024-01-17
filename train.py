@@ -51,6 +51,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
+
     indices = np.arange(X.shape[0])
 
     # Split indices into train and test

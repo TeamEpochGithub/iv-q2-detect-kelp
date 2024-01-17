@@ -7,17 +7,17 @@ from pathlib import Path
 from typing import Any, cast
 
 import dask.array
+import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.utils import estimator_html_repr
-
-import wandb
-from src.logging_utils.logger import logger
-from src.pipeline.ensemble.ensemble import EnsemblePipeline
-from src.pipeline.model.model import ModelPipeline
 from wandb.sdk.lib import RunDisabled
+
+from src.logging_utils.logger import logger
+from src.pipeline.ensemble.ensemble_base import EnsembleBase
+from src.pipeline.model.model import ModelPipeline
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -45,7 +45,7 @@ def setup_config(cfg: DictConfig) -> None:
         raise ValueError(f"Missing keys in config: {missing}")
 
 
-def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> ModelPipeline | EnsemblePipeline:
+def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | None) -> ModelPipeline | EnsembleBase:
     """Instantiate the pipeline and log it to HTML.
 
     :param pipeline_cfg: The model pipeline config. Root node should be a ModelPipeline
@@ -71,7 +71,7 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
         ensemble_cfg_dict = OmegaConf.to_container(ensemble_cfg, resolve=True)
         if isinstance(ensemble_cfg_dict, dict):
             for model in ensemble_cfg_dict.get("models", []):
-                ensemble_cfg_dict[model] = update_model_cfg_test_size(ensemble_cfg_dict[model], test_size, is_train=is_train)
+                ensemble_cfg_dict["models"][model] = update_model_cfg_test_size(ensemble_cfg_dict["models"][model], test_size, is_train=is_train)
 
         cfg = OmegaConf.create(ensemble_cfg_dict)
 
@@ -152,21 +152,24 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True)
-
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
         curr_config = "conf/" + job_type + ".yaml"
 
         # Get the model file name
-        model_name = OmegaConf.load(curr_config)["defaults"][2]["model"]  # type: ignore[index]
+        if "model" in cfg:
+            model_name = OmegaConf.load(curr_config).defaults[2].model
+            model_path = f"conf/model/{model_name}.yaml"
+        elif "ensemble" in cfg:
+            model_name = OmegaConf.load(curr_config).defaults[2].ensemble
+            model_path = f"conf/ensemble/{model_name}.yaml"
 
         # Store the config as an artefact of W&B
         artifact = wandb.Artifact(job_type + "_config", type="config")
         config_path = output_dir / ".hydra/config.yaml"
         artifact.add_file(str(config_path), "config.yaml")
         artifact.add_file(curr_config)
-        artifact.add_file(f"conf/model/{model_name}.yaml")
+        artifact.add_file(model_path)
         wandb.log_artifact(artifact)
 
     if cfg.wandb.log_code.enabled:

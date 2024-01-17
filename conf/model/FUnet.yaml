@@ -80,9 +80,9 @@ model_loop_pipeline:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
           model: # from segmentation_models_pytorch import Unet
-            _target_: segmentation_models_pytorch.UnetPlusPlus
+            _target_: segmentation_models_pytorch.Unet
             encoder_name: resnet34
-            in_channels: 4
+            in_channels: 5
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
@@ -122,7 +122,6 @@ model_loop_pipeline:
               height: 350
               width: 350
               p: 1.0
-
 
 # Post processing pipeline
 post_processing_pipeline:
