@@ -1,83 +1,74 @@
 """Threshold the predictions of the model."""
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Annotated, Any
 
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
+from annotated_types import Interval
 from scipy.optimize import minimize_scalar
 from scipy.spatial.distance import dice
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.exceptions import NotFittedError
 
 from src.logging_utils.logger import logger
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
 
 
-def threshold_func(threshold: float, y_pred: npt.NDArray[np.float_], y_true: npt.NDArray[np.bool_]) -> float:
-    """Optimize the threshold using the dice dissimilarity.
-
-    :param threshold: The threshold to use
-    :param y_pred: The predictions
-    :param y_true: The targets
-    """
-    return dice(y_true, y_pred > threshold)
-
-
 @dataclass
 class Threshold(TransformerMixin, BaseEstimator):
-    """Threshold the predictions of the model."""
+    """Threshold the predictions of the model.
 
-    _threshold: float = field(init=False)
+    :param threshold: The threshold to use. If None, the threshold will be optimized.
+    """
 
-    def fit(self: Self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array) -> Self:
+    # noinspection PyTypeHints
+    threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
+
+    # noinspection PyPep8Naming
+    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, **kwargs: Any) -> Self:  # noqa: ANN401
         """Fit the threshold.
 
         :param X: Output data of a model.
         :param y: Target data. Must have the same flattened shape as X.
+        :param kwargs: Unused additional arguments, for compatibility with sklearn pipelines.
         :return: Optimized threshold.
         """
+        if self.threshold is not None:
+            logger.info(f"Threshold manually set to {self.threshold}. Skipping optimization.")
+            return self
+
+        # Using Dask arrays and gives weird warnings about full garbage collections taking too much CPU time
         if isinstance(X, da.Array):
-            flat_X = X.compute().flatten()
-        else:
-            flat_X = X.flatten()
-
+            X = X.compute()
         if isinstance(y, da.Array):
-            flat_y = y.compute().flatten()
-        else:
-            flat_y = y.flatten()
+            y = y.compute()
 
-        if flat_X.shape != flat_y.shape:
+        y_pred = X.ravel()
+        y_true = y.ravel()
+
+        if y_pred.shape != y_true.shape:
             raise ValueError("X and y must have the same flattened shape")
 
-        # check_X_y(X, y, dtype=np.bool_, ensure_2d=False, allow_nd=True, multi_output=True, estimator=self)
+        logger.info("Optimizing threshold. This may take a while...")
+        self.threshold = minimize_scalar(lambda threshold: dice(y_true, threshold < y_pred), bounds=(0, 1), method="bounded").x
 
-        self._threshold = minimize_scalar(threshold_func, bounds=(0, 1), args=(flat_X, flat_y), method="bounded").x
-        logger.debug(f"Optimized threshold: {self._threshold}")
-
+        logger.info(f"Optimized threshold: {self.threshold}")
         return self
 
-    def transform(self: Self, X: npt.NDArray[np.float_] | da.Array) -> npt.NDArray[np.bool_]:
+    # noinspection PyPep8Naming
+    def transform(self, X: npt.NDArray[np.float_] | da.Array) -> npt.NDArray[np.bool_] | da.Array:
         """Transform the predictions.
 
         :param X: Input data
         :return: Transformed data
         """
-        # print(X)
-        return self._threshold < X
+        if self.threshold is None:
+            raise NotFittedError("Threshold has not been set")
 
-
-# if __name__ == "__main__":
-#     X = np.random.rand(100, 100)
-#     y = np.random.rand(100, 100) > 0.5
-#
-#     print(X)
-#     print(y)
-#
-#     threshold = Threshold()
-#     threshold.fit(X, y)
-#     print(threshold._threshold)
-#     print(threshold.transform(X))
+        return self.threshold < X

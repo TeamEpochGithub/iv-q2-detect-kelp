@@ -3,6 +3,8 @@
 import sys
 from dataclasses import dataclass
 
+from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
+
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     pass
 else:
@@ -28,7 +30,7 @@ class ModelPipeline(Pipeline):
     feature_pipeline: FeaturePipeline | None = None
     target_pipeline: TargetPipeline | None = None
     model_loop_pipeline: ModelLoopPipeline | None = None
-    post_processing_pipeline: Pipeline | None = None
+    post_processing_pipeline: PostProcessingPipeline | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
