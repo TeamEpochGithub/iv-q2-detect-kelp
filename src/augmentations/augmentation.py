@@ -10,10 +10,11 @@ from pandas._typing import npt
 class Augmentation(ABC):
     """Base class for custom data augmentations."""
 
+    p: float
     img_to_apply: int = 1
 
     @abstractmethod
-    def transforms(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_], i: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    def transforms(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], i: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the augmentation to the data.
 
         :param x: Batch of input features.
