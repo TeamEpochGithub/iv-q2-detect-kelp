@@ -43,7 +43,7 @@ class Threshold(TransformerMixin, BaseEstimator):
             logger.info(f"Threshold manually set to {self.threshold}. Skipping optimization.")
             return self
 
-        # Using Dask arrays and gives weird warnings about full garbage collections taking too much CPU time
+        # Using Dask arrays here gives weird warnings about full garbage collections taking too much CPU time
         if isinstance(X, da.Array):
             X = X.compute()
         if isinstance(y, da.Array):

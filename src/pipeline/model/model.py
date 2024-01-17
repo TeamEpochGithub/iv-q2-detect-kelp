@@ -3,8 +3,6 @@
 import sys
 from dataclasses import dataclass
 
-from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
-
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     pass
 else:
@@ -14,6 +12,7 @@ from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
+from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
 from src.pipeline.model.target.target import TargetPipeline
 
 
