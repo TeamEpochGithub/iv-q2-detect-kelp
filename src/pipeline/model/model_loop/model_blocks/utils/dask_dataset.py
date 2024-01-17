@@ -17,7 +17,7 @@ class Dask2TorchDataset(Dataset[Any]):
     :param y: Labels.
     """
 
-    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: Transformations) -> None:
+    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: Transformations | None = None) -> None:
         """Initialize the Dask2TorchDataset.
 
         :param X: Input features.
@@ -68,12 +68,12 @@ class Dask2TorchDataset(Dataset[Any]):
             else:
                 y_arr = self.memY[in_mem_idxs]
 
-            # If they exist, apply the augmentations in a paralleized way using asyncio
+            # If they exist, apply the augmentations in a paralellized way using asyncio
             if self.transforms is not None:
                 self.transforms.transform(x_arr, y_arr)
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
-        # If y doesn't exist it must be for submission and for that we dont want to augment the inference data
+        # If y doesn't exist it must be for submission and for that we don't want to augment the inference data
         # If y does not exist, return only x
         return torch.from_numpy(x_arr)
 

@@ -13,11 +13,12 @@ from src.augmentations.augmentation import Augmentation
 @dataclass
 class Transformations:
     """Base class for data augmentation transformations, contains a list of augmentations to apply to the data."""
+
     alb: albumentations.Compose = None
-    aug: list[Augmentation] = None
+    aug: list[Augmentation] | None = None
 
     def transform(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Applies all the augmentations to the current batch.
+        """Apply all the augmentations to the current batch.
 
         :param x: Batch of input features.
         :param y: Batch of labels.
@@ -31,7 +32,7 @@ class Transformations:
         return x_arr, y_arr
 
     def apply_albumentations(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Applies all the albumentations to the current batch.
+        """Apply all the albumentations to the current batch.
 
         :param x: Batch of input features.
         :param y: Batch of labels.
@@ -73,12 +74,12 @@ class Transformations:
         :param y: Labels.
         :return: augmented data
         """
-        for augmentation in self.aug:
+        for augmentation in self.aug:  # type: ignore[union-attr]
             x_arr, y_arr = augmentation.transforms(x_arr, y_arr, i)
         return x_arr, y_arr
 
     def apply_albumentation(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Applies the albumentation to the current image and mask.
+        """Apply the albumentation to the current image and mask.
 
         :param x: Input features.
         :param y: Labels.

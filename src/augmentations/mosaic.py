@@ -23,22 +23,22 @@ class Mosaic(Augmentation):
         :return: Augmentation applied to the image and mask at index i
         """
         # Get a random float between 0 and 1
-        r = np.random.rand()
+        rng = np.random.default_rng(42)
+        r = rng.random()
         # If the random float is less than the probability of the augmentation, apply it
 
         if r < self.p:
             # Get the indices of the images to apply the augmentation to
-            idxs = np.random.randint(0, len(images), self.img_to_apply)
+            idxs = rng.integers(low=0, high=len(images), size=self.img_to_apply)
             # Apply the mosaic augmentation
             image, mask = self.mosaic(images, masks, idxs)
             # Return the augmented image and mask
             return image, mask
 
-        else:
-            # If the augmentation is not applied, return the original image and mask
-            return images[i], masks[i]
+        # If the augmentation is not applied, return the original image and mask
+        return images[i], masks[i]
 
-    def mosaic(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], idxs: list[int]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    def mosaic(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], idxs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the mosaic augmentation to the images and masks.
 
         :param images: Batch of input features.
@@ -60,12 +60,12 @@ class Mosaic(Augmentation):
         mask = np.zeros((mask_1.shape[0], mask_1.shape[1] * 2, mask_1.shape[2] * 2))
 
         # Apply the mosaic augmentation
-        image[:, :h, :w, ] = image_1
+        image[:, :h, :w] = image_1
         image[:, :h, w:] = image_2
         image[:, h:, :w] = image_3
         image[:, h:, w:] = image_4
 
-        mask[:, :h, :w, ] = mask_1
+        mask[:, :h, :w] = mask_1
         mask[:, :h, w:] = mask_2
         mask[:, h:, :w] = mask_3
         mask[:, h:, w:] = mask_4
@@ -78,8 +78,9 @@ class Mosaic(Augmentation):
         # to get the bottom right of the cut
 
         # Get the random x and y coordinates
-        topL_x = np.random.randint(int(np.sqrt(h)), h - int(np.sqrt(h)))
-        topL_y = np.random.randint(int(np.sqrt(w)), w - int(np.sqrt(w)))
+        rng = np.random.default_rng(42)
+        topL_x = rng.integers(int(np.sqrt(h)), h - int(np.sqrt(h)))
+        topL_y = rng.integers(int(np.sqrt(w)), w - int(np.sqrt(w)))
         cut_x = topL_x + h
         cut_y = topL_y + w
 
@@ -88,5 +89,3 @@ class Mosaic(Augmentation):
         mask = mask[:, topL_x:cut_x, topL_y:cut_y]
 
         return image, mask
-
-

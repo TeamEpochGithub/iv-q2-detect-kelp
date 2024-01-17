@@ -1,4 +1,4 @@
-"""Base class for custom data augmentations"""
+"""Base class for custom data augmentations."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -22,4 +22,3 @@ class Augmentation(ABC):
         :param i: Index of the image to apply the augmentation to.
         :return: Augmentation applied to the image and mask at index i
         """
-        pass

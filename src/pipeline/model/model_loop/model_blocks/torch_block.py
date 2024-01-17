@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any
 
-import albumentations
 import dask.array as da
 import numpy as np
 import torch
@@ -55,7 +54,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
     test_size: float = 0.2  # Hashing purposes
-    transformations: Transformations = None
+    transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
