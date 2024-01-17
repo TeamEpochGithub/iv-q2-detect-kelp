@@ -2,6 +2,7 @@
 import copy
 import os
 import warnings
+from contextlib import nullcontext
 from pathlib import Path
 
 import hydra
@@ -17,6 +18,7 @@ from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
+from src.utils.script.lock import Lock
 from src.utils.script.reset_wandb_env import reset_wandb_env
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
@@ -31,6 +33,15 @@ cs.store(name="base_cv", node=CVConfig)
 
 @hydra.main(version_base=None, config_path="conf", config_name="cv")
 def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of DictConfig
+    """Do cv on a model pipeline with K fold split."""
+    # Run the train config with a dask client, and optionally a lock
+    optional_lock = Lock if not cfg.allow_multiple_instances else nullcontext
+    with optional_lock(), Client() as client:
+        logger.info(f"Client: {client}")
+        run_cv_cfg(cfg)
+
+
+def run_cv_cfg(cfg: DictConfig) -> None:
     """Do cv on a model pipeline with K fold split."""
     print_section_separator("Q2 Detect Kelp States -- CV")
 
@@ -90,7 +101,4 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
 
 if __name__ == "__main__":
-    # Run with dask client, which will automatically close if there is an error
-    with Client() as client:
-        logger.info(f"Client: {client}")
-        run_cv()
+    run_cv()
