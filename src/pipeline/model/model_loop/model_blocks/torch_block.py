@@ -1,7 +1,8 @@
 """TorchBlock class."""
 import copy
+import functools
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated, Any
@@ -24,6 +25,7 @@ from tqdm import tqdm
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -45,14 +47,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     """
 
     model: nn.Module
-    optimizer: Callable[[Iterator[Parameter]], Optimizer]
-    scheduler: LRScheduler | None
+    optimizer: functools.partial[Optimizer]
+    scheduler: Callable[[Optimizer], LRScheduler] | None
     criterion: nn.Module
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
     test_size: float = 0.2  # Hashing purposes
     transformations: albumentations.Compose = None
+    layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -62,8 +65,24 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Set model is saved to true
         self.save_model_to_disk = True
 
-        # Set the optimizer
-        self.initialized_optimizer = self.optimizer(self.model.parameters())
+        if self.layerwise_lr_decay is None:
+            # Apply the optimizer to all parameters at once
+            self.initialized_optimizer = self.optimizer(self.model.parameters())
+        else:
+            # Make a dummy optimizer to extract the base learning rate
+            dummy_optimizer = self.optimizer([Parameter(torch.zeros(1))])
+            base_lr = dummy_optimizer.defaults["lr"]
+
+            # Apply the optimizer to each layer with a different learning rate
+            param_groups = torch_layerwise_lr_groups(self.model, base_lr, self.layerwise_lr_decay)
+            self.initialized_optimizer = self.optimizer(param_groups)
+
+        # Set the scheduler
+        self.initialized_scheduler: LRScheduler | None
+        if self.scheduler is not None:
+            self.initialized_scheduler = self.scheduler(self.initialized_optimizer)
+        else:
+            self.initialized_scheduler = None
 
         # Set the device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -151,7 +170,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self._training_loop(train_loader, test_loader, train_losses, val_losses)
 
         logger.info("Done training the model")
-        self.is_trained = True
         if save_model:
             self.save_model()
 
@@ -232,6 +250,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             losses.append(loss.item())
             pbar.set_description(desc=desc)
             pbar.set_postfix(loss=sum(losses) / len(losses))
+
+        # Step the scheduler
+        if self.initialized_scheduler is not None:
+            self.initialized_scheduler.step()
+
         return sum(losses) / len(losses)
 
     def _val_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:

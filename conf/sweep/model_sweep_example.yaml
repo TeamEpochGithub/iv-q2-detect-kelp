@@ -1,0 +1,39 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args}
+method: bayes
+project: detect-kelp
+program: sweep.py
+name: model_sweep_example
+metric:
+  name: Score
+  goal: maximize
+parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
+  model:
+    parameters:
+      model_loop_pipeline:
+        parameters:
+          model_blocks_pipeline:
+            parameters:
+              model_blocks:
+                parameters:
+                    model:
+                      parameters:
+                        padding:
+                          values: [1,2]
+                    optimizer:
+                      parameters:
+                        _args_:
+                          parameters:
+                            path:
+                              values: [torch.optim.Adam, torch.optim.SGD]
+                            lr:
+                              values: [0.001, 0.01]
+                    epochs:
+                      values: [2, 3]
+                    batch_size:
+                      values: [16, 32]
+                    patience:
+                      values: [10, 20]

@@ -16,6 +16,7 @@ from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
+from src.utils.script.reset_wandb_env import reset_wandb_env
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -51,11 +52,16 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
     wandb_group_name = randomname.get_name()
 
     for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
+        # https://github.com/wandb/wandb/issues/5119
+        # This is a workaround for the issue where sweeps override the run id annoyingly
+        reset_wandb_env()
+
+        # Print section separator
         print_section_separator(f"CV - Fold {i}")
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            setup_wandb(cfg, "cv", output_dir, name=f"Fold {i}", group=wandb_group_name)
+            setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
@@ -63,18 +69,15 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         # Generate the parameters for training
         fit_params = generate_cv_params(cfg, model_pipeline, train_indices, test_indices)
 
-        # Fit the pipelinem
-        model_pipeline.fit(X, y, **fit_params)
-
-        # Only get the predictions for the test indices #TODO(Hugo): Issue 82
-        predictions = model_pipeline.transform(X)
+        # Fit the pipeline and get predictions
+        predictions = model_pipeline.fit_transform(X, y, **fit_params)
         scorer = instantiate(cfg.scorer)
         score = scorer(y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
         wandb.log({"Score": score})
 
-        if wandb.run is not None:
-            wandb.run.finish()
+        logger.info("Finishing wandb run")
+        wandb.finish()
 
 
 if __name__ == "__main__":

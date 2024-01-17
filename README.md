@@ -35,4 +35,5 @@ Here's a short command to make the documentation and open it in the browser:
 ```shell
 cd ./docs/;
 ./make.bat html; start chrome file://$PWD/_build/html/index.html
+cd ../
 ```

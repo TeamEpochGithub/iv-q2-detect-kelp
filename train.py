@@ -51,13 +51,14 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
+
     indices = np.arange(X.shape[0])
 
     # Split indices into train and test
     if cfg.test_size == 0:
         train_indices, test_indices = list(indices), []
     else:
-        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
+        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size, random_state=42)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
     # Generate the parameters for training

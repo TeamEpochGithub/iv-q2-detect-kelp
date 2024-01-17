@@ -39,6 +39,5 @@ class ColumnSelection(PretrainBlock):
         logger.info("Selecting columns...")
         start_time = time.time()
         X = X[:, self.columns]
-        X = X.rechunk({1: -1})
         logger.info("Selected columns in %s seconds", time.time() - start_time)
         return X

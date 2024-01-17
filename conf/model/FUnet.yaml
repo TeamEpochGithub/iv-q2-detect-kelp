@@ -56,11 +56,14 @@ target_pipeline:
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
-      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [1,7,8,9,10]
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
+      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
+        max_images: 2000
+        early_stopping_split: 0.2
+      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
+        columns: [0, 1, 2, 11]
 
   model_blocks_pipeline:
     model_blocks:
@@ -71,7 +74,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: vgg11
+            encoder_name: resnet34
             in_channels: 5
             classes: 1
             activation: sigmoid
@@ -79,12 +82,12 @@ model_loop_pipeline:
           _target_: functools.partial
           _args_:
             - _target_: hydra.utils.get_class
-              path: torch.optim.Adam
-          lr: 0.001
-        scheduler: None
+              path: torch.optim.AdamW
+          lr: 0.00005
+        scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 20
+        epochs: 100
         batch_size: 64
         patience: 20
         transformations:
@@ -112,7 +115,6 @@ model_loop_pipeline:
               height: 350
               width: 350
               p: 1.0
-
 
 # Post processing pipeline
 post_processing_pipeline:
