@@ -8,7 +8,6 @@ if sys.version_info < (3, 11):  # Self was added in Python 3.11
 else:
     pass
 
-
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline

@@ -65,6 +65,4 @@ model_loop_pipeline:
             - _target_: albumentations.VerticalFlip
               p: 0.2
 
-
-# Post processing pipeline
 post_processing_pipeline:

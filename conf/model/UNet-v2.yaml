@@ -131,6 +131,4 @@ model_loop_pipeline:
             alpha_affine: 50
             p: 0.5
 
-
-# Post processing pipeline
 post_processing_pipeline:
