@@ -1,8 +1,9 @@
 """Implementation of the Mosaic augmentation."""
-
 from dataclasses import dataclass
-import numpy.typing as npt
+
 import numpy as np
+import numpy.typing as npt
+
 from src.augmentations.augmentation import Augmentation
 
 
@@ -55,19 +56,22 @@ class Mosaic(Augmentation):
         h, w = image_1.shape[0], image_1.shape[1]
 
         # Create the mosaic image and mask, ensure that the mosaic image and mask have the same shape as the original images and masks
-        image = np.zeros((image_1.shape[0], image_1.shape[1] * 2, image_1.shape[2] * 2))
-        mask = np.zeros((mask_1.shape[0], mask_1.shape[1] * 2, mask_1.shape[2] * 2))
+        image = np.zeros((image_1.shape[0] * 2, image_1.shape[1] * 2, image_1.shape[2]))
+        mask = np.zeros((mask_1.shape[0] * 2, mask_1.shape[1] * 2, mask_1.shape[2]))
 
+        print(image.shape)
+        print(mask.shape)
+        print(image_1.shape)
         # Apply the mosaic augmentation
-        image[:, :h, :w] = image_1
-        image[:, :h, w:] = image_2
-        image[:, h:, :w] = image_3
-        image[:, h:, w:] = image_4
+        image[:h, :w, :] = image_1
+        image[:h, w:, :] = image_2
+        image[h:, :w, :] = image_3
+        image[h:, w:, :] = image_4
 
-        mask[:, :h, :w] = mask_1
-        mask[:, :h, w:] = mask_2
-        mask[:, h:, :w] = mask_3
-        mask[:, h:, w:] = mask_4
+        mask[:h, :w, :] = mask_1
+        mask[:h, w:, :] = mask_2
+        mask[h:, :w, :] = mask_3
+        mask[h:, w:, :] = mask_4
 
         # Now make the cutout from the final image to get back to original image width and height
         # Since the image is twice the input size, we can get
@@ -83,27 +87,27 @@ class Mosaic(Augmentation):
         cut_y = topL_y + w
 
         # Cut the image and mask
-        image = image[:, topL_x:cut_x, topL_y:cut_y]
-        mask = mask[:, topL_x:cut_x, topL_y:cut_y]
+        image = image[topL_x:cut_x, topL_y:cut_y, :]
+        print(image.shape)
+        mask = mask[topL_x:cut_x, topL_y:cut_y, :]
 
         return image, mask
 
 
 if __name__ == "__main__":
-
     # Test the mosaic augmentation with 4 random images
 
     # Create 4 random images and masks where each image has 1 color
 
-    image_1 = np.random.randint(0, 50, (3, 256, 256))
-    image_2 = np.random.randint(50, 150, (3, 256, 256))
-    image_3 = np.random.randint(150, 200, (3, 256, 256))
-    image_4 = np.random.randint(200, 255, (3, 256, 256))
+    image_1 = np.random.randint(0, 50, (256, 256, 3))
+    image_2 = np.random.randint(50, 150, (256, 256, 3))
+    image_3 = np.random.randint(150, 200, (256, 256, 3))
+    image_4 = np.random.randint(200, 255, (256, 256, 3))
 
-    mask_1 = np.random.randint(0, 50, (1, 256, 256))
-    mask_2 = np.random.randint(50, 150, (1, 256, 256))
-    mask_3 = np.random.randint(150, 200, (1, 256, 256))
-    mask_4 = np.random.randint(200, 255, (1, 256, 256))
+    mask_1 = np.random.randint(0, 50, (256, 256, 1))
+    mask_2 = np.random.randint(50, 150, (256, 256, 1))
+    mask_3 = np.random.randint(150, 200, (256, 256, 1))
+    mask_4 = np.random.randint(200, 255, (256, 256, 1))
 
     # Create the images and masks arrays
     images = np.array([image_1, image_2, image_3, image_4])
@@ -120,15 +124,18 @@ if __name__ == "__main__":
     print(image.shape)
     print(mask.shape)
 
-    # Visualize the augmented image and mask
+    # Visualize the augmented image and mask using opencv
 
-    import matplotlib.pyplot as plt
+    import cv2
 
-    plt.imshow(image.transpose(1, 2, 0))
-    plt.show()
+    # Save to file
+    cv2.imwrite("mosaic_image.png", image)
+
+    #Save the mask
+    cv2.imwrite("mosaic_mask.png", mask)
 
 
 
-
+    x = 15
 
 

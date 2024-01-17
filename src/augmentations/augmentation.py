@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
-from pandas._typing import npt
+import numpy.typing as npt
 
 
 @dataclass
