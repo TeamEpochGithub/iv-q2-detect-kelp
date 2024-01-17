@@ -6,13 +6,13 @@ from pathlib import Path
 
 import hydra
 import numpy as np
+import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
-import wandb
 from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
