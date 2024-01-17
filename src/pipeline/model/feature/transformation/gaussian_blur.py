@@ -1,9 +1,11 @@
-"""A pipeline step that divides the data by a number."""
+"""Pipeline step to smooth the labels."""
 import sys
 import time
 from dataclasses import dataclass
 
 import dask.array as da
+import dask_image.ndfilters._gaussian as gaf
+import dask_image.ndfilters._utils as gau
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
@@ -16,13 +18,13 @@ else:
 
 
 @dataclass
-class Divider(BaseEstimator, TransformerMixin):
-    """Pipeline step to divide the data by a number.
+class GaussianBlur(BaseEstimator, TransformerMixin):
+    """Pipeline step to smooth the labels.
 
-    :param divider: The number to divide by
+    :param smoothing: The smoothing factor
     """
 
-    divider: int
+    sigma: float = 0.5
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """Fit the transformer.
@@ -40,6 +42,16 @@ class Divider(BaseEstimator, TransformerMixin):
         :return: The transformed data
         """
         time_start = time.time()
-        result = (X / self.divider).astype(np.float32)
-        logger.info(f"Divider transform complete in: {time.time() - time_start} seconds.")
+
+        X = X.astype(np.float32)
+
+        _, boundary = gau._get_depth_boundary(X.ndim, 5, "none")  # noqa: SLF001
+        meta = X._meta  # noqa: SLF001
+
+        result = X.map_overlap(
+            gaf.dispatch_gaussian_filter(X), depth=0, boundary=boundary, dtype=X.dtype, meta=meta, sigma=self.sigma, order=0, mode="reflect", cval=0, truncate=4.0
+        )
+
+        logger.info(f"Gaussian blur complete in: {time.time() - time_start} seconds.")
+
         return result

@@ -1,4 +1,5 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import copy
 import os
 import warnings
 from pathlib import Path
@@ -65,14 +66,20 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     fit_params = generate_train_params(cfg, model_pipeline, train_indices=train_indices, test_indices=test_indices)
 
     # Fit the pipeline
+    target_pipeline = model_pipeline.get_target_pipeline()
+    original_y = copy.deepcopy(y)
+
+    if target_pipeline is not None:
+        print_section_separator("Target pipeline")
+        y = target_pipeline.fit_transform(y)
+
     logger.info("Now fitting the pipeline...")
-    model_pipeline.fit(X, y, **fit_params)
+    predictions = model_pipeline.fit_transform(X, y, **fit_params)
 
     if len(test_indices) > 0:
         logger.info("Calculating score on test set...")
-        predictions = model_pipeline.transform(X[test_indices])
         scorer = instantiate(cfg.scorer)
-        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        score = scorer(original_y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
 
         if wandb.run:
