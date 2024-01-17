@@ -61,10 +61,9 @@ model_loop_pipeline:
           _target_: dask_ml.preprocessing.StandardScaler
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
         max_images: 2000
-        test_split: 0.2
+        early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0, 1, 2, 11]
-
   model_blocks_pipeline:
     model_blocks:
 
@@ -74,17 +73,18 @@ model_loop_pipeline:
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
+          activation:
+            _target_: torch.nn.Sigmoid
           model: # from segmentation_models_pytorch import Unet
-            _target_: segmentation_models_pytorch.UnetPlusPlus
-            encoder_name: resnext50_32x4d
+            _target_: monai.networks.nets.swin_unetr.SwinUNETR
+            img_size: [352,352]
             in_channels: 4
-            classes: 1
-            activation: sigmoid
-
-        epochs: 30
-        batch_size: 16
+            out_channels: 1
+            spatial_dims: 2
+        epochs: 50
+        batch_size: 32
         patience: 20
-        layerwise_lr_decay: 0.9
+        layerwise_lr_decay: 1
 
         # Optimizer
         optimizer:
@@ -130,5 +130,11 @@ model_loop_pipeline:
             sigma: 50
             alpha_affine: 50
             p: 0.5
+          - _target_: albumentations.Resize
+            height: 350
+            width: 350
+            p: 1.0
 
+
+# Post processing pipeline
 post_processing_pipeline:
