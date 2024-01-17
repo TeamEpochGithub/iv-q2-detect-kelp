@@ -8,13 +8,14 @@ import numpy as np
 import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
+from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import train_test_split
 
 from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.utils.script.hash_check import check_hash_train
+from src.utils.script.generate_params import generate_train_params
 from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
@@ -42,45 +43,38 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
     if cfg.wandb.enabled:
-        setup_wandb(cfg, "Training", output_dir)
+        setup_wandb(cfg, "train", output_dir)
 
-    # Check hashes train
-    model_hashes, scaler_hashes = check_hash_train(cfg)
-
-    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
+    print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
+
     indices = np.arange(X.shape[0])
 
     # Split indices into train and test
     if cfg.test_size == 0:
-        train_indices, test_indices = indices, []
+        train_indices, test_indices = list(indices), []
     else:
-        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size)
+        train_indices, test_indices = train_test_split(indices, test_size=cfg.test_size, random_state=42)
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
-    logger.info("Now fitting the pipeline...")
-    # Set train and test indices for each model block
-    # Due to how SKLearn pipelines work, we have to set the model fit parameters using a deeply nested dictionary
-    # Then we convert it to a flat dictionary with __ as the separator between each level
 
-    fit_params = {
-        "train_indices": train_indices,
-        "test_indices": test_indices,
-        "cache_size": cfg.cache_size,
-        "model_hashes": model_hashes,
-    }
+    # Generate the parameters for training
+    fit_params = generate_train_params(cfg, model_pipeline, train_indices=train_indices, test_indices=test_indices)
 
     # Fit the pipeline
+    logger.info("Now fitting the pipeline...")
     model_pipeline.fit(X, y, **fit_params)
 
-    # Save the model
-    model_pipeline.save_model(model_hashes)
-
-    # Save the scaler
-    model_pipeline.save_scaler(scaler_hashes)
+    if len(test_indices) > 0:
+        logger.info("Calculating score on test set...")
+        predictions = model_pipeline.transform(X[test_indices])
+        scorer = instantiate(cfg.scorer)
+        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        logger.info(f"Score: {score}")
+        wandb.log({"Score": score})
 
     if wandb.run:
         wandb.finish()

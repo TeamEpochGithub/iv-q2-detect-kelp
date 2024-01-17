@@ -1,8 +1,10 @@
 """TorchBlock class."""
 import copy
+import functools
 import sys
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Any
 
 import albumentations
@@ -11,6 +13,7 @@ import numpy as np
 import torch
 import wandb
 from annotated_types import Gt
+from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
 from torch.nn import Parameter
@@ -22,6 +25,7 @@ from tqdm import tqdm
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -43,18 +47,42 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     """
 
     model: nn.Module
-    optimizer: Callable[[Iterator[Parameter]], Optimizer]
-    scheduler: LRScheduler | None
+    optimizer: functools.partial[Optimizer]
+    scheduler: Callable[[Optimizer], LRScheduler] | None
     criterion: nn.Module
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
+    test_size: float = 0.2  # Hashing purposes
     transformations: albumentations.Compose = None
+    layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
-        # Set the optimizer
-        self.initialized_optimizer = self.optimizer(self.model.parameters())
+        # Set the hash
+        self.set_hash("")
+
+        # Set model is saved to true
+        self.save_model_to_disk = True
+
+        if self.layerwise_lr_decay is None:
+            # Apply the optimizer to all parameters at once
+            self.initialized_optimizer = self.optimizer(self.model.parameters())
+        else:
+            # Make a dummy optimizer to extract the base learning rate
+            dummy_optimizer = self.optimizer([Parameter(torch.zeros(1))])
+            base_lr = dummy_optimizer.defaults["lr"]
+
+            # Apply the optimizer to each layer with a different learning rate
+            param_groups = torch_layerwise_lr_groups(self.model, base_lr, self.layerwise_lr_decay)
+            self.initialized_optimizer = self.optimizer(param_groups)
+
+        # Set the scheduler
+        self.initialized_scheduler: LRScheduler | None
+        if self.scheduler is not None:
+            self.initialized_scheduler = self.scheduler(self.initialized_optimizer)
+        else:
+            self.initialized_scheduler = None
 
         # Set the device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,7 +99,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
 
         :param X: Input features.
@@ -81,6 +109,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Fitted model.
         """
+        # Check if the model exists
+        self.save_model_to_disk = save_model
+        if Path(f"tm/{self.prev_hash}.pt").exists() and save_model:
+            logger.info(f"Model exists at tm/{self.prev_hash}.pt, skipping training")
+            return self
+
+        # TODO(Jasper): Add scheduler to the loop if it is not none
         # TODO(Epoch): Add scheduler to the loop if it is not none
         # Train the model with self.model named model, print model name to print_section_separator
         # Print the model name to print_section_separator
@@ -91,7 +126,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_indices.sort()
 
         # Rechunk the data
-        logger.info("Rechunking the data")
         X = X.rechunk((1, -1, -1, -1))
         y = y.rechunk((1, -1, -1))
 
@@ -132,27 +166,44 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         if len(test_loader) == 0:
             logger.warning(f"Doing train full, early stopping is not yet implemented for this case so the model will be trained for {self.epochs} epochs")
 
+        # Train the model
+        self._training_loop(train_loader, test_loader, train_losses, val_losses)
+
+        logger.info("Done training the model")
+        if save_model:
+            self.save_model()
+
+        return self
+
+    def _training_loop(
+        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+    ) -> None:
+        """Training loop for the model.
+
+        :param train_loader: Dataloader for the testing data.
+        :param test_loader: Dataloader for the training data. (can be empty)
+        :param train_losses: List of train losses.
+        :param val_losses: List of validation losses.
+        """
         for epoch in range(self.epochs):
             # Train using train_loader
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
 
+            # Log train loss
             if wandb.run:
-                # Log only the train loss in the "Training" section
                 wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
 
-            # Validate using test_loader if we have validation data
+            # Compute validation loss
             if len(test_loader) > 0:
                 self.last_val_loss = self._val_one_epoch(test_loader, desc=f"Epoch {epoch} Valid")
                 logger.debug(f"Epoch {epoch} Valid Loss: {self.last_val_loss}")
                 val_losses.append(self.last_val_loss)
 
+                # Log validation loss and plot train/val loss against each other
                 if wandb.run:
-                    # Also log the validation loss in the "Training" section
                     wandb.log({"Training/Validation Loss": val_losses[-1]}, step=epoch + 1)
-
-                    # Log both the train and validation loss in a line plot in the "Training" section
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
@@ -161,12 +212,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                         }
                     )
 
+                # TODO(#38): Train full early stopping
                 if self.early_stopping():
+                    # Log the trained epochs - patience to wandb
+                    if wandb.run:
+                        wandb.log({"Epochs": (epoch + 1) - self.patience})
                     break
-            else:  # Train full TODO(#38)
-                pass
-
-        return self
+            elif wandb.run:
+                # Log the trained epochs to wandb if we finished training
+                wandb.log({"Epochs": epoch + 1})
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
         """Train the model for one epoch.
@@ -196,6 +250,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             losses.append(loss.item())
             pbar.set_description(desc=desc)
             pbar.set_postfix(loss=sum(losses) / len(losses))
+
+        # Step the scheduler
+        if self.initialized_scheduler is not None:
+            self.initialized_scheduler.step()
+
         return sum(losses) / len(losses)
 
     def _val_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
@@ -224,23 +283,29 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 pbar.set_postfix(loss=sum(losses) / len(losses))
         return sum(losses) / len(losses)
 
-    def save_model(self, model_hash: str) -> None:
+    def save_model(self) -> None:
         """Save the model in the tm folder.
 
         :param block_hash: Hash of the model pipeline
         """
-        logger.info(f"Saving model to tm/{model_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{model_hash}.pt")
-        logger.info(f"Model saved to tm/{model_hash}.pt")
+        logger.info(f"Saving model to tm/{self.prev_hash}.pt")
+        torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
+        logger.info(f"Model saved to tm/{self.prev_hash}.pt")
+        self.model_is_saved = True
 
-    def load_model(self, model_hash: str) -> None:
+    def load_model(self) -> None:
         """Load the model from the tm folder.
 
         :param block_hash: Hash of the model pipeline
         """
-        logger.info(f"Loading model from tm/{model_hash}.pt")
-        self.model.load_state_dict(torch.load(f"tm/{model_hash}.pt"))
-        logger.info(f"Model loaded from tm/{model_hash}.pt")
+        # Load the model if it exists
+        if not Path(f"tm/{self.prev_hash}.pt").exists():
+            logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
+            sys.exit(1)
+
+        logger.info(f"Loading model from tm/{self.prev_hash}.pt")
+        self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
+        logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
     def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
         """Predict on the test data.
@@ -249,6 +314,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param cache_size: Number of samples to load into memory.
         :return: Predictions.
         """
+        # Load the model if it exists
+        if self.save_model_to_disk:
+            self.load_model()
+
         print_section_separator(f"Predicting of model: {self.model.__class__.__name__}")
         logger.debug(f"Training model: {self.model.__class__.__name__}")
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
@@ -270,7 +339,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         return np.array(preds)
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> np.ndarray[Any, Any]:
+    def transform(self, X: da.Array) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
@@ -296,3 +365,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 self.model.load_state_dict(self.best_model)
                 return True
         return False
+
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
+
+        :param prev_hash: Previous hash
+        :return: Hash
+        """
+        torch_block_hash = hash(str(self) + prev_hash)
+
+        self.prev_hash = torch_block_hash
+
+        return torch_block_hash

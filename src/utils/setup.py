@@ -2,8 +2,9 @@
 import os
 import re
 from collections.abc import Callable
+from enum import Enum
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import dask.array
 import wandb
@@ -52,18 +53,29 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
     :param is_train: Whether the pipeline is for training or not.
     """
     logger.info("Instantiating the pipeline")
-    cfg = pipeline_cfg
 
-    if "model" in cfg:
-        pipeline_cfg = cfg.model
-        if not is_train:
-            pipeline_cfg["feature_pipeline"]["processed_path"] = "data/test"
-    elif "ensemble" in cfg:
-        pipeline_cfg = cfg.ensemble
-        if not is_train:
-            for model in pipeline_cfg.models.values():
-                model.feature_pipeline.processed_path = "data/test"
-    model_pipeline = instantiate(pipeline_cfg)
+    test_size = pipeline_cfg.get("test_size", -1)
+
+    if "model" in pipeline_cfg:
+        model_cfg = pipeline_cfg.model
+
+        # Add test size to the config
+        model_cfg_dict = OmegaConf.to_container(model_cfg, resolve=True)
+        model_cfg_dict = update_model_cfg_test_size(model_cfg_dict, test_size, is_train=is_train)
+
+        cfg = OmegaConf.create(model_cfg_dict)
+
+    elif "ensemble" in pipeline_cfg:
+        ensemble_cfg = pipeline_cfg.ensemble
+
+        ensemble_cfg_dict = OmegaConf.to_container(ensemble_cfg, resolve=True)
+        if isinstance(ensemble_cfg_dict, dict):
+            for model in ensemble_cfg_dict.get("models", []):
+                ensemble_cfg_dict[model] = update_model_cfg_test_size(ensemble_cfg_dict[model], test_size, is_train=is_train)
+
+        cfg = OmegaConf.create(ensemble_cfg_dict)
+
+    model_pipeline = instantiate(cfg)
 
     logger.debug(f"Pipeline: \n{model_pipeline}")
 
@@ -74,6 +86,27 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
         f.write(pipeline_html)
 
     return model_pipeline
+
+
+def update_model_cfg_test_size(
+    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None, test_size: int = -1, *, is_train: bool | None
+) -> dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None:
+    """Update the test size in the model config.
+
+    :param cfg: The model config.
+    :param test_size: The test size.
+
+    :return: The updated model config.
+    """
+    if isinstance(model_cfg_dict, dict):
+        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
+            model_block["test_size"] = test_size
+        for pretrain_block in model_cfg_dict.get("model_loop_pipeline", {}).get("pretrain_pipeline", {}).get("pretrain_steps", []):
+            pretrain_block["test_size"] = test_size
+
+        if not is_train:
+            model_cfg_dict.get("feature_pipeline", {})["processed_path"] = "data/test"
+    return model_cfg_dict
 
 
 def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array, dask.array.Array]:
@@ -119,14 +152,19 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     if isinstance(run, wandb.sdk.lib.RunDisabled) or run is None:  # Can't be True after wandb.init, but this casts wandb.run to be non-None, which is necessary for MyPy
         raise RuntimeError("Failed to initialize Weights & Biases")
 
-    wandb.config = OmegaConf.to_container(cfg, resolve=True)
-
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
+        curr_config = "conf/" + job_type + ".yaml"
+
+        # Get the model file name
+        model_name = OmegaConf.load(curr_config)["defaults"][2]["model"]  # type: ignore[index]
+
         # Store the config as an artefact of W&B
         artifact = wandb.Artifact(job_type + "_config", type="config")
         config_path = output_dir / ".hydra/config.yaml"
-        artifact.add_file(str(config_path), job_type + ".yaml")
+        artifact.add_file(str(config_path), "config.yaml")
+        artifact.add_file(curr_config)
+        artifact.add_file(f"conf/model/{model_name}.yaml")
         wandb.log_artifact(artifact)
 
     if cfg.wandb.log_code.enabled:

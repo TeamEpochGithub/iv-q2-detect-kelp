@@ -107,7 +107,7 @@ dependencies = [
 
 
 [tool.mypy]
-exclude = ["external/", "venv/"]
+exclude = ["external/", "venv/", ".cache"]
 allow_untyped_calls = true
 disable_error_code = ["import-untyped"]
 python-version = "3.10.13"

@@ -12,7 +12,6 @@ from src.config.submit_config import SubmitConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.make_submission import make_submission
-from src.utils.script.hash_check import check_hash_submit
 from src.utils.setup import setup_config, setup_pipeline, setup_test_data
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -41,29 +40,20 @@ def run_submit(cfg: DictConfig) -> None:
     # Check for missing keys in the config file
     setup_config(cfg)
 
-    # Check if the model and scaler hashes are cached already, if not give an error
-    model_hashes, scaler_hashes = check_hash_submit(cfg)
-
-    print_section_separator("Setup pipeline")
     # Preload the pipeline and save it to HTML
+    print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=False)
 
     # Load the test data
     X, filenames = setup_test_data(cfg.raw_data_path)
 
-    # Load the model from the model hashes
-    model_pipeline.load_model(model_hashes)
-
-    # Load the scaler from the scaler hashes
-    model_pipeline.load_scaler(scaler_hashes)
-
-    logger.info("Now transforming the pipeline...")
     # Predict on the test data
+    logger.info("Now transforming the pipeline...")
     predictions = model_pipeline.transform(X)
 
     # Make submission
     if predictions is not None:
-        make_submission(output_dir, predictions, filenames, threshold=0.25)
+        make_submission(output_dir, predictions, filenames, threshold=0.5)
     else:
         logger.error("Predictions are None")
         raise ValueError("Predictions are None")

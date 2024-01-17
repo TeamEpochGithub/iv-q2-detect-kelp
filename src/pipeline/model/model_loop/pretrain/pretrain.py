@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 
 @dataclass
@@ -17,41 +18,33 @@ class PretrainPipeline(Pipeline):
     :param steps: list of steps
     """
 
-    steps: list[Any]
+    pretrain_steps: list[PretrainBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
         super().__init__(self._get_steps())
+        self.set_hash("")
 
-    def _get_steps(self) -> list[tuple[str, Any]]:
+    def _get_steps(self) -> list[tuple[str, PretrainBlock]]:
         """Get the pipeline steps.
 
         :return: list of steps
         """
-        # Use list comprehension to get the steps
-        # if isinstance(self.steps[0], tuple):
-        #     return self.steps
-        # else:
-        return [(str(step), step) for step in self.steps]
+        return [(str(step), step) for step in self.pretrain_steps]
 
-    def load_scaler(self, scaler_hash: str) -> None:
-        """Load the scaler from the scaler hash.
+    def set_hash(self, prev_hash: str) -> str:
+        """Set the hash.
 
-        :param scaler_hash: The scaler hash
+        :param prev_hash: Previous hash
+        :return: Hash
         """
-        for step in self.steps:
-            if hasattr(step, "load_scaler"):
-                step.load_scaler(scaler_hash)
+        pretrain_hash = prev_hash
+        for step in self.pretrain_steps:
+            pretrain_hash = step.set_hash(pretrain_hash)
 
-    def save_scaler(self, scaler_hash: str) -> list[tuple[str, Any]]:
-        """Save the scaler to the scaler hash.
+        self.prev_hash = pretrain_hash
 
-        :param scaler_hash: The scaler hash
-        """
-        for step in self.steps:
-            if hasattr(step, "save_scaler"):
-                step.save_scaler(scaler_hash)
-        return [(step.__class__.__name__, step) for step in self.steps]
+        return pretrain_hash
 
     def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
         """Fit and transform the data.

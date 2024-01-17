@@ -50,15 +50,12 @@ model_loop_pipeline:
               - _target_: hydra.utils.get_class
                 path: torch.optim.Adam
             lr: 0.001
-          scheduler:
+          scheduler: None
           criterion:
             _target_: src.modules.loss.dice_loss.DiceLoss
-          epochs: 50
-          batch_size: 32
+          epochs: 2
+          batch_size: 16
           patience: 10
+
 post_processing_pipeline:
-  _target_: sklearn.pipeline.make_pipeline
-  _args_:
-    - _target_: src.pipeline.model.post_processing.threshold.Threshold
-  memory: "${model.feature_pipeline.processed_path}/"
-  verbose: True
+  -_target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock

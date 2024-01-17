@@ -26,10 +26,14 @@ class FeaturePipeline(Pipeline):
     def __post_init__(self) -> None:
         """Post init function."""
         # Create hash
+        self.load_from_cache = False
         if self.processed_path:
             self.transformation_hash = hash(self.transformation_pipeline)
+            self.load_from_cache = True
 
         super().__init__(self._get_steps(), memory=self._get_memory())
+
+        self.set_hash("")
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """_get_steps function returns the steps for the pipeline.
@@ -42,17 +46,27 @@ class FeaturePipeline(Pipeline):
         else:
             logger.debug("No transformation steps were provided")
 
-        if self.processed_path:
+        if self.processed_path and self.load_from_cache:
             steps.append(("store_processed", CacheTIFBlock(self.processed_path + "/" + self.transformation_hash)))
 
         if self.column_pipeline:
-            if self.processed_path:
+            if self.processed_path and self.load_from_cache:
                 self.column_pipeline.set_path(self.processed_path + "/" + self.transformation_hash)
             steps.append((str(self.column_pipeline), self.column_pipeline))
         else:
             logger.debug("No column steps were provided")
 
         return steps
+
+    def set_load_from_cache(self, *, load_from_cache: bool) -> None:
+        """set_load_from_cache function sets the load from cache flag for the pipeline.
+
+        :param load_from_cache: load from cache flag
+        """
+        self.load_from_cache = load_from_cache
+
+        # Update the steps in the pipeline after changing the load from cache flag
+        super().__init__(self._get_steps(), memory=self._get_memory())
 
     def _get_memory(self) -> str | None:
         """_get_memory function returns the memory location for the pipeline.
@@ -62,3 +76,19 @@ class FeaturePipeline(Pipeline):
         if self.processed_path:
             return self.processed_path + "/" + self.transformation_hash + "/pipeline_cache"
         return None
+
+    def set_hash(self, prev_hash: str) -> str:
+        """set_hash function sets the hash for the pipeline.
+
+        :param prev_hash: previous hash
+        :return: hash
+        """
+        feature_hash = prev_hash
+        if self.transformation_pipeline:
+            feature_hash = self.transformation_pipeline.set_hash(feature_hash)
+        if self.column_pipeline:
+            feature_hash = self.column_pipeline.set_hash(feature_hash)
+
+        self.prev_hash = feature_hash
+
+        return feature_hash
