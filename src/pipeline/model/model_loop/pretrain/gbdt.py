@@ -72,7 +72,11 @@ class GBDT(PretrainBlock):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.early_stopping_split)
 
         # Fit the catboost model
-        cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
+        # Check if labels are continuous or binary
+        if np.unique(y).shape[0] == 2:
+            cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
+        else:
+            cbm = catboost.CatBoostRegressor(iterations=100, verbose=True, early_stopping_rounds=10)
         cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
 
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
