@@ -1,12 +1,12 @@
 """Generate the model parameters for training and cross validation."""
 from omegaconf import DictConfig
 
-from src.pipeline.ensemble.ensemble import EnsemblePipeline
+from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
 from src.utils.flatten_dict import flatten_dict
 
 
-def generate_train_params(cfg: DictConfig, model_pipeline: ModelPipeline | EnsemblePipeline, train_indices: list[int], test_indices: list[int]) -> dict[str, str]:
+def generate_train_params(cfg: DictConfig, model_pipeline: ModelPipeline | EnsembleBase, train_indices: list[int], test_indices: list[int]) -> dict[str, str]:
     """Generate the model parameters.
 
     :param cfg: The configuration
@@ -20,7 +20,7 @@ def generate_train_params(cfg: DictConfig, model_pipeline: ModelPipeline | Ensem
     return params
 
 
-def generate_cv_params(cfg: DictConfig, model_pipeline: ModelPipeline | EnsemblePipeline, train_indices: list[int], test_indices: list[int]) -> dict[str, str]:
+def generate_cv_params(cfg: DictConfig, model_pipeline: ModelPipeline | EnsembleBase, train_indices: list[int], test_indices: list[int]) -> dict[str, str]:
     """Generate the model parameters.
 
     :param cfg: The configuration
@@ -74,7 +74,7 @@ def generate_model_params(
 
 
 def generate_ensemble_params(
-    ensemble_pipeline: EnsemblePipeline, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
+    ensemble_pipeline: EnsembleBase, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
 ) -> dict[str, str]:
     """Generate the model parameters.
 

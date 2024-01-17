@@ -76,7 +76,9 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
         scorer = instantiate(cfg.scorer)
         score = scorer(y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
-        wandb.log({"Score": score})
+
+        if wandb.run:
+            wandb.log({"Score": score})
 
     if wandb.run:
         wandb.finish()
