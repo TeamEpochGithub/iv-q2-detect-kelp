@@ -64,11 +64,14 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     fit_params = generate_train_params(cfg, model_pipeline, train_indices=train_indices, test_indices=test_indices)
 
     # Fit the pipeline
-    logger.info("Now fitting the pipeline...")
     target_pipeline = model_pipeline.get_target_pipeline()
     original_y = y
+
     if target_pipeline is not None:
+        print_section_separator("Target pipeline")
         y = target_pipeline.fit_transform(y)
+
+    logger.info("Now fitting the pipeline...")
     model_pipeline.fit(X, y, **fit_params)
 
     if len(test_indices) > 0:
