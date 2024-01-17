@@ -73,11 +73,10 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
         y = target_pipeline.fit_transform(y)
 
     logger.info("Now fitting the pipeline...")
-    model_pipeline.fit(X, y, **fit_params)
+    predictions = model_pipeline.fit_transform(X, y, **fit_params)
 
     if len(test_indices) > 0:
         logger.info("Calculating score on test set...")
-        predictions = model_pipeline.transform(X[test_indices])
         scorer = instantiate(cfg.scorer)
         score = scorer(original_y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
