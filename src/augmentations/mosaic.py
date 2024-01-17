@@ -1,10 +1,8 @@
 """Implementation of the Mosaic augmentation."""
 
 from dataclasses import dataclass
-
+import numpy.typing as npt
 import numpy as np
-from pandas._typing import npt
-
 from src.augmentations.augmentation import Augmentation
 
 
@@ -89,3 +87,48 @@ class Mosaic(Augmentation):
         mask = mask[:, topL_x:cut_x, topL_y:cut_y]
 
         return image, mask
+
+
+if __name__ == "__main__":
+
+    # Test the mosaic augmentation with 4 random images
+
+    # Create 4 random images and masks where each image has 1 color
+
+    image_1 = np.random.randint(0, 50, (3, 256, 256))
+    image_2 = np.random.randint(50, 150, (3, 256, 256))
+    image_3 = np.random.randint(150, 200, (3, 256, 256))
+    image_4 = np.random.randint(200, 255, (3, 256, 256))
+
+    mask_1 = np.random.randint(0, 50, (1, 256, 256))
+    mask_2 = np.random.randint(50, 150, (1, 256, 256))
+    mask_3 = np.random.randint(150, 200, (1, 256, 256))
+    mask_4 = np.random.randint(200, 255, (1, 256, 256))
+
+    # Create the images and masks arrays
+    images = np.array([image_1, image_2, image_3, image_4])
+    masks = np.array([mask_1, mask_2, mask_3, mask_4])
+
+    # Create the mosaic augmentation
+    mosaic = Mosaic(1)
+
+    # Apply the mosaic augmentation
+    image, mask = mosaic.mosaic(images, masks, [0, 1, 2, 3])
+
+    # Print the shapes of the augmented image and mask
+
+    print(image.shape)
+    print(mask.shape)
+
+    # Visualize the augmented image and mask
+
+    import matplotlib.pyplot as plt
+
+    plt.imshow(image.transpose(1, 2, 0))
+    plt.show()
+
+
+
+
+
+
