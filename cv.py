@@ -33,8 +33,8 @@ cs.store(name="base_cv", node=CVConfig)
 
 @hydra.main(version_base=None, config_path="conf", config_name="cv")
 def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of DictConfig
-    """Do cv on a model pipeline with K fold split."""
-    # Run the train config with a dask client, and optionally a lock
+    """Do cv on a model pipeline with K fold split. Entry point for Hydra which loads the config file."""
+    # Run the cv config with a dask client, and optionally a lock
     optional_lock = Lock if not cfg.allow_multiple_instances else nullcontext
     with optional_lock(), Client() as client:
         logger.info(f"Client: {client}")
