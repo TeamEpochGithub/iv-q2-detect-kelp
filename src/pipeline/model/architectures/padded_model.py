@@ -8,17 +8,20 @@ class PaddedModel(nn.Module):
 
     :param model: Pytorch model to be used
     :param padding: padding to be applied to the input image (to allow, for example, Unet to work with 350x350 images)
+    :param activation: activation function to be applied to the output of the model
     """
 
-    def __init__(self, model: nn.Module, padding: int = 0) -> None:
+    def __init__(self, model: nn.Module, padding: int = 0, activation: None | nn.Module = None) -> None:
         """Initialize the PaddedModel.
 
         :param model: Pytorch model to be used
         :param padding: padding to be applied to the input image (to allow, for example, Unet to work with 350x350 images)
+        :param activation: activation function to be applied to the output of the model
         """
         super().__init__()
         self.model = model
         self.padding = padding
+        self.activation = activation
         # Create a padding layer to pad the input image to a suitable size
         if padding > 0:
             self.padding_layer = nn.ZeroPad2d((padding, padding, padding, padding))
@@ -39,5 +42,7 @@ class PaddedModel(nn.Module):
         # Remove the padding if necessary
         if self.padding > 0:
             y = y[:, self.padding : -self.padding, self.padding : -self.padding]
+        if self.activation is not None:
+            y = self.activation(y)
 
         return y
