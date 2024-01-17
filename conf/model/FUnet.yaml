@@ -82,15 +82,15 @@ model_loop_pipeline:
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
             encoder_name: resnet34
-            in_channels: 5
+            in_channels: 4
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
           _args_:
             - _target_: hydra.utils.get_class
-              path: torch.optim.AdamW
-          lr: 0.00005
+              path: torch.optim.Adam
+          lr: 0.001
         scheduler:
         criterion:
           _target_: src.modules.loss.shrinkage_loss.ShrinkageLoss
@@ -98,30 +98,36 @@ model_loop_pipeline:
         batch_size: 16
         patience: 20
         transformations:
-          _target_: albumentations.Compose
-          transforms:
-            - _target_: albumentations.VerticalFlip
-              p: 0.5
-            - _target_: albumentations.HorizontalFlip
-              p: 0.5
-            - _target_: albumentations.RandomRotate90
-              p: 0.5
-            - _target_: albumentations.GaussianBlur
-              blur_limit: 7
-              p: 0.1
-            - _target_: albumentations.ElasticTransform
-              alpha: 1
-              sigma: 50
-              alpha_affine: 50
-              p: 0.1
-            - _target_: albumentations.RandomCrop
-              height: 300
-              width: 300
+          _target_: src.augmentations.transformations.Transformations
+          alb:
+            _target_: albumentations.Compose
+            transforms:
+              - _target_: albumentations.VerticalFlip
+                p: 0.5
+              - _target_: albumentations.HorizontalFlip
+                p: 0.5
+              - _target_: albumentations.RandomRotate90
+                p: 0.5
+              - _target_: albumentations.GaussianBlur
+                blur_limit: 7
+                p: 0.1
+              - _target_: albumentations.ElasticTransform
+                alpha: 1
+                sigma: 50
+                alpha_affine: 50
+                p: 0.1
+              - _target_: albumentations.RandomCrop
+                height: 300
+                width: 300
+                p: 0.2
+              - _target_: albumentations.Resize
+                height: 350
+                width: 350
+                p: 1.0
+          aug:
+            - _target_: src.augmentations.mosaic.Mosaic
               p: 0.2
-            - _target_: albumentations.Resize
-              height: 350
-              width: 350
-              p: 1.0
+
 
 post_processing_pipeline:
   post_processing_steps:
