@@ -17,6 +17,7 @@ class TrainConfig:
     :param scorer: Scorer object to be instantiated.
     :param cache_size: The size of the cache in items (not bytes).
     :param wandb: Whether to log to Weights & Biases and other settings.
+    :param allow_multiple_instances: Whether to allow multiple instances of the same experiment.
     """
 
     model: Any
@@ -27,3 +28,4 @@ class TrainConfig:
     scorer: Any
     cache_size: int
     wandb: WandBConfig
+    allow_multiple_instances: bool = False
