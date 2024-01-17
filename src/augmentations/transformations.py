@@ -2,10 +2,9 @@
 import asyncio
 import concurrent
 from dataclasses import dataclass
-
+import numpy.typing as npt
 import albumentations
 import numpy as np
-from pandas._typing import npt
 
 from src.augmentations.augmentation import Augmentation
 
@@ -56,7 +55,7 @@ class Transformations:
         # Apply the augmentations in a paralleized way using asyncio
         with concurrent.futures.ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()
-            futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1, 2, 0), y_arr[i]) for i in range(len(x_arr))]
+            futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1, 2, 0), y_arr[i], i) for i in range(len(x_arr))]
             looper = asyncio.gather(*futures)
         augmentation_results = loop.run_until_complete(looper)
 

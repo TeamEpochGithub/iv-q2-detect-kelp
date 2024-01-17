@@ -22,6 +22,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
@@ -54,7 +55,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
     test_size: float = 0.2  # Hashing purposes
-    transformations: albumentations.Compose = None
+    transformations: Transformations = None
     layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
