@@ -29,6 +29,9 @@ class EnsemblePipeline(Pipeline):
         if len(self.models) != len(self.weights):
             raise EnsemblePipelineError("The number of models and weights must be the same")
 
+        # Normalize the weights
+        self.weights = np.array(self.weights) / np.sum(self.weights)
+
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
