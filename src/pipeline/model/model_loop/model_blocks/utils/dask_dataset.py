@@ -1,14 +1,13 @@
 """Module to convert a dask array to a torch dataset."""
-import asyncio
-import concurrent.futures
 from typing import Any
 
-import albumentations
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
 import torch
 from torch.utils.data import Dataset
+
+from src.augmentations.transformations import Transformations
 
 
 class Dask2TorchDataset(Dataset[Any]):
@@ -18,7 +17,7 @@ class Dask2TorchDataset(Dataset[Any]):
     :param y: Labels.
     """
 
-    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: albumentations.Compose = None) -> None:
+    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: Transformations) -> None:
         """Initialize the Dask2TorchDataset.
 
         :param X: Input features.
@@ -71,15 +70,7 @@ class Dask2TorchDataset(Dataset[Any]):
 
             # If they exist, apply the augmentations in a paralleized way using asyncio
             if self.transforms is not None:
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    loop = asyncio.get_event_loop()
-                    futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr[i].transpose(1, 2, 0), y_arr[i]) for i in range(len(x_arr))]
-                    looper = asyncio.gather(*futures)
-                augmentation_results = loop.run_until_complete(looper)
-                # Change the values of x_arr and y_arr to the augmented values
-                for i in range(len(x_arr)):
-                    x_arr[i] = augmentation_results[i][0].transpose(2, 0, 1)
-                    y_arr[i] = augmentation_results[i][1]
+                self.transforms.transform(x_arr, y_arr)
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
         # If y doesn't exist it must be for submission and for that we dont want to augment the inference data
@@ -100,13 +91,3 @@ class Dask2TorchDataset(Dataset[Any]):
         if self.daskY is not None:
             self.memY = self.daskY[:idx].compute()
             self.daskY = self.daskY[idx:]
-
-    def apply_augmentation(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
-        """Apply the augmentation to the data.
-
-        :param x: Input features.
-        :param y: Labels.
-        :return: augmented data
-        """
-        transformed_dict = self.transforms(image=image, mask=mask)
-        return transformed_dict["image"], transformed_dict["mask"]
