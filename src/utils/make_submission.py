@@ -35,11 +35,8 @@ def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: li
     for pred, filename in tqdm(zip(predictions, filenames, strict=False)):
         files = filename.split("_")
         final_name = files[0] + "_kelp.tif"
-        # Set replace values above the threshold to be 1 and below threshold to be 0 of pred
-        pred[pred > threshold] = 1
-        pred[pred <= threshold] = 0
+
         # Save the prediction as tiff file
-        # Threshold the
         tifffile.imwrite(os.path.join(loc, final_name), pred)
 
     # Create a zip file of all files in loc

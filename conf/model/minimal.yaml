@@ -59,5 +59,4 @@ model_loop_pipeline:
         patience: 5
         transformations:
 
-# Post processing pipeline
 post_processing_pipeline:
