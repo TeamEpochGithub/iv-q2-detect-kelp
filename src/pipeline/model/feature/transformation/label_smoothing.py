@@ -1,10 +1,9 @@
-"""A pipeline step that divides the data by a number."""
+"""Pipeline step to smooth the labels."""
 import sys
 import time
 from dataclasses import dataclass
 
 import dask.array as da
-import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
@@ -16,13 +15,13 @@ else:
 
 
 @dataclass
-class Divider(BaseEstimator, TransformerMixin):
-    """Pipeline step to divide the data by a number.
+class LabelSmoothing(BaseEstimator, TransformerMixin):
+    """Pipeline step to smooth the labels.
 
-    :param divider: The number to divide by
+    :param smoothing: The smoothing factor
     """
 
-    divider: int
+    smoothing: float = 0.1
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
         """Fit the transformer.
@@ -41,6 +40,8 @@ class Divider(BaseEstimator, TransformerMixin):
         :return: The transformed data
         """
         time_start = time.time()
-        result = (X / self.divider).astype(np.float32)
-        logger.info(f"Divider transform complete in: {time.time() - time_start} seconds.")
-        return result
+
+        # Add gaussian label smoothing to the 1's of the labels to make the model more robust
+
+        logger.info(f"Label smoothing complete in: {time.time() - time_start} seconds.")
+        return X

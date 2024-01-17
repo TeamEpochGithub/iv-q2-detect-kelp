@@ -65,6 +65,9 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Fit the pipeline
     logger.info("Now fitting the pipeline...")
+    target_pipeline = model_pipeline.get_target_pipeline()
+    if target_pipeline is not None:
+        y = target_pipeline.fit_transform(y)
     model_pipeline.fit(X, y, **fit_params)
 
     if len(test_indices) > 0:

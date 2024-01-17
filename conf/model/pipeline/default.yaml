@@ -11,7 +11,14 @@ feature_pipeline:
     _target_: src.pipeline.model.feature.column.column.ColumnPipeline
 
 
-target_pipeline: None
+target_pipeline:
+  _target_: src.pipeline.model.feature.feature.FeaturePipeline
+
+  transformation_pipeline:
+    _target_: src.pipeline.model.feature.transformation.transformation.TransformationPipeline
+
+  column_pipeline:
+    _target_: src.pipeline.model.feature.column.column.ColumnPipeline
 
 model_loop_pipeline:
   _target_: src.pipeline.model.model_loop.model_loop.ModelLoopPipeline
