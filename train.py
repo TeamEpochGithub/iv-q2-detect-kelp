@@ -66,6 +66,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
     # Fit the pipeline
     logger.info("Now fitting the pipeline...")
     target_pipeline = model_pipeline.get_target_pipeline()
+    original_y = y
     if target_pipeline is not None:
         y = target_pipeline.fit_transform(y)
     model_pipeline.fit(X, y, **fit_params)
@@ -74,7 +75,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
         logger.info("Calculating score on test set...")
         predictions = model_pipeline.transform(X[test_indices])
         scorer = instantiate(cfg.scorer)
-        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        score = scorer(original_y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
         wandb.log({"Score": score})
 

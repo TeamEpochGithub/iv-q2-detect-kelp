@@ -33,7 +33,7 @@ class Divider(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
+    def transform(self, X: da.Array) -> da.Array:
         """Transform the data.
 
         :param X: The data to transform
