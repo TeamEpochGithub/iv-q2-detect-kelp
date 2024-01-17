@@ -1,4 +1,5 @@
 """Train.py is the main script for training the model and will take in the raw data and output a trained model."""
+import copy
 import os
 import warnings
 from pathlib import Path
@@ -66,7 +67,7 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Fit the pipeline
     target_pipeline = model_pipeline.get_target_pipeline()
-    original_y = y
+    original_y = copy.deepcopy(y)
 
     if target_pipeline is not None:
         print_section_separator("Target pipeline")
@@ -74,6 +75,8 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     logger.info("Now fitting the pipeline...")
     predictions = model_pipeline.fit_transform(X, y, **fit_params)
+    predictions[predictions >= 0.5] = 1
+    predictions[predictions < 0.5] = 0
 
     if len(test_indices) > 0:
         logger.info("Calculating score on test set...")

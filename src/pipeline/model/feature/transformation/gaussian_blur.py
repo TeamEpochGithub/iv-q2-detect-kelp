@@ -39,7 +39,6 @@ class GaussianBlur(BaseEstimator, TransformerMixin):
         """Transform the data.
 
         :param X: The data to transform
-        :param y: The target variable
         :return: The transformed data
         """
         time_start = time.time()

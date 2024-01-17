@@ -1,4 +1,5 @@
 """cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
+import copy
 import os
 import warnings
 from pathlib import Path
@@ -71,7 +72,7 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
 
         # Fit the pipeline
         target_pipeline = model_pipeline.get_target_pipeline()
-        original_y = y
+        original_y = copy.deepcopy(y)
 
         if target_pipeline is not None:
             print_section_separator("Target pipeline")
