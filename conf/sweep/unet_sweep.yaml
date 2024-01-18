@@ -49,8 +49,8 @@ parameters: # Will use the model file in cv.yaml and override the values there w
                             path:
                               values: [torch.optim.Adam, torch.optim.SGD, torch.optim.AdamW]
                             lr:
-                              max: 0.001
-                              min: 1e-6
+                              max: -5
+                              min: -10
                               distribution: log_uniform
                     criterion:
                       parameters:
