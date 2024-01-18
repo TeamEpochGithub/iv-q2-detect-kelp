@@ -61,6 +61,11 @@ def predictions_layout(image_id: str) -> html.Div:
     pred = load_tiff(preds_loc / f"{image_id}_pred.tif")
     pred = pred.reshape(350, 350)
 
+    alpha = 0.5
+    overlay_pred = rgb.copy()
+    thresh = 0.5
+    overlay_pred[pred > thresh, 0] = (1 - alpha) * overlay_pred[pred > thresh, 0] + alpha
+
     # read the csv in to a dataframe
     results_df = pd.read_csv(latest_folder / "results.csv")
     # get the dice_coef for this image
@@ -69,6 +74,7 @@ def predictions_layout(image_id: str) -> html.Div:
         make_fig(pred, f"Prediction with dice_coef: {dice_coef:.2f}"),
         make_fig(overlay, "Kelp Overlay"),
         make_fig(swir_nir_red, "SWIR/NIR/Red"),
+        make_fig(overlay_pred, "Prediction Overlay"),
     ]
 
     return html.Div(figs, style={"display": "flex"})

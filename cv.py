@@ -1,4 +1,5 @@
 """cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
+import copy
 import os
 import warnings
 from pathlib import Path
@@ -69,10 +70,18 @@ def run_cv(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use CVConfig instead of D
         # Generate the parameters for training
         fit_params = generate_cv_params(cfg, model_pipeline, train_indices, test_indices)
 
+        # Fit the pipeline
+        target_pipeline = model_pipeline.get_target_pipeline()
+        original_y = copy.deepcopy(y)
+
+        if target_pipeline is not None:
+            print_section_separator("Target pipeline")
+            y = target_pipeline.fit_transform(y)
+
         # Fit the pipeline and get predictions
         predictions = model_pipeline.fit_transform(X, y, **fit_params)
         scorer = instantiate(cfg.scorer)
-        score = scorer(y[test_indices].compute(), predictions[test_indices])
+        score = scorer(original_y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
         wandb.log({"Score": score})
 

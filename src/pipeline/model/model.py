@@ -8,12 +8,13 @@ if sys.version_info < (3, 11):  # Self was added in Python 3.11
 else:
     pass
 
+
+from joblib import hash
 from sklearn.pipeline import Pipeline
 
 from src.pipeline.model.feature.feature import FeaturePipeline
 from src.pipeline.model.model_loop.model_loop import ModelLoopPipeline
 from src.pipeline.model.post_processing.post_processing import PostProcessingPipeline
-from src.pipeline.model.target.target import TargetPipeline
 
 
 @dataclass
@@ -27,7 +28,7 @@ class ModelPipeline(Pipeline):
     """
 
     feature_pipeline: FeaturePipeline | None = None
-    target_pipeline: TargetPipeline | None = None
+    target_pipeline: FeaturePipeline | None = None
     model_loop_pipeline: ModelLoopPipeline | None = None
     post_processing_pipeline: PostProcessingPipeline | None = None
 
@@ -45,14 +46,22 @@ class ModelPipeline(Pipeline):
 
         if self.feature_pipeline:
             steps.append(("feature_pipeline_step", self.feature_pipeline))
-        if self.target_pipeline:
-            steps.append(("target_pipeline_step", self.target_pipeline))
         if self.model_loop_pipeline:
             steps.append(("model_loop_pipeline_step", self.model_loop_pipeline))
         if self.post_processing_pipeline:
             steps.append(("post_processing_pipeline_step", self.post_processing_pipeline))
 
         return steps
+
+    def get_target_pipeline(self) -> FeaturePipeline | None:
+        """Get the target pipeline.
+
+        :return: The target pipeline
+        """
+        if self.target_pipeline:
+            return self.target_pipeline
+
+        return None
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hashes of the pipelines."""
@@ -61,7 +70,7 @@ class ModelPipeline(Pipeline):
         if self.feature_pipeline:
             model_hash = self.feature_pipeline.set_hash(model_hash)
         if self.target_pipeline:
-            model_hash = self.target_pipeline.set_hash(model_hash)
+            model_hash = hash(self.target_pipeline.set_hash(prev_hash) + model_hash)
         if self.model_loop_pipeline:
             model_hash = self.model_loop_pipeline.set_hash(model_hash)
         if self.post_processing_pipeline:
