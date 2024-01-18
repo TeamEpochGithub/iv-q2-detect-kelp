@@ -48,6 +48,7 @@ class BandCopy(BaseEstimator, TransformerMixin):
 
         start_time = time.time()
         X = dask.array.concatenate([X, copy_of_band[:, None]], axis=1)
-        X = X.rechunk()
+
+        X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         logger.info(f"BandCopy transform complete in: {time.time() - start_time} seconds")
         return X

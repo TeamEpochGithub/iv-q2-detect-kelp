@@ -26,10 +26,17 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
         # Check if path has any tif files
         if glob.glob(f"{data_path}/*.tif"):
             logger.info(f"Loading tif data from {data_path}")
-            return imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
+            array = imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
+            array = array.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
+            return array
         if glob.glob(f"{data_path}/*.npy"):
             logger.info(f"Loading npy data from {data_path}")
-            return da.from_npy_stack(data_path).astype(np.float32)
+            array = da.from_npy_stack(data_path).astype(np.float32)
+            if array.ndim == 4:
+                array = array.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
+            elif array.ndim == 3:
+                array = array.rechunk({0: "auto", 1: -1, 2: -1})
+            return array
 
     # Check if the dask array is defined
     if dask_array is None:
@@ -43,6 +50,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     dask_array = dask_array.astype(np.float32)
     da.to_npy_stack(data_path, dask_array)
     dask_array = da.from_npy_stack(data_path)
+    dask_array = dask_array.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
     end_time = time.time()
     logger.debug(f"Finished storing data to disk in: {end_time - start_time} seconds")
