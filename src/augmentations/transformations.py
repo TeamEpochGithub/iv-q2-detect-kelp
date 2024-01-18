@@ -17,6 +17,11 @@ class Transformations:
     alb: albumentations.Compose = None
     aug: list[Augmentation] | None = None
 
+    def __post_init__(self) -> None:
+        """Initialize the Mosaic augmentation."""
+        # Initialize the random number generator
+        self.rng = np.random.default_rng(42)
+
     def transform(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply all the augmentations to the current batch.
 
@@ -57,10 +62,7 @@ class Transformations:
         # Apply the augmentations in a paralleized way using asyncio
         with concurrent.futures.ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()
-            futures = [
-                loop.run_in_executor(executor, self.apply_augmentation, x_arr.copy(), y_arr.reshape(-1, 1, y_arr.shape[1], y_arr.shape[2]).copy(), i)
-                for i in range(len(x_arr))
-            ]
+            futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr, y_arr.reshape(-1, 1, y_arr.shape[1], y_arr.shape[2]), i) for i in range(len(x_arr))]
             looper = asyncio.gather(*futures)
         augmentation_results = loop.run_until_complete(looper)
 
@@ -78,7 +80,10 @@ class Transformations:
         :return: augmented data
         """
         for augmentation in self.aug:  # type: ignore[union-attr]
-            x_arr, y_arr = augmentation.transforms(x_arr, y_arr, i)
+            if self.rng.random() < augmentation.p:
+                x_arr, y_arr = augmentation.transforms(x_arr.copy(), y_arr.copy(), i)
+            else:
+                x_arr, y_arr = x_arr[i], y_arr[i]
         return x_arr, y_arr
 
     def apply_albumentation(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
