@@ -9,4 +9,6 @@ raw_target_path: data/raw/train_kelp
 scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
 cache_size: -1
-n_splits: 5
+splitter:
+  _target_: src.cv_splitter.binary_target_stratified_k_fold.BinaryTargetStratifiedKFold
+  n_splits: 5
