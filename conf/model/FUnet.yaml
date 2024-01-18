@@ -126,7 +126,7 @@ model_loop_pipeline:
                 p: 1.0
           aug:
             - _target_: src.augmentations.mosaic.Mosaic
-              p: 0.2
+              p: 1
 
 
 post_processing_pipeline:

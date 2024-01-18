@@ -14,6 +14,11 @@ class Mosaic(Augmentation):
     p: float
     img_to_apply: int = 4
 
+    def __post_init__(self) -> None:
+        """Initialize the Mosaic augmentation."""
+        # Initialize the random number generator
+        self.rng = np.random.default_rng(42)
+
     def transforms(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], i: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the augmentation to the data.
 
@@ -23,13 +28,12 @@ class Mosaic(Augmentation):
         :return: Augmentation applied to the image and mask at index i
         """
         # Get a random float between 0 and 1
-        rng = np.random.default_rng(42)
-        r = rng.random()
+        r = self.rng.random()
         # If the random float is less than the probability of the augmentation, apply it
 
         if r < self.p:
             # Get the indices of the images to apply the augmentation to
-            idxs = rng.integers(low=0, high=len(images), size=self.img_to_apply)
+            idxs = self.rng.integers(low=0, high=len(images), size=self.img_to_apply)
             # Apply the mosaic augmentation
             image, mask = self.mosaic(images, masks, idxs)
             # Return the augmented image and mask
@@ -78,9 +82,8 @@ class Mosaic(Augmentation):
         # to get the bottom right of the cut
 
         # Get the random x and y coordinates
-        rng = np.random.default_rng(42)
-        topL_x = rng.integers(int(np.sqrt(h)), h - int(np.sqrt(h)))
-        topL_y = rng.integers(int(np.sqrt(w)), w - int(np.sqrt(w)))
+        topL_x = self.rng.integers(int(np.sqrt(h)), h - int(np.sqrt(h)))
+        topL_y = self.rng.integers(int(np.sqrt(w)), w - int(np.sqrt(w)))
         cut_x = topL_x + h
         cut_y = topL_y + w
 

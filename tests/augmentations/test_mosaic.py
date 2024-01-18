@@ -52,3 +52,8 @@ class Test(TestCase):
         # Check if > 200 and i < 255 exists in image
         self.assertTrue(np.any(np.logical_and(image > 200, image < 255)))
 
+
+        # save  the images with cv
+        import cv2
+
+
