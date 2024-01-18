@@ -56,19 +56,19 @@ target_pipeline:
   transformation_pipeline:
     transformations:
       - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
-        sigma: 2
+        sigma: 1
   column_pipeline:
     columns: []
 
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
+        max_images: 500
+        early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
-      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 2000
-        early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0, 1, 2, 11]
 
