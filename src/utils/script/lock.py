@@ -19,15 +19,25 @@ class Lock:
 
     lock_file = ".lock"
 
+    def __init__(self) -> None:
+        """Initialize the lock."""
+        self.acquired = False
+
     def __enter__(self) -> Self:
         """Create the lock file."""
         logger.info("Acquiring lock")
+
+        # Check if locked by checking if the file exists
         if os.path.exists(self.lock_file):
             logger.info("Waiting for lock to be released...")
         while os.path.exists(self.lock_file):
             time.sleep(1)
+
+        # Acquire the lock by creating the file
         open(self.lock_file, "w").close()
+        self.acquired = True
         logger.info("Lock acquired")
+
         return self
 
     def __exit__(self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: TracebackType | None) -> Literal[False]:
@@ -38,7 +48,8 @@ class Lock:
         :param exc_tb: Exception traceback
         :return: False, always.
         """
-        logger.info("Releasing lock...")
-        os.remove(self.lock_file)
-        logger.info("Lock released")
+        if self.acquired:
+            logger.info("Releasing lock...")
+            os.remove(self.lock_file)
+            logger.info("Lock released")
         return False
