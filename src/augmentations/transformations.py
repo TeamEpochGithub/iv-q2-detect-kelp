@@ -57,7 +57,10 @@ class Transformations:
         # Apply the augmentations in a paralleized way using asyncio
         with concurrent.futures.ThreadPoolExecutor() as executor:
             loop = asyncio.get_event_loop()
-            futures = [loop.run_in_executor(executor, self.apply_augmentation, x_arr, y_arr.reshape(-1, 1, y_arr.shape[1], y_arr.shape[2]), i) for i in range(len(x_arr))]
+            futures = [
+                loop.run_in_executor(executor, self.apply_augmentation, x_arr.copy(), y_arr.reshape(-1, 1, y_arr.shape[1], y_arr.shape[2]).copy(), i)
+                for i in range(len(x_arr))
+            ]
             looper = asyncio.gather(*futures)
         augmentation_results = loop.run_until_complete(looper)
 
