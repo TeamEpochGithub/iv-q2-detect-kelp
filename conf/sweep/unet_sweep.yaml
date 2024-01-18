@@ -6,13 +6,23 @@ command:
 method: bayes
 project: detect-kelp
 program: sweep.py
-name: model_sweep_example
+name: unet_sweep_0
 metric:
   name: Score
   goal: maximize
 parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
   model:
     parameters:
+      target_pipeline:
+        parameters:
+          transformation_pipeline:
+            parameters:
+              transformations:
+                parameters:
+                  - _target_:
+                      value: src.pipeline.model.feature.transformation.gaussian_blr.GaussianBlur
+                    sigma:
+                      values: [0, 0.5, 1, 1.5, 2, 2.5, 3]
       model_loop_pipeline:
         parameters:
           model_blocks_pipeline:
@@ -24,7 +34,7 @@ parameters: # Will use the model file in cv.yaml and override the values there w
                         model:
                           parameters:
                             encoder_name:
-                              values: [resnet18, resnet34, efficientnet, ]
+                              values: [resnet18, resnet34, efficientnet-b0, efficientnet-b3, mobilenet_v2]
                             in_channels:
                               value: 4
                             activation:
@@ -39,5 +49,9 @@ parameters: # Will use the model file in cv.yaml and override the values there w
                               max: 0.001
                               min: 1e-6
                               distribution: log_uniform
+                    criterion:
+                      parameters:
+                        _target_:
+                          values: [src.modules.loss.dice_loss.DiceLoss, torch.nn.BCELoss, src.modules.loss.bce_dice_loss.BCEDiceLoss, src.modules.loss.shrinkage_loss.ShrinkageLoss, src.modules.loss.jaccard_loss.JaccardLoss, src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss]
                     batch_size:
                       values: [8, 16, 24]
