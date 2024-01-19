@@ -26,6 +26,7 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
+from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -147,8 +148,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
 
         # Train model
         logger.info("Training the model")
@@ -377,3 +378,5 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.prev_hash = torch_block_hash
 
         return torch_block_hash
+
+    

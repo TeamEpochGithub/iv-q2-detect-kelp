@@ -23,7 +23,8 @@ from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setu
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()
 cs.store(name="base_train", node=TrainConfig)
@@ -52,7 +53,6 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-
     indices = np.arange(X.shape[0])
 
     # Split indices into train and test
