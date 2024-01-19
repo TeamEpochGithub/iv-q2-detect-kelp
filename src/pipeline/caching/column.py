@@ -43,7 +43,7 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         """
         # Check if the data path is set
         if not self.data_path:
-            if not X:
+            if X is None:
                 logger.error("data_paths are required")
                 raise CachePipelineError("data_path is required")
 
