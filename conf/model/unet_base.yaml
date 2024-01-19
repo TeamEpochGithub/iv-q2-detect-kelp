@@ -94,7 +94,7 @@ model_loop_pipeline:
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 100
+        epochs: 2
         batch_size: 16
         patience: 15
         transformations:

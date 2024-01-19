@@ -23,7 +23,7 @@ class ColumnSelection(PretrainBlock):
 
     columns: list[int] = field(default_factory=list)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
         """Return self, no fitting necessary.
 
         :param X: Data to fit

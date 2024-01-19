@@ -3,7 +3,6 @@
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any
 
 from src.logging_utils.logger import logger
 
@@ -58,7 +57,7 @@ class ModelPipeline(Pipeline):
 
         return steps
 
-    def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: dict[str, Any]) -> da.Array:
+    def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: str) -> da.Array:
         """Fit and transform the data.
 
         :param X: Data to fit and transform

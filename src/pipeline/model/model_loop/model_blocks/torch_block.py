@@ -2,6 +2,7 @@
 import copy
 import functools
 import sys
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -137,10 +138,18 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
         # np.round is there to make sure we dont miss a sample due to int to float conversion
+        start_time = time.time()
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transformations)
+        logger.info(f"Created train dataset in {time.time() - start_time} seconds")
+        start_time = time.time()
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
+        logger.info(f"Created train cache in {time.time() - start_time} seconds")
+        start_time = time.time()
         test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transformations)
+        logger.info(f"Created test dataset in {time.time() - start_time} seconds")
+        start_time = time.time()
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
+        logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
