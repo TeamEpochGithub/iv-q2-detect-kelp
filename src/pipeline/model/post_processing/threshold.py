@@ -7,11 +7,12 @@ from typing import Annotated
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
-from annotated_types import Interval
+from annotated_types import Gt, Interval
 from scipy.optimize import minimize_scalar
 from scipy.spatial.distance import dice
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import NotFittedError
+from tqdm import tqdm
 
 from src.logging_utils.logger import logger
 
@@ -21,22 +22,41 @@ else:
     from typing import Self
 
 
+def _calc_dice_dissimilarity(threshold: float, y_true: npt.NDArray[np.bool_], y_pred: npt.NDArray[np.float_], pbar: tqdm | None = None) -> float:
+    """Calculate the dice dissimilarity for a given threshold. Used for optimizing the threshold.
+
+    :param y_true: The true labels.
+    :param y_pred: The predicted labels.
+    :param threshold: The threshold to use.
+    :return: The dice score.
+    """
+    score = dice(y_true, threshold < y_pred)
+
+    if pbar is not None:
+        pbar.update()
+        pbar.set_postfix({"Threshold": threshold, "Dice Coefficient": 1 - score})
+
+    return score
+
+
 @dataclass
 class Threshold(TransformerMixin, BaseEstimator):
     """Threshold the predictions of the model.
 
-    :param threshold: The threshold to use. If None, the threshold will be optimized.
+    :param threshold: The threshold to use ∈ [0, 1]. If None, the threshold will be optimized.
+    :param max_iterations: The maximum number of iterations to use when optimizing the threshold. Defaults to 500. Only used for optimizing the threshold.
     """
 
     # noinspection PyTypeHints
     threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
+    max_iterations: Annotated[int, Gt(0)] = 500
 
     def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Iterable[int]) -> Self:  # noqa: ARG002
         """Fit the threshold.
 
         :param X: Output data of a model.
         :param y: Target data. Must have the same flattened shape as X.
-        :param test_indices: UNUSED indices of the test data in X.
+        :param test_indices: UNUSED indices of the test data in X. Exists for compatibility with the Pipeline.
         :return: Optimized threshold.
         """
         if self.threshold is not None:
@@ -53,10 +73,11 @@ class Threshold(TransformerMixin, BaseEstimator):
         y_true = y.ravel()
 
         if y_pred.shape != y_true.shape:
-            raise ValueError("X and y must have the same flattened shape")
+            raise ValueError("Shape mismatch: X and y must have the same flattened shape")
 
-        logger.info("Optimizing threshold. This may take a while...")
-        self.threshold = minimize_scalar(lambda threshold: dice(y_true, threshold < y_pred), bounds=(0, 1), method="bounded").x
+        with tqdm(total=self.max_iterations, desc="Optimizing threshold") as pbar:
+            self.threshold = minimize_scalar(_calc_dice_dissimilarity, args=(y_true, y_pred, pbar), bounds=(0, 1), options={"maxiter": self.max_iterations}).x
+            pbar.total = pbar.n
 
         logger.info(f"Optimized threshold: {self.threshold}")
         return self

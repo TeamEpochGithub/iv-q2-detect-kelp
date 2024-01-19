@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -28,16 +28,19 @@ class ScalerBlock(PretrainBlock):
 
     scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:  # noqa: ARG002
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W).
         :param y: Target data. Shape should be (N, H, W).
-        :param train_indices: UNUSED indices of the training data in X.
-        :param save_pretrain: UNUSED whether to save this block.
-        :return: Fitted scaler.
+        :param train_indices: Indices of the training data in X.
+        :param save_pretrain_with_split: Whether to save this block with the split.
+        :return: The fitted transformer
         """
         # Check if the scaler exists
+        if save_pretrain_with_split:
+            self.train_split_hash(train_indices=train_indices)
+        self.train_indices = train_indices
         if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
             logger.info("Scaler already exists, loading it")
             return self
@@ -77,13 +80,15 @@ class ScalerBlock(PretrainBlock):
             # Flatten and rechunk all the data so all pixels per channels are a single row
             # The shape is (C, N*H*W) after reshaping
             X_reshaped = X.transpose([0, 2, 3, 1]).reshape([-1, X.shape[1]])
-            X_reshaped = X_reshaped.rechunk({1: X_reshaped.shape[1]})
+            X_reshaped = X_reshaped.rechunk({0: "auto", 1: -1})
             # Apply the scaler
             X_reshaped = self.scaler.transform(X_reshaped)
             X = X_reshaped.reshape(X.shape[0], X.shape[2], X.shape[3], X.shape[1]).transpose([0, 3, 1, 2])
-            X = X.rechunk()
+            X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
+        if self.train_indices is not None:
+            return self.save_pretrain(X, self.train_indices)
         return X
 
     def save_scaler(self) -> None:

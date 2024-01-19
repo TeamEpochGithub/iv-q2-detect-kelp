@@ -1,5 +1,6 @@
 """The caching column block is responsible for loading and storing individual columns to disk."""
 import sys
+from dataclasses import dataclass
 
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -14,6 +15,7 @@ else:
     from typing import Self
 
 
+@dataclass
 class CacheColumnBlock(BaseEstimator, TransformerMixin):
     """The caching column block is responsible for loading and storing individual columns to disk.
 
@@ -21,15 +23,8 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
     :param column: The column to store
     """
 
-    def __init__(self, data_path: str | None = None, column: int = -1) -> None:
-        """Initialize the caching column block.
-
-        :param data_path: The path to the data
-        :param column: The column to store
-        """
-        # Set values to self
-        self.data_path = data_path
-        self.column = column
+    data_path: str | None = None
+    column: int = -1
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Do nothing. Exists for Pipeline compatibility.
@@ -40,16 +35,15 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
+    def transform(self, X: da.Array) -> da.Array:
         """Transform the data.
 
         :param X: The data to transform
-        :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data
         """
         # Check if the data path is set
         if not self.data_path:
-            if not X:
+            if X is None:
                 logger.error("data_paths are required")
                 raise CachePipelineError("data_path is required")
 
@@ -75,17 +69,3 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         :param data_path: The new data path
         """
         self.data_path = data_path
-
-    def __str__(self) -> str:
-        """__str__ returns string representation of the CacheColumnBlock.
-
-        :return: String representation of the CacheColumnBlock
-        """
-        return "CacheColumnBlock"
-
-    def __repr__(self) -> str:
-        """__repr__ returns full representation of the CacheColumnBlock.
-
-        :return: Representation of the CacheColumnBlock
-        """
-        return f"CacheColumnBlock(data_path={self.data_path}, column={self.column})"

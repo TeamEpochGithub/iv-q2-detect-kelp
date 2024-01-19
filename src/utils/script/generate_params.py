@@ -10,28 +10,32 @@ def generate_train_params(cfg: DictConfig, model_pipeline: ModelPipeline | Ensem
     """Generate the model parameters.
 
     :param cfg: The configuration
+    :param model_pipeline: The model pipeline
+    :param train_indices: The train indices
+    :param test_indices: The test indices
     :return: The model parameters
     """
     if "model" in cfg:
-        params = generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=True)
-    elif "ensemble" in cfg:
-        params = generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=True)
-
-    return params
+        return generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=True)
+    if "ensemble" in cfg:
+        return generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=True)
+    raise ValueError("No model or ensemble found in config")
 
 
 def generate_cv_params(cfg: DictConfig, model_pipeline: ModelPipeline | EnsembleBase, train_indices: list[int], test_indices: list[int]) -> dict[str, str]:
     """Generate the model parameters.
 
     :param cfg: The configuration
+    :param model_pipeline: The model pipeline
+    :param train_indices: The train indices
+    :param test_indices: The test indices
     :return: The model parameters
     """
     if "model" in cfg:
-        params = generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False)
-    elif "ensemble" in cfg:
-        params = generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False)
-
-    return params
+        return generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False, save_pretrain_with_split=True)
+    if "ensemble" in cfg:
+        return generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False, save_pretrain_with_split=True)
+    raise ValueError("No model or ensemble found in config")
 
 
 def generate_model_params(
@@ -41,20 +45,26 @@ def generate_model_params(
     cache_size: int = -1,
     *,
     save: bool = True,
+    save_pretrain: bool = True,
+    save_pretrain_with_split: bool = False,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
+    :param model_pipeline: The model pipeline
     :param train_indices: The train indices
     :param test_indices: The test indices
     :param cache_size: The cache size
     :param save: Whether to save the model or not
+    :param save_pretrain: Whether to save the pretrain or not
+    :param save_pretrain_with_split: Whether to save the pretrain with the split or not
     :return: The model parameters
     """
     new_params = (
         {
             "model_loop_pipeline_step": {
                 "pretrain_pipeline_step": {
-                    name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                    name: {"train_indices": train_indices, "save_pretrain": save_pretrain, "save_pretrain_with_split": save_pretrain_with_split}
+                    for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                 }
                 if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps
                 else {},
@@ -85,13 +95,18 @@ def generate_ensemble_params(
     cache_size: int = -1,
     *,
     save: bool = True,
+    save_pretrain: bool = True,
+    save_pretrain_with_split: bool = False,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
+    :param ensemble_pipeline: The ensemble pipeline
     :param train_indices: The train indices
     :param test_indices: The test indices
     :param cache_size: The cache size
     :param save: Whether to save the model or not
+    :param save_pretrain: Whether to save the pretrain or not
+    :param save_pretrain_with_split: Whether to save the pretrain with the split or not
     :return: The model parameters
     """
     new_params = (
@@ -99,7 +114,7 @@ def generate_ensemble_params(
             name: {
                 "model_loop_pipeline_step": {
                     "pretrain_pipeline_step": {
-                        name: {"train_indices": train_indices, "save_pretrain": save}
+                        name: {"train_indices": train_indices, "save_pretrain": save_pretrain, "save_pretrain_with_split": save_pretrain_with_split}
                         for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                     }
                     if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps

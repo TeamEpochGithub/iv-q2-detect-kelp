@@ -23,13 +23,15 @@ class ColumnSelection(PretrainBlock):
 
     columns: list[int] = field(default_factory=list)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:  # noqa: ARG002
-        """Do nothing. Exists for Pipeline compatibility.
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
+        """Return self, no fitting necessary. Exists for Pipeline compatibility.
 
         :param X: UNUSED data to fit.
         :param y: UNUSED target data.
         :param train_indices: UNUSED indices of the training data in X.
         :param save_pretrain: UNUSED whether to save this block.
+        :param save_pretrain_with_split: UNUSED whether to save this block with the split.
+        :return: self
         """
         return self
 
@@ -37,6 +39,7 @@ class ColumnSelection(PretrainBlock):
         """Transform the data.
 
         :param X: Data to transform
+        :return: Transformed data
         """
         logger.info("Selecting columns...")
         start_time = time.time()
