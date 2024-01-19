@@ -2,6 +2,7 @@
 import copy
 import os
 import warnings
+from contextlib import nullcontext
 from pathlib import Path
 
 import hydra
@@ -17,6 +18,7 @@ from src.config.train_config import TrainConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_train_params
+from src.utils.script.lock import Lock
 from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
@@ -30,7 +32,16 @@ cs.store(name="base_train", node=TrainConfig)
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="train")
-def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
+def run_train(cfg: DictConfig) -> None:
+    """Train a model pipeline with a train-test split. Entry point for Hydra which loads the config file."""
+    # Run the train config with a dask client, and optionally a lock
+    optional_lock = Lock if not cfg.allow_multiple_instances else nullcontext
+    with optional_lock(), Client() as client:
+        logger.info(f"Client: {client}")
+        run_train_cfg(cfg)
+
+
+def run_train_cfg(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instead of DictConfig
     """Train a model pipeline with a train-test split."""
     print_section_separator("Q2 Detect Kelp States - Training")
     set_torch_seed()
@@ -90,7 +101,4 @@ def run_train(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig instea
 
 
 if __name__ == "__main__":
-    # Run with dask client, which will automatically close if there is an error
-    with Client() as client:
-        logger.info(f"Client: {client}")
-        run_train()
+    run_train()
