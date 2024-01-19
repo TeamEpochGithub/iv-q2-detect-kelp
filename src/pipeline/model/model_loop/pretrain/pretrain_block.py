@@ -1,11 +1,15 @@
 """Pretrain block class."""
 import sys
+import time
 from abc import abstractmethod
 from dataclasses import dataclass
 
 import dask.array as da
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
+
+from src.logging_utils.logger import logger
+from src.pipeline.caching.util.store_raw import store_raw
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -27,7 +31,7 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         self.set_hash("")
 
     @abstractmethod
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
         """Return self, no fitting necessary.
 
         :param X: Data to fit
@@ -56,3 +60,26 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         self.prev_hash = curr_hash
 
         return curr_hash
+
+    def save_pretrain(self, X: da.Array, train_indices: list[int]) -> da.Array:
+        """Save the pretrain data.
+
+        :param X: Data to save
+        :param train_indices: Train indices
+        :return: Saved data
+        """
+        start_time = time.time()
+        logger.info("Saving pretrain data...")
+        # Save the pretrain data
+        result = store_raw("data/training/" + hash(self.prev_hash + str(train_indices)), X)
+        logger.info("Saved pretrain data in %s seconds", time.time() - start_time)
+        return result
+
+    def train_split_hash(self, train_indices: list[int]) -> str:
+        """Split the hash on train split.
+
+        :param train_indices: Train indices
+        :return: Split hash
+        """
+        self.prev_hash = hash(self.prev_hash + str(train_indices))
+        return self.prev_hash
