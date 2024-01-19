@@ -11,13 +11,12 @@ from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 
 
-def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: list[str], threshold: float = 0.5) -> None:
+def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: list[str]) -> None:
     """Create a submission file of the predictions (store single-band TIF files with predictions of each image in test_predictions).
 
     :param path: Path to the submission folder
     :param predictions: Predictions of the model
     :param filenames: Filenames of the test data
-    :param threshold: Threshold to use for the predictions
     """
     print_section_separator("Making submission")
     logger.info("Creating submission.zip")
@@ -37,7 +36,7 @@ def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: li
         final_name = files[0] + "_kelp.tif"
 
         # Save the prediction as tiff file
-        tifffile.imwrite(os.path.join(loc, final_name), pred)
+        tifffile.imwrite(os.path.join(loc, final_name), pred, photometric="minisblack")
 
     # Create a zip file of all files in loc
     import zipfile
