@@ -1,7 +1,10 @@
 """ModelPipeline is the class used to create the model pipeline."""
 
 import sys
+import time
 from dataclasses import dataclass
+
+from src.logging_utils.logger import logger
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     pass
@@ -9,6 +12,7 @@ else:
     pass
 
 
+import dask.array as da
 from joblib import hash
 from sklearn.pipeline import Pipeline
 
@@ -34,8 +38,8 @@ class ModelPipeline(Pipeline):
 
     def __post_init__(self) -> None:
         """Post init function."""
-        super().__init__(self._get_steps())
         self.set_hash("")
+        super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """Get the pipeline steps.
@@ -52,6 +56,19 @@ class ModelPipeline(Pipeline):
             steps.append(("post_processing_pipeline_step", self.post_processing_pipeline))
 
         return steps
+
+    def fit_transform(self, X: da.Array, y: da.Array | None = None, **fit_params: str) -> da.Array:
+        """Fit and transform the data.
+
+        :param X: Data to fit and transform
+        :param y: Target data
+        :param fit_params: Fit parameters
+        :return: Fitted and transformed data
+        """
+        start_time = time.time()
+        X = super().fit_transform(X, y, **fit_params)
+        logger.info(f"Fitted model pipeline in {time.time() - start_time} seconds")
+        return X
 
     def get_target_pipeline(self) -> FeaturePipeline | None:
         """Get the target pipeline.

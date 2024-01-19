@@ -17,6 +17,7 @@ class CVConfig:
     :param scorer: Scorer object to be instantiated.
     :param cache_size: Cache size for the pipeline.
     :param wandb: Whether to log to Weights & Biases and other settings.
+    :param allow_multiple_instances: Whether to allow multiple instances of training at the same time.
     """
 
     model: Any
@@ -27,3 +28,4 @@ class CVConfig:
     scorer: Any
     cache_size: int
     wandb: WandBConfig
+    allow_multiple_instances: bool = False
