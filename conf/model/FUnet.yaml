@@ -98,35 +98,18 @@ model_loop_pipeline:
         batch_size: 16
         patience: 20
         transformations:
-          _target_: src.augmentations.transformations.Transformations
-          alb:
-            _target_: albumentations.Compose
-            transforms:
-              - _target_: albumentations.VerticalFlip
-                p: 0.5
-              - _target_: albumentations.HorizontalFlip
-                p: 0.5
-              - _target_: albumentations.RandomRotate90
-                p: 0.5
-              - _target_: albumentations.GaussianBlur
-                blur_limit: 7
-                p: 0.1
-              - _target_: albumentations.ElasticTransform
-                alpha: 1
-                sigma: 50
-                alpha_affine: 50
-                p: 0.1
-              - _target_: albumentations.RandomCrop
-                height: 300
-                width: 300
-                p: 0.2
-              - _target_: albumentations.Resize
-                height: 350
-                width: 350
-                p: 1.0
-          aug:
-            - _target_: src.augmentations.mosaic.Mosaic
-              p: 1
+            _target_: src.augmentations.transformations.Transformations
+
+            torch:
+              _target_: torchvision.transforms.v2.Compose
+              transforms:
+                - _target_: torchvision.transforms.v2.RandomHorizontalFlip
+                  p: 0.5
+                - _target_: torchvision.transforms.v2.RandomVerticalFlip
+                  p: 0.5
+                - _target_: torchvision.transforms.v2.ElasticTransform
+                  alpha: 1
+                  sigma: 50
 
 
 post_processing_pipeline:

@@ -77,7 +77,6 @@ model_loop_pipeline:
                 - _target_: torchvision.transforms.v2.ElasticTransform
                   alpha: 1
                   sigma: 50
-                  p: 0.1
 
 post_processing_pipeline:
   post_processing_steps:
