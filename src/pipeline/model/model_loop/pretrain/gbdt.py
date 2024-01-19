@@ -33,13 +33,15 @@ class GBDT(PretrainBlock):
         """Initialize the GBDT model."""
         self.trained_model = None
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
         """Fit the model.
 
         :param X: The data to fit
         :param y: The target variable
         :return: The fitted transformer
         """
+        if save_pretrain_with_split:
+            self.train_split_hash(train_indices=train_indices)
         if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
             logger.info(f"GBDT already exists at {f'tm/{self.prev_hash}.gbdt'}")
             return self
