@@ -1,6 +1,7 @@
 """Base class for data augmentation transformations."""
 import asyncio
 import concurrent
+import copy
 from dataclasses import dataclass
 
 import albumentations
@@ -32,11 +33,6 @@ class Transformations:
         if self.aug is not None:
             x_arr, y_arr = self.apply_augmentations(x_arr, y_arr)
         if self.torch is not None:
-            # add the to tensor conversions to the torchvision transforms since they cant be used in the config
-            self.torch = torchvision.transforms.v2.Compose([torchvision.transforms.v2.ToImage(), 
-                                                            torchvision.transforms.v2.ToDtype(torch.float32, scale=True),
-                                                            torchvision.transforms.v2.ToPureTensor(), 
-                                                            self.torch])
             x_arr, y_arr = self.apply_torchvision(x_arr, y_arr)
         return x_arr, y_arr
         
@@ -107,8 +103,10 @@ class Transformations:
         :param x: Batch of input features.
         :param y: Batch of masks.
         """
-        
-        for i in range(len(x_arr)):
-            x_arr[i] = self.torch(x_arr[i]).permute(1, 2, 0)
-            y_arr[i] = self.torch(y_arr[i])
-        return x_arr, y_arr
+        # concatenate the x and y to apply the same transforms to both
+        x_tensor = torch.from_numpy(x_arr)
+        y_tensor = torch.from_numpy(y_arr)
+        merged = torch.cat((x_tensor, y_tensor.unsqueeze(1)), dim=1)
+        merged_old = copy.deepcopy(merged)
+        merged = self.torch(merged) 
+        return merged
