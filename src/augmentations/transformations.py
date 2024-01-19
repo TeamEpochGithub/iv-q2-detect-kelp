@@ -8,7 +8,8 @@ import numpy as np
 import numpy.typing as npt
 
 from src.augmentations.augmentation import Augmentation
-
+import torchvision
+import torch
 
 @dataclass
 class Transformations:
@@ -16,6 +17,7 @@ class Transformations:
 
     alb: albumentations.Compose = None
     aug: list[Augmentation] | None = None
+    torch: torchvision.transforms.Compose | None = None
 
     def transform(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply all the augmentations to the current batch.
@@ -29,7 +31,15 @@ class Transformations:
             x_arr, y_arr = self.apply_albumentations(x_arr, y_arr)
         if self.aug is not None:
             x_arr, y_arr = self.apply_augmentations(x_arr, y_arr)
+        if self.torch is not None:
+            # add the to tensor conversions to the torchvision transforms since they cant be used in the config
+            self.torch = torchvision.transforms.v2.Compose([torchvision.transforms.v2.ToImage(), 
+                                                            torchvision.transforms.v2.ToDtype(torch.float32, scale=True),
+                                                            torchvision.transforms.v2.ToPureTensor(), 
+                                                            self.torch])
+            x_arr, y_arr = self.apply_torchvision(x_arr, y_arr)
         return x_arr, y_arr
+        
 
     def apply_albumentations(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply all the albumentations to the current batch.
@@ -90,3 +100,15 @@ class Transformations:
         """
         transformed_dict = self.alb(image=image, mask=mask)
         return transformed_dict["image"], transformed_dict["mask"]
+    
+    def apply_torchvision(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+        """Apply the torchvision transforms to both the image and the mask.
+
+        :param x: Batch of input features.
+        :param y: Batch of masks.
+        """
+        
+        for i in range(len(x_arr)):
+            x_arr[i] = self.torch(x_arr[i]).permute(1, 2, 0)
+            y_arr[i] = self.torch(y_arr[i])
+        return x_arr, y_arr

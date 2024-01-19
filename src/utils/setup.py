@@ -18,7 +18,7 @@ from wandb.sdk.lib import RunDisabled
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
-
+from torchvision.transforms.v2 import ToImage
 
 def setup_config(cfg: DictConfig) -> None:
     """Verify that config has no missing values and log it to yaml.
