@@ -37,7 +37,7 @@ parameters: # Will use the model file in cv.yaml and override the values there w
                               encoder_name:
                                 values: [resnet18, resnet34, efficientnet-b0, efficientnet-b3, mobilenet_v2, vgg11]
                               in_channels:
-                                value: 4
+                                value: 6
                               activation:
                                 values: [sigmoid, softmax, relu]
                       optimizer:
