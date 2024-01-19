@@ -8,7 +8,6 @@ import catboost
 import dask.array as da
 import numpy as np
 from numpy import typing as npt
-from sklearn.model_selection import train_test_split
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
@@ -65,15 +64,13 @@ class GBDT(PretrainBlock):
 
         # Convert to numpy (will trigger all computations)
         X = X.compute()
-        y = y.compute()
+        y = y.compute() > 0.5  # ensure binary labels
 
-        # Threshhold y, if larger than 0.75 set to 1
-        y[y > 0.75] = 1
-        y[y <= 0.75] = 0
         logger.info(f"Computed X and y, shape: {X.shape}, {y.shape} in {time.time() - start_time} seconds")
 
-        # Split into train and test
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.early_stopping_split)
+        # Split into train and test without shuffling
+        train_size = int((1 - self.early_stopping_split) * len(X))
+        X_train, X_test, y_train, y_test = X[:train_size], X[train_size:], y[:train_size], y[train_size:]
 
         # Fit the catboost model
         # Check if labels are continuous or binary

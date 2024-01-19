@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import dask.array as da
 import numpy as np
 import scipy
+from numpy import typing as npt
 from sklearn.base import BaseEstimator, TransformerMixin
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
@@ -15,38 +16,38 @@ else:
     from typing import Literal, Self
 
 
-def _distance(elev: da.Array) -> da.Array:
+def _distance(elev: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Compute the distance to land.
 
     :param elev: The elevation band (H,W)
     :return: The distance to land (H,W)
     """
     mask = elev <= 0
-    if da.all(mask):
-        return da.full_like(elev, 400)
+    if np.all(mask):
+        return np.full_like(elev, 400)
     return scipy.ndimage.distance_transform_edt(mask)
 
 
-def _closeness(elev: da.Array) -> da.Array:
+def _closeness(elev: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Compute the closeness to land. Roughly the inverse of the distance to land.
 
     :param elev: The elevation band (H,W)
     :return: The closeness to land (H,W)
     """
     mask = elev <= 0
-    if da.all(mask):
-        return da.zeros_like(elev)
+    if np.all(mask):
+        return np.zeros_like(elev)
     dist = scipy.ndimage.distance_transform_edt(mask)
     return 1 / (1 + dist * 0.1)
 
 
-def _binary(elev: da.Array) -> da.Array:
+def _binary(elev: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
     """Compute a binary mask of land pixels.
 
     :param elev: The elevation band (H,W)
     :return: The binary mask (H,W)
     """
-    return elev > 0
+    return (elev > 0).astype(np.float32)
 
 
 # map of mode to functions
@@ -98,11 +99,11 @@ class Shore(BaseEstimator, TransformerMixin):
 
         # Create a function that takes chunks of multiple images,
         # and applies the function to each image one by one
-        def chunk_func(x: da.Array) -> da.Array:
-            result = da.zeros((x.shape[0], 1, 350, 350), dtype="float32")
+        def chunk_func(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+            result = np.zeros((x.shape[0], 1, 350, 350), dtype="float32")
             for i in range(x.shape[0]):
                 result[i] = func(x[i, self.elevation_band])
-            return da.concatenate([x, result], axis=1)
+            return np.concatenate([x, result], axis=1)
 
         # Map the function over each chunk
         return X.map_blocks(chunk_func, dtype="float32", chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
