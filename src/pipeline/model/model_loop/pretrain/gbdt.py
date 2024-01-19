@@ -66,6 +66,10 @@ class GBDT(PretrainBlock):
         # Convert to numpy (will trigger all computations)
         X = X.compute()
         y = y.compute()
+
+        # Threshhold y, if larger than 0.75 set to 1
+        y[y > 0.75] = 1
+        y[y <= 0.75] = 0
         logger.info(f"Computed X and y, shape: {X.shape}, {y.shape} in {time.time() - start_time} seconds")
 
         # Split into train and test
@@ -73,7 +77,7 @@ class GBDT(PretrainBlock):
 
         # Fit the catboost model
         # Check if labels are continuous or binary
-        cbm = catboost.CatBoostRegressor(iterations=100, verbose=True, early_stopping_rounds=10)
+        cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
         cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
 
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
@@ -96,7 +100,7 @@ class GBDT(PretrainBlock):
         logger.info("Transforming with GBDT...")
 
         # Load the model
-        cbm = catboost.CatBoostRegressor()
+        cbm = catboost.CatBoostClassifier()
         if self.trained_model is None:
             # Verify that the model exists
             if not Path(f"tm/{self.prev_hash}.gbdt").exists():
@@ -115,7 +119,7 @@ class GBDT(PretrainBlock):
             x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
 
             # Predict and reshape back to (N, 1, H, W)
-            pred = cbm.predict(x_).reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
+            pred = cbm.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
             return np.concatenate([x, pred], axis=1)
 
         return X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
