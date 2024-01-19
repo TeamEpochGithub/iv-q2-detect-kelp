@@ -70,7 +70,9 @@ class Dask2TorchDataset(Dataset[Any]):
 
             # If they exist, apply the augmentations in a paralellized way using asyncio
             if self.transforms is not None:
-                self.transforms.transform(x_arr, y_arr)
+                x_arr, y_arr = self.transforms.transform(x_arr, y_arr)
+            if isinstance(x_arr, torch.Tensor) and isinstance(y_arr, torch.Tensor):
+                return x_arr, y_arr
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
 
         # If y doesn't exist it must be for submission and for that we don't want to augment the inference data

@@ -7,10 +7,11 @@ from dataclasses import dataclass
 import albumentations
 import numpy as np
 import numpy.typing as npt
+import torch
+import torchvision
 
 from src.augmentations.augmentation import Augmentation
-import torchvision
-import torch
+
 
 @dataclass
 class Transformations:
@@ -35,7 +36,6 @@ class Transformations:
         if self.torch is not None:
             x_arr, y_arr = self.apply_torchvision(x_arr, y_arr)
         return x_arr, y_arr
-        
 
     def apply_albumentations(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply all the albumentations to the current batch.
@@ -96,7 +96,7 @@ class Transformations:
         """
         transformed_dict = self.alb(image=image, mask=mask)
         return transformed_dict["image"], transformed_dict["mask"]
-    
+
     def apply_torchvision(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the torchvision transforms to both the image and the mask.
 
@@ -108,5 +108,6 @@ class Transformations:
         y_tensor = torch.from_numpy(y_arr)
         merged = torch.cat((x_tensor, y_tensor.unsqueeze(1)), dim=1)
         merged_old = copy.deepcopy(merged)
-        merged = self.torch(merged) 
-        return merged
+        for i in range(len(merged)):
+            merged[i] = self.torch(merged[i])
+        return merged[:, :-1, :, :], merged[:, -1, :, :]
