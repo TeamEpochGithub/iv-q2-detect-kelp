@@ -17,7 +17,6 @@ def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: li
     :param path: Path to the submission folder
     :param predictions: Predictions of the model
     :param filenames: Filenames of the test data
-    :param threshold: Threshold to use for the predictions
     """
     print_section_separator("Making submission")
     logger.info("Creating submission.zip")
@@ -37,7 +36,7 @@ def make_submission(path: Path, predictions: np.ndarray[Any, Any], filenames: li
         final_name = files[0] + "_kelp.tif"
 
         # Save the prediction as tiff file
-        tifffile.imwrite(os.path.join(loc, final_name), pred)
+        tifffile.imwrite(os.path.join(loc, final_name), pred, photometric="minisblack")
 
     # Create a zip file of all files in loc
     import zipfile

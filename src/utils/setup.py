@@ -140,7 +140,10 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
     :param group: The namer of the group of the run.
     """
     logger.debug("Initializing Weights & Biases")
+
+    config = OmegaConf.to_container(cfg, resolve=True)
     run = wandb.init(
+        config=config,  # type: ignore[arg-type]
         project="detect-kelp",
         name=name,
         group=group,
