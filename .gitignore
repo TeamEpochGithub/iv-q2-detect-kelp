@@ -207,3 +207,6 @@ plots/images/train
 
 # Unignore Configs
 !conf/
+
+# ignore Lock file used
+.lock
