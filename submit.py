@@ -53,7 +53,7 @@ def run_submit(cfg: DictConfig) -> None:
 
     # Make submission
     if predictions is not None:
-        make_submission(output_dir, predictions, filenames, threshold=0.5)
+        make_submission(output_dir, predictions, filenames)
     else:
         logger.error("Predictions are None")
         raise ValueError("Predictions are None")

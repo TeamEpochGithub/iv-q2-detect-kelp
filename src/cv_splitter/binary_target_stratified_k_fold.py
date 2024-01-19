@@ -39,7 +39,7 @@ class BinaryTargetStratifiedKFold:
         # Bin the data based on the mean coverage of each image
         coverages = y.astype(np.float32).mean(axis=tuple(range(1, y.ndim)))
         kbd = KBinsDiscretizer(n_bins=self.n_bins, encode="ordinal", strategy=self.strategy)
-        bins = kbd.fit_transform(coverages.reshape(-1, 1)).flatten()  # TODO(Jeffrey): There is one bin less
+        bins = kbd.fit_transform(coverages.reshape(-1, 1)).flatten()  # TODO(Jeffrey): There is one bin less for no reason
 
         kf = StratifiedGroupKFold(n_splits=self.n_splits, shuffle=self.shuffle, random_state=self.random_state)
         yield from kf.split(X, y, groups=bins)

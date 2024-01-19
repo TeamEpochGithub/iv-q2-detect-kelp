@@ -104,8 +104,8 @@ def features_layout(image_id: str) -> html.Div:
     overlay = rgb.copy()
     overlay[label == 1, 0] = (1 - alpha) * overlay[label == 1, 0] + alpha
 
-    thresh = 0.2
-    pred, dice = catboost_preds(img_df, smoothing=0, thresh=thresh)
+    thresh = 0.15
+    pred, dice = catboost_preds(img_df, smoothing=0.6, thresh=thresh)
     pred = pred.reshape(350, 350)
 
     overlay_pred = rgb.copy()

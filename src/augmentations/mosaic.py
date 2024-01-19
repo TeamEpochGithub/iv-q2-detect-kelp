@@ -27,20 +27,15 @@ class Mosaic(Augmentation):
         :param i: Index of the image to apply the augmentation to.
         :return: Augmentation applied to the image and mask at index i
         """
-        # Get a random float between 0 and 1
-        r = self.rng.random()
-        # If the random float is less than the probability of the augmentation, apply it
-
-        if r < self.p:
-            # Get the indices of the images to apply the augmentation to
+        # Get the indices of the images to apply the augmentation to, make sure they are not the same. USe choice instead of integers to avoid duplicates
+        if len(images) < self.img_to_apply:
             idxs = self.rng.integers(low=0, high=len(images), size=self.img_to_apply)
-            # Apply the mosaic augmentation
-            image, mask = self.mosaic(images, masks, idxs)
-            # Return the augmented image and mask
-            return image, mask
-
-        # If the augmentation is not applied, return the original image and mask
-        return images[i], masks[i]
+        else:
+            idxs = self.rng.choice(len(images), size=self.img_to_apply, replace=False)
+        # Apply the mosaic augmentation
+        image, mask = self.mosaic(images, masks, idxs)
+        # Return the augmented image and mask
+        return image, mask
 
     def mosaic(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], idxs: npt.NDArray[np.int_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the mosaic augmentation to the images and masks.
