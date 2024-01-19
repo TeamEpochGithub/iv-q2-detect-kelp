@@ -68,7 +68,7 @@ class GBDT(PretrainBlock):
         y = y.compute()
 
         # Threshhold y, if larger than 0.75 set to 1
-        y[y > 0.5] = 1
+        y[y > 0.75] = 1
         y[y <= 0.75] = 0
         logger.info(f"Computed X and y, shape: {X.shape}, {y.shape} in {time.time() - start_time} seconds")
 
