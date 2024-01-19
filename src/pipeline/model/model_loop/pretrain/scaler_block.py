@@ -28,12 +28,14 @@ class ScalerBlock(PretrainBlock):
 
     scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
-        :param X: Data to fit. Shape should be (N, C, H, W)
-        :param y: Target data. Shape should be (N, H, W)
-        :return: Fitted scaler
+        :param X: Data to fit. Shape should be (N, C, H, W).
+        :param y: Target data. Shape should be (N, H, W).
+        :param train_indices: UNUSED indices of the training data in X.
+        :param save_pretrain: UNUSED whether to save this block.
+        :return: Fitted scaler.
         """
         # Check if the scaler exists
         if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:

@@ -35,7 +35,12 @@ def generate_cv_params(cfg: DictConfig, model_pipeline: ModelPipeline | Ensemble
 
 
 def generate_model_params(
-    model_pipeline: ModelPipeline, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
+    model_pipeline: ModelPipeline,
+    train_indices: list[int] | None = None,
+    test_indices: list[int] | None = None,
+    cache_size: int = -1,
+    *,
+    save: bool = True,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
@@ -74,7 +79,12 @@ def generate_model_params(
 
 
 def generate_ensemble_params(
-    ensemble_pipeline: EnsembleBase, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
+    ensemble_pipeline: EnsembleBase,
+    train_indices: list[int] | None = None,
+    test_indices: list[int] | None = None,
+    cache_size: int = -1,
+    *,
+    save: bool = True,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
@@ -102,7 +112,7 @@ def generate_ensemble_params(
                     else {},
                 }
                 if "model_loop_pipeline_step" in model_pipeline.named_steps and model_pipeline.model_loop_pipeline
-                else {}
+                else {},
             }
             for name, model_pipeline in ensemble_pipeline.steps
         }

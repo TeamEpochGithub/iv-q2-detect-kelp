@@ -89,7 +89,10 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
 
 
 def update_model_cfg_test_size(
-    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None, test_size: int = -1, *, is_train: bool | None
+    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None,
+    test_size: int = -1,
+    *,
+    is_train: bool | None,
 ) -> dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None:
     """Update the test size in the model config.
 
