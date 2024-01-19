@@ -153,8 +153,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=2, prefetch_factor=1, persistent_workers=True)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=2, prefetch_factor=1, persistent_workers=True)
 
         # Train model
         logger.info("Training the model")
@@ -193,6 +193,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         for epoch in range(self.epochs):
             # Train using train_loader
+            start_time = time.time()
+            print("started timer")
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
@@ -227,6 +229,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             elif wandb.run:
                 # Log the trained epochs to wandb if we finished training
                 wandb.log({"Epochs": epoch + 1})
+            print(f"Epoch {epoch} took {time.time() - start_time} seconds")
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
         """Train the model for one epoch.

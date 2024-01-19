@@ -113,8 +113,9 @@ class Transformations:
         # concatenate the x and y to apply the same transforms to both
         x_tensor = torch.from_numpy(x_arr)
         y_tensor = torch.from_numpy(y_arr)
-        merged = torch.cat((x_tensor, y_tensor.unsqueeze(1)), dim=1)
-        merged_old = copy.deepcopy(merged)
+        merged = torch.cat((x_tensor, y_tensor.unsqueeze(1)), dim=1).to('cuda')
+        merged.requires_grad = False
         for i in range(len(merged)):
-            merged[i] = self.torch(merged[i])
+            merged = self.torch(merged)
+        merged.requires_grad = True
         return merged[:, :-1, :, :], merged[:, -1, :, :]

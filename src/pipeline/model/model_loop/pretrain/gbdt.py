@@ -79,15 +79,15 @@ class GBDT(PretrainBlock):
 
         # Fit the catboost model
         # Check if labels are continuous or binary
-        cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
-        cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
+        self.cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
+        self.cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
 
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
 
         # Save the model
-        self.trained_model = cbm
+        self.trained_model = self.cbm
         if save_pretrain:
-            cbm.save_model(f"tm/{self.prev_hash}.gbdt")
+            self.cbm.save_model(f"tm/{self.prev_hash}.gbdt")
             logger.info(f"Saved GBDT to {f'tm/{self.prev_hash}.gbdt'}")
 
         return self
@@ -102,26 +102,27 @@ class GBDT(PretrainBlock):
         logger.info("Transforming with GBDT...")
 
         # Load the model
-        cbm = catboost.CatBoostClassifier()
+        self.cbm = catboost.CatBoostClassifier()
         if self.trained_model is None:
             # Verify that the model exists
             if not Path(f"tm/{self.prev_hash}.gbdt").exists():
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
 
-            cbm.load_model(f"tm/{self.prev_hash}.gbdt")
+            self.cbm.load_model(f"tm/{self.prev_hash}.gbdt")
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
-            cbm = self.trained_model
+            self.cbm = self.trained_model
 
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
+        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
 
-        # Predict in parallel with dask map blocks
-        def predict(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
-            # x has shape (B, C, H, W), transpose and reshape for catboost to (N, C)
-            x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
+    # Predict in parallel with dask map blocks
+    def transform_chunk(self, x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+        # x has shape (B, C, H, W), transpose and reshape for catboost to (N, C)
+        x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
 
-            # Predict and reshape back to (N, 1, H, W)
-            pred = cbm.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
-            return np.concatenate([x, pred], axis=1)
+        # Predict and reshape back to (N, 1, H, W)
+        pred = self.cbm.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
+        return np.concatenate([x, pred], axis=1)
 
-        return X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+        
