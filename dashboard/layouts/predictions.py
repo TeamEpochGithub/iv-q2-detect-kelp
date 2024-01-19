@@ -55,6 +55,7 @@ def predictions_layout(image_id: str) -> html.Div:
     latest_folder = max(folders, key=os.path.getctime)
 
     # get the preds from the latest folder
+    latest_folder = Path("outputs/2024-01-18/12-00-48")
     preds_loc = latest_folder / "preds"
     if not os.path.exists(preds_loc / f"{image_id}_pred.tif"):
         return html.P(f"Predictions for {image_id} not found in {preds_loc}. This image is not in the test split")
@@ -73,8 +74,8 @@ def predictions_layout(image_id: str) -> html.Div:
     figs = [
         make_fig(pred, f"Prediction with dice_coef: {dice_coef:.2f}"),
         make_fig(overlay, "Kelp Overlay"),
-        make_fig(swir_nir_red, "SWIR/NIR/Red"),
         make_fig(overlay_pred, "Prediction Overlay"),
+        make_fig(swir_nir_red, "SWIR/NIR/Red"),
     ]
 
     return html.Div(figs, style={"display": "flex"})
