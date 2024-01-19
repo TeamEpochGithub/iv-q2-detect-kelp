@@ -23,8 +23,8 @@ class TransformationPipeline(Pipeline):
 
     def __post_init__(self) -> None:
         """Post init function."""
-        super().__init__(self._get_steps())
         self.set_hash("")
+        super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, BaseEstimator | Pipeline]]:
         """Get the transformation pipeline steps.

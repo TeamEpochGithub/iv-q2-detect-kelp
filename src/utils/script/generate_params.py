@@ -27,15 +27,22 @@ def generate_cv_params(cfg: DictConfig, model_pipeline: ModelPipeline | Ensemble
     :return: The model parameters
     """
     if "model" in cfg:
-        params = generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False)
+        params = generate_model_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False, save_pretrain_with_split=True)
     elif "ensemble" in cfg:
-        params = generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False)
+        params = generate_ensemble_params(model_pipeline, train_indices, test_indices, cfg.cache_size, save=False, save_pretrain_with_split=True)
 
     return params
 
 
 def generate_model_params(
-    model_pipeline: ModelPipeline, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
+    model_pipeline: ModelPipeline,
+    train_indices: list[int] | None = None,
+    test_indices: list[int] | None = None,
+    cache_size: int = -1,
+    *,
+    save: bool = True,
+    save_pretrain: bool = True,
+    save_pretrain_with_split: bool = False,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
@@ -49,7 +56,8 @@ def generate_model_params(
         {
             "model_loop_pipeline_step": {
                 "pretrain_pipeline_step": {
-                    name: {"train_indices": train_indices, "save_pretrain": save} for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
+                    name: {"train_indices": train_indices, "save_pretrain": save_pretrain, "save_pretrain_with_split": save_pretrain_with_split}
+                    for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                 }
                 if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps
                 else {},
@@ -74,7 +82,14 @@ def generate_model_params(
 
 
 def generate_ensemble_params(
-    ensemble_pipeline: EnsembleBase, train_indices: list[int] | None = None, test_indices: list[int] | None = None, cache_size: int = -1, *, save: bool = True
+    ensemble_pipeline: EnsembleBase,
+    train_indices: list[int] | None = None,
+    test_indices: list[int] | None = None,
+    cache_size: int = -1,
+    *,
+    save: bool = True,
+    save_pretrain: bool = True,
+    save_pretrain_with_split: bool = False,
 ) -> dict[str, str]:
     """Generate the model parameters.
 
@@ -89,7 +104,7 @@ def generate_ensemble_params(
             name: {
                 "model_loop_pipeline_step": {
                     "pretrain_pipeline_step": {
-                        name: {"train_indices": train_indices, "save_pretrain": save}
+                        name: {"train_indices": train_indices, "save_pretrain": save_pretrain, "save_pretrain_with_split": save_pretrain_with_split}
                         for name, _ in model_pipeline.model_loop_pipeline.named_steps.pretrain_pipeline_step.steps
                     }
                     if "pretrain_pipeline_step" in model_pipeline.model_loop_pipeline.named_steps

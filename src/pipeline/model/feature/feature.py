@@ -31,9 +31,8 @@ class FeaturePipeline(Pipeline):
             self.transformation_hash = hash(self.transformation_pipeline)
             self.load_from_cache = True
 
-        super().__init__(self._get_steps(), memory=self._get_memory())
-
         self.set_hash("")
+        super().__init__(self._get_steps(), memory=self._get_memory())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """_get_steps function returns the steps for the pipeline.
@@ -55,6 +54,10 @@ class FeaturePipeline(Pipeline):
             steps.append((str(self.column_pipeline), self.column_pipeline))
         else:
             logger.debug("No column steps were provided")
+
+        # Add step to cache the processed data
+        if self.processed_path and self.load_from_cache:
+            steps.append(("store_pipeline", CacheTIFBlock(self.processed_path + "/" + self.prev_hash)))
 
         return steps
 
