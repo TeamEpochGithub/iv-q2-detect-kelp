@@ -34,4 +34,4 @@ if __name__ == "__main__":
 
     # Call your original script with the sanitized arguments
     python_path = "venv/Scripts/python.exe"
-    subprocess.run([python_path, "cv.py", *hydra_args], check=False)  # noqa
+    subprocess.run([python_path, "cv.py", *hydra_args], check=False) 
