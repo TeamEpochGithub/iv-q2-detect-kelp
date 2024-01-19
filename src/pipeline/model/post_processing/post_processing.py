@@ -45,10 +45,10 @@ class PostProcessingPipeline(Pipeline):
         :param y: Target data
         :param fit_params: Fit parameters
         """
-        print_section_separator("Pretrain")
+        print_section_separator("Postprocessing")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
-        logger.info(f"Fitted pretrain pipeline in {time.time() - start_time} seconds")
+        logger.info(f"Fitted postprocessing pipeline in {time.time() - start_time} seconds")
         return X
 
     def transform(self, X: da.Array) -> da.Array:
@@ -56,8 +56,8 @@ class PostProcessingPipeline(Pipeline):
 
         :param X: Data to transform
         """
-        print_section_separator("Pretrain")
+        print_section_separator("Postprocessing")
         start_time = time.time()
         X = super().transform(X)
-        logger.info(f"Transformed pretrain pipeline in {time.time() - start_time} seconds")
+        logger.info(f"Transformed postprocessing pipeline in {time.time() - start_time} seconds")
         return X

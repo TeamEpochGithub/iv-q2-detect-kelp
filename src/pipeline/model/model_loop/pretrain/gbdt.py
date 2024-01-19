@@ -72,7 +72,8 @@ class GBDT(PretrainBlock):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.early_stopping_split)
 
         # Fit the catboost model
-        cbm = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
+        # Check if labels are continuous or binary
+        cbm = catboost.CatBoostRegressor(iterations=100, verbose=True, early_stopping_rounds=10)
         cbm.fit(X_train, y_train, eval_set=(X_test, y_test))
 
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
@@ -95,7 +96,7 @@ class GBDT(PretrainBlock):
         logger.info("Transforming with GBDT...")
 
         # Load the model
-        cbm = catboost.CatBoostClassifier()
+        cbm = catboost.CatBoostRegressor()
         if self.trained_model is None:
             # Verify that the model exists
             if not Path(f"tm/{self.prev_hash}.gbdt").exists():
@@ -114,7 +115,7 @@ class GBDT(PretrainBlock):
             x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
 
             # Predict and reshape back to (N, 1, H, W)
-            pred = cbm.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
+            pred = cbm.predict(x_).reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
             return np.concatenate([x, pred], axis=1)
 
         return X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
