@@ -27,8 +27,11 @@ class Mosaic(Augmentation):
         :param i: Index of the image to apply the augmentation to.
         :return: Augmentation applied to the image and mask at index i
         """
-        # Get the indices of the images to apply the augmentation to
-        idxs = self.rng.integers(low=0, high=len(images), size=self.img_to_apply)
+        # Get the indices of the images to apply the augmentation to, make sure they are not the same. USe choice instead of integers to avoid duplicates
+        if len(images) < self.img_to_apply:
+            idxs = self.rng.integers(low=0, high=len(images), size=self.img_to_apply)
+        else:
+            idxs = self.rng.choice(len(images), size=self.img_to_apply, replace=False)
         # Apply the mosaic augmentation
         image, mask = self.mosaic(images, masks, idxs)
         # Return the augmented image and mask

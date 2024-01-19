@@ -14,7 +14,7 @@ from src.augmentations.augmentation import Augmentation
 class Transformations:
     """Base class for data augmentation transformations, contains a list of augmentations to apply to the data."""
 
-    alb: albumentations.Compose = None
+    alb: albumentations.Compose | None = None
     aug: list[Augmentation] | None = None
 
     def __post_init__(self) -> None:
@@ -77,14 +77,16 @@ class Transformations:
 
         :param x: Input features.
         :param y: Labels.
-        :return: augmented data
+        :return: augmented image
         """
+        xi = np.zeros(x_arr[i].shape)
+        yi = np.zeros(y_arr[i].shape)
         for augmentation in self.aug:  # type: ignore[union-attr]
             if self.rng.random() < augmentation.p:
-                x_arr, y_arr = augmentation.transforms(x_arr.copy(), y_arr.copy(), i)
+                xi, yi = augmentation.transforms(x_arr, y_arr, i)
             else:
-                x_arr, y_arr = x_arr[i], y_arr[i]
-        return x_arr, y_arr
+                xi, yi = x_arr[i], y_arr[i]
+        return xi, yi
 
     def apply_albumentation(self, image: npt.NDArray[np.float_], mask: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
         """Apply the albumentation to the current image and mask.
@@ -93,5 +95,5 @@ class Transformations:
         :param y: Labels.
         :return: augmented data
         """
-        transformed_dict = self.alb(image=image, mask=mask)
+        transformed_dict = self.alb(image=image, mask=mask)  # type: ignore[misc]
         return transformed_dict["image"], transformed_dict["mask"]
