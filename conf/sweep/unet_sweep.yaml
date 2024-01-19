@@ -28,29 +28,27 @@ parameters: # Will use the model file in cv.yaml and override the values there w
             parameters:
               model_blocks:
                 parameters:
-                    model:
-                      parameters:
-                        model:
-                          parameters:
-                            encoder_name:
-                              values: [resnet18, resnet34, efficientnet-b0, efficientnet-b3, mobilenet_v2, vgg11]
-                            in_channels:
-                              value: 4
-                            activation:
-                              values: [sigmoid, softmax, relu]
-                    optimizer:
-                      parameters:
-                        _args_:
-                          parameters:
-                            path:
-                              values: [torch.optim.Adam, torch.optim.SGD, torch.optim.AdamW]
-                            lr:
-                              max: -5
-                              min: -10
-                              distribution: log_uniform
-                    criterion:
-                      parameters:
-                        _target_:
-                          values: [src.modules.loss.dice_loss.DiceLoss, torch.nn.BCELoss, src.modules.loss.bce_dice_loss.BCEDiceLoss, src.modules.loss.shrinkage_loss.ShrinkageLoss, src.modules.loss.jaccard_loss.JaccardLoss, src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss]
-                    batch_size:
-                      values: [8, 16, 24]
+                  unet_model:
+                    parameters:
+                      model:
+                        parameters:
+                          model:
+                            parameters:
+                              encoder_name:
+                                values: [resnet18, resnet34, efficientnet-b0, efficientnet-b3, mobilenet_v2, vgg11]
+                              in_channels:
+                                value: 4
+                              activation:
+                                values: [sigmoid, softmax, relu]
+                      optimizer:
+                        parameters:
+                          lr:
+                            max: -5
+                            min: -10
+                            distribution: log_uniform
+                      criterion:
+                        parameters:
+                          _target_:
+                            values: [src.modules.loss.dice_loss.DiceLoss, torch.nn.BCELoss, src.modules.loss.bce_dice_loss.BCEDiceLoss, src.modules.loss.shrinkage_loss.ShrinkageLoss, src.modules.loss.jaccard_loss.JaccardLoss, src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss]
+                      batch_size:
+                        values: [8, 16, 24]

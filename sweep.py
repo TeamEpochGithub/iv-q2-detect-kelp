@@ -1,44 +1,37 @@
 """Module to convert wandb arguments to Hydra arguments and call the cv script."""
+import ast
 import subprocess
 import sys
 
-from src.logging_utils.logger import logger
 
-
-def convert_args(args: list[str]) -> list[str]:
-    """Convert wandb arguments to Hydra arguments.
-
-    :param args: The arguments to convert.
-    :return: The converted arguments.
-    """
-    # Convert wandb arguments to Hydra arguments
-    return [arg.replace("--", "") for arg in args]
-
-
-def sanitize_args(args: list[str]) -> list[str]:
-    """Sanitize the arguments.
-
-    :param args: The arguments to sanitize.
-    :return: The sanitized arguments.
-    """
-    # A list of shell metacharacters that might be used in a command injection attack
-    shell_metacharacters = [";", "|", "&", "<", ">", "(", ")", "$", "`", "\\", '"', "'"]
-    sanitized_args = []
-    for arg in args:
-        if any(char in arg for char in shell_metacharacters):
-            logger.warning(f"Warning: Argument {arg} contains shell metacharacters and will be ignored.")
+def flatten_dict(d, parent_key="", sep="."):
+    items = []
+    for k, v in d.items():
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v, new_key, sep=sep).items())
         else:
-            sanitized_args.append(arg)
-    return sanitized_args
+            items.append((new_key, v))
+    return dict(items)
+
+
+def convert_to_hydra_format(model_str: str, sep="."):
+    # Remove the leading "--model=" and convert the string to a dictionary
+    model_dict = ast.literal_eval(model_str.replace("--model=", "").replace("=", ":"))
+    flattened_dict = flatten_dict(model_dict, sep=sep)
+
+    hydra_args = [f"model.{k}={v!r}" for k, v in flattened_dict.items()]
+    return hydra_args
 
 
 if __name__ == "__main__":
     # Get the original arguments
     original_args = sys.argv[1:]
-    # Convert the arguments
-    hydra_args = convert_args(original_args)
-    # Sanitize the arguments
-    sanitized_args = sanitize_args(hydra_args)
+    # Convert the arguments with a custom separator (e.g., underscore)
+    hydra_args = convert_to_hydra_format(original_args[0])
+    hydra_args = [arg.replace("'_target_'", "_target_").replace("'sigma'", "sigma") for arg in hydra_args]
+    # Turn list of strings into one string with spaces
+
     # Call your original script with the sanitized arguments
     python_path = "venv/Scripts/python.exe"
-    subprocess.run([python_path, "cv.py", *sanitized_args], check=False)  # noqa: S603
+    subprocess.run([python_path, "cv.py", *hydra_args], check=False)  # noqa
