@@ -14,7 +14,6 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig
 
 from src.config.cross_validation_config import CVConfig
-from src.cv_splitter.binary_target_stratified_k_fold import BinaryTargetStratifiedKFold
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
@@ -56,14 +55,13 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
-    # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
-    kf = BinaryTargetStratifiedKFold(n_splits=cfg.n_splits)
-    # stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
+    # Do whatever this is so y is compatible with the sklearn splitters
+    stratification_key = y.reshape(y.shape[0], -1).max(axis=1)
 
     # Set up Weights & Biases group name
     wandb_group_name = randomname.get_name()
 
-    for i, (train_indices, test_indices) in enumerate(kf.split(X, y)):
+    for i, (train_indices, test_indices) in enumerate(instantiate(cfg.splitter).split(X, stratification_key)):
         # https://github.com/wandb/wandb/issues/5119
         # This is a workaround for the issue where sweeps override the run id annoyingly
         reset_wandb_env()

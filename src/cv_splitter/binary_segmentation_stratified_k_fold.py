@@ -1,7 +1,7 @@
 """Stratified k-fold cross-validation splitter for binary segmentation tasks."""
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from typing import Annotated, Literal
+from typing import Annotated
 
 import dask.array as da
 import numpy as np
@@ -12,23 +12,21 @@ from sklearn.preprocessing import KBinsDiscretizer
 
 
 @dataclass
-class BinaryTargetStratifiedKFold:
+class BinarySegmentationStratifiedKFold:
     """Stratified k-fold cross-validation splitter for binary segmentation tasks.
 
     :param n_splits: Number of folds. Must be at least 2.
     :param shuffle: Whether to shuffle the data before splitting into batches.
     :param random_state: Seed for the random number generator. Defaults to None.
-    :param n_bins: Number of bins to use for binning the data. Defaults to 5.
-    :param strategy: Strategy used to define the widths of the bins. Defaults to "quantile".
+    :param mean_coverages: The pre-computed mean coverage of each image.
     """
 
+    mean_coverages: npt.NDArray[np.float_] | da.Array
     n_splits: Annotated[int, Ge(2)] = 5
     shuffle: bool = True
     random_state: int | None = None
-    n_bins: Annotated[int, Ge(2)] = 5
-    strategy: Literal["uniform", "quantile", "kmeans"] = "quantile"
 
-    def split(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, groups: Iterable[int] | None = None) -> Iterator[tuple[list[int], list[int]]]:
+    def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array, groups: Iterable[int] | None = None) -> Iterator[tuple[list[int], list[int]]]:
         """Generate indices to split data into training and test set.
 
         :param X: The data to split.
@@ -36,10 +34,8 @@ class BinaryTargetStratifiedKFold:
         :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
         :return: The training and test set indices for that split.
         """
-        # Bin the data based on the mean coverage of each image
-        coverages = y.astype(np.float32).mean(axis=tuple(range(1, y.ndim)))
-        kbd = KBinsDiscretizer(n_bins=self.n_bins, encode="ordinal", strategy=self.strategy)
-        bins = kbd.fit_transform(coverages.reshape(-1, 1)).flatten()  # TODO(Jeffrey): There is one bin less for no reason
+        kbd = KBinsDiscretizer(n_bins=self.n_splits, encode="ordinal", strategy="quantile")
+        bins = kbd.fit_transform(self.mean_coverages.reshape(-1, 1)).flatten().astype(np.min_scalar_type(self.n_splits))
 
         kf = StratifiedGroupKFold(n_splits=self.n_splits, shuffle=self.shuffle, random_state=self.random_state)
         yield from kf.split(X, y, groups=bins)
