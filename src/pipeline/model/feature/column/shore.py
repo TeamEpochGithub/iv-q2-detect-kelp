@@ -91,19 +91,19 @@ class Shore(BaseEstimator, TransformerMixin):
         :param y: The target variable
         :return: The transformed data
         """
-        # Apply a different function depending on the mode
-        func = mode_to_func[self.mode]
-
         # Re-chunk so that chunks contains complete images
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
-        # Create a function that takes chunks of multiple images,
-        # and applies the function to each image one by one
-        def chunk_func(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
-            result = np.zeros((x.shape[0], 1, 350, 350), dtype="float32")
-            for i in range(x.shape[0]):
-                result[i] = func(x[i, self.elevation_band])
-            return np.concatenate([x, result], axis=1)
-
         # Map the function over each chunk
-        return X.map_blocks(chunk_func, dtype="float32", chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+        return X.map_blocks(self.chunk_func, dtype="float32", chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+
+    def chunk_func(self, x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+        """Apply the function to a chunk of data.
+
+        :param x: The chunk of data
+        :return: The transformed chunk
+        """
+        result = np.zeros((x.shape[0], 1, 350, 350), dtype="float32")
+        for i in range(x.shape[0]):
+            result[i] = mode_to_func[self.mode](x[i, self.elevation_band])
+        return np.concatenate([x, result], axis=1)
