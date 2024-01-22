@@ -153,8 +153,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=2, prefetch_factor=1, persistent_workers=True)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=2, prefetch_factor=1, persistent_workers=True)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)
 
         # Train model
         logger.info("Training the model")
