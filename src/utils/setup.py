@@ -7,17 +7,17 @@ from pathlib import Path
 from typing import Any, cast
 
 import dask.array
-import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.utils import estimator_html_repr
-from wandb.sdk.lib import RunDisabled
 
+import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
+from wandb.sdk.lib import RunDisabled
 
 
 def setup_config(cfg: DictConfig) -> None:

@@ -1,4 +1,5 @@
 """A wrapper around BinarySegmentationStratifiedKFold that uses the metadata file specific to the Kelp Forest Segmentation competition data."""
+import logging
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -36,8 +37,13 @@ class KelpForestSegmentationStratifiedKFold:
         :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
         :return: The training and test set indices for that split.
         """
-        # Read the metadata
-        metadata = pd.read_csv(self.metadata_path).sort_values(by="tile_id")
-        kelp_coverages = metadata.query("in_train")["kelp"].to_numpy()
+        if self.metadata_path.exists():
+            logging.info("Metadata file found at %s", self.metadata_path)
+            metadata = pd.read_csv(self.metadata_path).sort_values(by="tile_id")
 
-        yield from BinarySegmentationStratifiedKFold(mean_coverages=kelp_coverages, n_splits=self.n_splits, shuffle=self.shuffle, random_state=self.random_state).split(X, y)
+            kelp_coverages = metadata.query("in_train")["kelp"].to_numpy()
+            yield from BinarySegmentationStratifiedKFold(n_splits=self.n_splits, shuffle=self.shuffle, random_state=self.random_state, coverages=kelp_coverages).split(X, y)
+        else:
+            logging.info("Metadata file not found at %s, using the target to compute the coverages", self.metadata_path)
+            logging.info("Hint: You can generate the metadata file with `notebooks/create_metadataset.ipynb`")
+            yield from BinarySegmentationStratifiedKFold(n_splits=self.n_splits, shuffle=self.shuffle, random_state=self.random_state).split(X, y)
