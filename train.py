@@ -25,12 +25,12 @@ from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setu
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
 os.environ["HYDRA_FULL_ERROR"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
+# os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["MKL_NUM_THREADS"] = "1"
 # Set up the config store, necessary for type checking of config yaml
 cs = ConfigStore.instance()
 cs.store(name="base_train", node=TrainConfig)
-
+count = 0
 
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:

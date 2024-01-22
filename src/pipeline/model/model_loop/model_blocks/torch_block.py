@@ -28,6 +28,7 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
+from src.globals import count
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -192,11 +193,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param val_losses: List of validation losses.
         """
         for epoch in range(self.epochs):
+            global count 
+            count += 1
+            print(count)
             # Train using train_loader
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
-
+            
             # Log train loss
             if wandb.run:
                 wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)
@@ -238,6 +242,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         losses = []
         self.model.train()
         pbar = tqdm(dataloader, unit="batch")
+        print(count)
         for batch in pbar:
             X_batch, y_batch = batch
             X_batch = X_batch.to(self.device).float()
