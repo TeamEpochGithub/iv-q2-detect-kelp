@@ -66,17 +66,23 @@ model_loop_pipeline:
           patience: 10
           transformations:
             _target_: src.augmentations.transformations.Transformations
+            korn:
+              _target_: kornia.augmentation.AugmentationSequential
+              _args_:
+                - _target_: kornia.augmentation.RandomHorizontalFlip
+                  p: 0.5
+                - _target_: kornia.augmentation.RandomVerticalFlip
+                  p: 0.5
+                - _target_: kornia.augmentation.RandomRotation
+                  degrees: 90
+                  p: 0.5
+                - _target_: kornia.augmentation.RandomGaussianBlur
+                  kernel_size: [3, 3]
+                  p: 0.5
+                  sigma: [0.1, 2.0]
+                - _target_: kornia.augmentation.RandomMosaic
+                  p: 0.5
 
-            torch:
-              _target_: torchvision.transforms.v2.Compose
-              transforms:
-                - _target_: torchvision.transforms.v2.RandomHorizontalFlip
-                  p: 0.5
-                - _target_: torchvision.transforms.v2.RandomVerticalFlip
-                  p: 0.5
-                - _target_: torchvision.transforms.v2.ElasticTransform
-                  alpha: 1
-                  sigma: 50
 
 post_processing_pipeline:
   post_processing_steps:

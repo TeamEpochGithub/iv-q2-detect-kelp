@@ -11,7 +11,6 @@ from typing import Annotated, Any
 import dask.array as da
 import numpy as np
 import torch
-import wandb
 from annotated_types import Gt
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -22,12 +21,13 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
-from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
@@ -153,8 +153,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)  # type: ignore[arg-type]
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=1, prefetch_factor=1, persistent_workers=True)  # type: ignore[arg-type]
 
         # Train model
         logger.info("Training the model")
@@ -193,8 +193,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         for epoch in range(self.epochs):
             # Train using train_loader
-            start_time = time.time()
-            print("started timer")
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
@@ -229,7 +227,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             elif wandb.run:
                 # Log the trained epochs to wandb if we finished training
                 wandb.log({"Epochs": epoch + 1})
-            print(f"Epoch {epoch} took {time.time() - start_time} seconds")
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
         """Train the model for one epoch.
@@ -386,5 +383,3 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.prev_hash = torch_block_hash
 
         return torch_block_hash
-
-    
