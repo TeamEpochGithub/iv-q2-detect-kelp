@@ -19,7 +19,7 @@ class TransformationPipeline(Pipeline):
     :param transformations: list of transformations
     """
 
-    transformations: list[BaseEstimator]
+    transformations: list[BaseEstimator | Pipeline]
 
     def __post_init__(self) -> None:
         """Post init function."""
