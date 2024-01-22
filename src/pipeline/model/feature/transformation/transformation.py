@@ -19,7 +19,7 @@ class TransformationPipeline(Pipeline):
     :param transformations: list of transformations
     """
 
-    transformations: list[BaseEstimator]
+    transformations: dict[str, BaseEstimator]
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -32,7 +32,7 @@ class TransformationPipeline(Pipeline):
         :return: list of steps
         """
         # Use list comprehension to get the steps
-        return [(str(transformation), transformation) for transformation in self.transformations]
+        return [(str(transformation), transformation) for transformation in self.transformations.values()]
 
     def set_hash(self, prev_hash: str) -> str:
         """set_hash function sets the hash for the pipeline.
@@ -41,7 +41,7 @@ class TransformationPipeline(Pipeline):
         :return: hash
         """
         transformation_hash = prev_hash
-        for transformation in self.transformations:
+        for transformation in self.transformations.values():
             transformation_hash = hash(str(transformation) + transformation_hash)
 
         self.prev_hash = transformation_hash

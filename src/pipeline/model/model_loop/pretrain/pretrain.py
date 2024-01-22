@@ -18,7 +18,7 @@ class PretrainPipeline(Pipeline):
     :param steps: list of steps
     """
 
-    pretrain_steps: list[PretrainBlock]
+    pretrain_steps: dict[str, PretrainBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -30,7 +30,7 @@ class PretrainPipeline(Pipeline):
 
         :return: list of steps
         """
-        return [(str(step), step) for step in self.pretrain_steps]
+        return [(str(step), step) for step in self.pretrain_steps.values()]
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hash.
@@ -39,7 +39,7 @@ class PretrainPipeline(Pipeline):
         :return: Hash
         """
         pretrain_hash = prev_hash
-        for step in self.pretrain_steps:
+        for step in self.pretrain_steps.values():
             pretrain_hash = step.set_hash(pretrain_hash)
 
         self.prev_hash = pretrain_hash
