@@ -7,17 +7,17 @@ from pathlib import Path
 from typing import Any, cast
 
 import dask.array
-import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.utils import estimator_html_repr
-from wandb.sdk.lib import RunDisabled
 
+import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
+from wandb.sdk.lib import RunDisabled
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -99,7 +99,7 @@ def update_model_cfg_test_size(
     :return: The updated model config.
     """
     if isinstance(model_cfg_dict, dict):
-        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
+        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []).values():
             model_block["test_size"] = test_size
         for pretrain_block in model_cfg_dict.get("model_loop_pipeline", {}).get("pretrain_pipeline", {}).get("pretrain_steps", []):
             pretrain_block["test_size"] = test_size
