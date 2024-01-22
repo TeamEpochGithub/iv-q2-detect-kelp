@@ -9,5 +9,5 @@ raw_target_path: data/raw/train_kelp
 scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
 cache_size: -1
-n_splits: 4
+n_splits: 3
 allow_multiple_instances: true
