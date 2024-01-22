@@ -61,7 +61,8 @@ model_loop_pipeline:
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 2000
+        type: Catboost
+        max_images: 500
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [1, 7, 8, 9, 10, 11]
@@ -88,7 +89,7 @@ model_loop_pipeline:
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 100
+        epochs: 40
         batch_size: 16
         patience: 15
         transformations:
@@ -97,21 +98,20 @@ model_loop_pipeline:
             _target_: albumentations.Compose
             transforms:
               - _target_: albumentations.VerticalFlip
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.HorizontalFlip
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.RandomRotate90
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.GaussianBlur
                 blur_limit: 7
                 p: 0.05
           aug:
             - _target_: src.augmentations.mosaic.Mosaic
-              p: 0.15
+              p: 0.25
 
 post_processing_pipeline:
   post_processing_steps:
     - _target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
       raw_data_path: data/raw/train_satellite
     - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold: 0.8791
