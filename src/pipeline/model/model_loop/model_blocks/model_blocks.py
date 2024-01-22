@@ -13,7 +13,7 @@ class ModelBlocksPipeline(Pipeline):
     :param model_blocks: list of model blocks
     """
 
-    model_blocks: list[TorchBlock]
+    model_blocks: dict[str, TorchBlock]
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -26,7 +26,7 @@ class ModelBlocksPipeline(Pipeline):
         :return: list of steps
         """
         # Use list comprehension to get the steps
-        return [(str(model_block), model_block) for model_block in self.model_blocks]
+        return [(str(model_block), model_block) for model_block in self.model_blocks.values()]
 
     def set_hash(self, prev_hash: str) -> str:
         """Set the hash.
@@ -36,7 +36,7 @@ class ModelBlocksPipeline(Pipeline):
         """
         model_blocks_hash = prev_hash
 
-        for model_block in self.model_blocks:
+        for model_block in self.model_blocks.values():
             model_blocks_hash = model_block.set_hash(model_blocks_hash)
 
         self.prev_hash = model_blocks_hash
