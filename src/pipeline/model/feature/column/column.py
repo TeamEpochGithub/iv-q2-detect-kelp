@@ -18,7 +18,7 @@ class ColumnPipeline(Pipeline):
     :param columns: The columns
     """
 
-    columns: dict[str, ColumnBlockPipeline]
+    columns: list[ColumnBlockPipeline]
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -32,7 +32,7 @@ class ColumnPipeline(Pipeline):
         :return: List of steps in the pipeline
         """
         steps = []
-        for column in self.columns.values():
+        for column in self.columns:
             if self.path:
                 column.set_path(self.path)
             steps.append((str(column), column))
@@ -83,7 +83,7 @@ class ColumnPipeline(Pipeline):
         :return: Hash
         """
         column_hash = prev_hash
-        for column in self.columns.values():
+        for column in self.columns:
             column_hash = column.set_hash(column_hash)
 
         self.prev_hash = column_hash
