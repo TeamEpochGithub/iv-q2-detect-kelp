@@ -111,6 +111,10 @@ def run_cv_cfg(cfg: DictConfig) -> None:
             logger.error("Worker failed")
             break
 
+        if result.sweep_score < 0.1:
+            logger.debug("Worker score too low, stopping run")
+            break
+
     sweep_run.log(dict(sweep_score=sum(metrics) / len(metrics)))
     wandb.join()
 
