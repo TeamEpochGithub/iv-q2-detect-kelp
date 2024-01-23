@@ -61,7 +61,7 @@ model_loop_pipeline:
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        type: XGBoost
+        model_type: XGBoost
         max_images: 1000
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
