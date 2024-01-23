@@ -8,9 +8,9 @@ from pathlib import Path
 import catboost
 import dask.array as da
 import numpy as np
-from lightgbm import LGBMClassifier
+from lightgbm import LGBMClassifier  # type: ignore[import-not-found]
 from numpy import typing as npt
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier  # type: ignore[import-not-found]
 
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
@@ -28,19 +28,19 @@ class GBDT(PretrainBlock):
 
     :param max_images: The maximum number of images to use for training. If None, all training images will be used.
     :param test_split: The test split to use for early stopping. Split will be made amongst training images.
-    :param type: The type of GBDT model to use. Currently only catboost is supported.
+    :param model_type: The type of GBDT model to use. Currently only catboost is supported.
     """
 
     max_images: int | None = None
     early_stopping_split: float = 0.2
-    type: str = "XGBoost"
+    model_type: str = "XGBoost"
 
     def __post_init__(self) -> None:
         """Initialize the GBDT model."""
         self.trained_model = None
         # Check if type is valid
-        if self.type not in ["Catboost", "XGBoost", "LightGBM"]:
-            raise ValueError(f"Invalid model type {self.type}. Please choose from ['Catboost', 'XGBoost', 'LightGBM']")
+        if self.model_type not in ["Catboost", "XGBoost", "LightGBM"]:
+            raise ValueError(f"Invalid model type {self.model_type}. Please choose from ['Catboost', 'XGBoost', 'LightGBM']")
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
         """Fit the model.
@@ -85,15 +85,15 @@ class GBDT(PretrainBlock):
 
         # Fit the catboost model
         # Check if labels are continuous or binary
-        if self.type == "Catboost":
+        if self.model_type == "Catboost":
             logger.info("Fitting catboost model...")
             model = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
             model.fit(X_train, y_train, eval_set=(X_test, y_test))
-        elif self.type == "XGBoost":
+        elif self.model_type == "XGBoost":
             logger.info("Fitting XGBoost model...")
             model = XGBClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10)
             model.fit(X_train, y_train, eval_set=[(X_test, y_test)])
-        elif self.type == "LightGBM":
+        elif self.model_type == "LightGBM":
             logger.info("Fitting LightGBM model...")
             model = LGBMClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10, verbose=1, num_iterations=50)
             model.fit(X_train, y_train, eval_set=(X_test, y_test))
@@ -106,7 +106,7 @@ class GBDT(PretrainBlock):
         # Save the model
         self.trained_model = model
         if save_pretrain:
-            with open(f"tm/{self.prev_hash}.gbdt", 'wb') as f:
+            with open(f"tm/{self.prev_hash}.gbdt", "wb") as f:
                 pickle.dump(model, f)
             logger.info(f"Saved GBDT to {f'tm/{self.prev_hash}.gbdt'}")
 
@@ -122,14 +122,13 @@ class GBDT(PretrainBlock):
         logger.info("Transforming with GBDT...")
 
         # Load the model
-        cbm = catboost.CatBoostClassifier()
         if self.trained_model is None:
             # Verify that the model exists
             if not Path(f"tm/{self.prev_hash}.gbdt").exists():
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
 
-            with open(f"tm/{self.prev_hash}.gbdt", 'rb') as f:
-                model = pickle.load(f)
+            with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
+                model = pickle.load(f)  # noqa: S301
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
             model = self.trained_model
