@@ -5,10 +5,10 @@ command:
   - ${args_no_hyphens}
 method: bayes
 project: detect-kelp
-program: cv.py
-name: unet_sweep_small
+program: sweep.py
+name: unet_sweep_small_1000
 metric:
-  name: Score
+  name: sweep_score
   goal: maximize
 parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.model.model.encoder_name:
@@ -25,7 +25,7 @@ parameters: # Will use the model file in cv.yaml and override the values there w
     values:
       - src.modules.loss.dice_loss.DiceLoss
       - torch.nn.BCELoss
-      - src.modules.loss.bce_dice_loss.BCEDiceLoss
+      - src.modules.loss.dice_bce_loss.DiceBCELoss
       - src.modules.loss.shrinkage_loss.ShrinkageLoss
       - src.modules.loss.jaccard_loss.JaccardLoss
       - src.modules.loss.tversky_loss.TverskyLoss

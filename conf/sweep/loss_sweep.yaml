@@ -5,7 +5,7 @@ command:
   - ${args_no_hyphens}
 method: bayes
 project: detect-kelp
-program: cv3.py
+program: sweep.py
 name: loss_sweep
 metric:
   name: sweep_score
