@@ -11,7 +11,6 @@ def reset_wandb_env() -> None:
         "WANDB_PROJECT",
         "WANDB_ENTITY",
         "WANDB_API_KEY",
-        "WANDB_SWEEP_ID",
     }
     for k, v in os.environ.items():
         if k.startswith("WANDB_") and k not in exclude:

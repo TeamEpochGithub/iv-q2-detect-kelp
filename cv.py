@@ -10,7 +10,7 @@ import randomname
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
 import wandb
@@ -74,7 +74,6 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         sweep_run = wandb.init(group=wandb_group_name, reinit=True)
         sweep_run.save()
 
-
     for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
         # https://github.com/wandb/wandb/issues/5119
         # This is a workaround for the issue where sweeps override the run id annoyingly
@@ -118,13 +117,14 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         wandb.join()
 
     print(sweep_run)
-    
+
     if sweep_run is not None:
         # Log the average score
         if len(scores) > 0:
             sweep_run.log(dict(sweep_score=sum(scores) / len(scores)))
     else:
         print_section_separator("CV Results")
+
 
 if __name__ == "__main__":
     run_cv()

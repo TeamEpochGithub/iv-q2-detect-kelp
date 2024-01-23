@@ -157,6 +157,10 @@ def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | No
 
     if cfg.wandb.log_config:
         logger.debug("Uploading config files to Weights & Biases")
+
+        # Get the config file name
+        if job_type == "sweep":
+            job_type = "cv"
         curr_config = "conf/" + job_type + ".yaml"
 
         # Get the model file name

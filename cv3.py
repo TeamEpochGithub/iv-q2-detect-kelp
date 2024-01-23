@@ -1,31 +1,30 @@
-import copy
-from distributed import Client
-import hydra
-from omegaconf import DictConfig
-import wandb
-import os
-import multiprocessing
 import collections
-import random
-from hydra.core.config_store import ConfigStore
+import copy
+import multiprocessing
+import os
 import warnings
 from contextlib import nullcontext
-from hydra.utils import instantiate
 from pathlib import Path
-from sklearn.model_selection import StratifiedKFold
+
+import hydra
 import randomname
+from distributed import Client
+from hydra.core.config_store import ConfigStore
+from hydra.utils import instantiate
+from omegaconf import DictConfig
+from sklearn.model_selection import StratifiedKFold
+
+import wandb
+from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
 from src.utils.script.lock import Lock
-from src.config.cross_validation_config import CVConfig
 from src.utils.script.reset_wandb_env import reset_wandb_env
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 Worker = collections.namedtuple("Worker", ("queue", "process"))
-WorkerInitData = collections.namedtuple(
-    "WorkerInitData", ("cfg", "output_dir", "wandb_group_name", "i", "train_indices", "test_indices", "X", "y")
-)
+WorkerInitData = collections.namedtuple("WorkerInitData", ("cfg", "output_dir", "wandb_group_name", "i", "train_indices", "test_indices", "X", "y"))
 
 WorkerDoneData = collections.namedtuple("WorkerDoneData", ("sweep_score"))
 
@@ -78,9 +77,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     workers = []
     for num in range(cfg.n_splits):
         q = multiprocessing.Queue()
-        p = multiprocessing.Process(
-            target=fold_run, kwargs=dict(sweep_q=sweep_q, worker_q=q)
-        )
+        p = multiprocessing.Process(target=fold_run, kwargs=dict(sweep_q=sweep_q, worker_q=q))
         p.start()
         workers.append(Worker(queue=q, process=p))
 
@@ -109,13 +106,13 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         worker.process.join()
         # Log metric to sweep_run
         metrics.append(result.sweep_score)
-    
+
     sweep_run.log(dict(sweep_score=sum(metrics) / len(metrics)))
     wandb.join()
 
-def fold_run(sweep_q, worker_q):
 
-    # Get the data from the queue    
+def fold_run(sweep_q, worker_q):
+    # Get the data from the queue
     worker_data = worker_q.get()
     cfg = worker_data.cfg
     output_dir = worker_data.output_dir
@@ -135,7 +132,7 @@ def fold_run(sweep_q, worker_q):
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
     if cfg.wandb.enabled:
-        fold_run = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
+        wandb_fold_run = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
 
     for key, value in os.environ.items():
         if key.startswith("WANDB_"):
@@ -160,8 +157,8 @@ def fold_run(sweep_q, worker_q):
     scorer = instantiate(cfg.scorer)
     score = scorer(original_y[test_indices].compute(), predictions[test_indices])
     logger.info(f"Score: {score}")
-    if fold_run is not None:
-        fold_run.log({"Score": score})
+    if wandb_fold_run is not None:
+        wandb_fold_run.log({"Score": score})
 
     logger.info("Finishing wandb run")
     wandb.join()
