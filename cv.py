@@ -10,7 +10,7 @@ import randomname
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from sklearn.model_selection import StratifiedKFold
 
 import wandb
@@ -55,8 +55,8 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-    X = X[:1000]
-    y = y[:1000]
+    X = X[:200]
+    y = y[:200]
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
@@ -64,6 +64,16 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Set up Weights & Biases group name
     wandb_group_name = randomname.get_name()
+
+    # If wandb is enabled, set up the sweep
+    sweep_run = None
+    scores = []
+    if cfg.wandb.enabled and wandb.sweep:
+        print_section_separator("Sweep")
+        # Set up the sweep config
+        sweep_run = wandb.init(group=wandb_group_name, reinit=True)
+        sweep_run.save()
+
 
     for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
         # https://github.com/wandb/wandb/issues/5119
@@ -75,7 +85,11 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
         if cfg.wandb.enabled:
-            setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
+            fold_run = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
+
+        for key, value in os.environ.items():
+            if key.startswith("WANDB_"):
+                logger.info(f"{key}: {value}")
 
         logger.info("Creating clean pipeline for this fold")
         model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
@@ -96,11 +110,21 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         scorer = instantiate(cfg.scorer)
         score = scorer(original_y[test_indices].compute(), predictions[test_indices])
         logger.info(f"Score: {score}")
-        wandb.log({"Score": score})
+        if fold_run is not None:
+            fold_run.log({"Score": score})
+        scores.append(score)
 
         logger.info("Finishing wandb run")
-        wandb.finish()
+        wandb.join()
 
+    print(sweep_run)
+    
+    if sweep_run is not None:
+        # Log the average score
+        if len(scores) > 0:
+            sweep_run.log(dict(sweep_score=sum(scores) / len(scores)))
+    else:
+        print_section_separator("CV Results")
 
 if __name__ == "__main__":
     run_cv()
