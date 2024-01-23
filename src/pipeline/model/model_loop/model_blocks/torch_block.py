@@ -193,9 +193,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param val_losses: List of validation losses.
         """
         for epoch in range(self.epochs):
-            global count 
-            count += 1
-            print(count)
             # Train using train_loader
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
@@ -242,7 +239,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         losses = []
         self.model.train()
         pbar = tqdm(dataloader, unit="batch")
-        print(count)
         for batch in pbar:
             X_batch, y_batch = batch
             X_batch = X_batch.to(self.device).float()
