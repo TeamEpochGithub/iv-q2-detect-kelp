@@ -9,7 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import skimage as ski
 from annotated_types import Len
-from beartype import beartype
 from sklearn.base import BaseEstimator, TransformerMixin
 
 if sys.version_info < (3, 11):
@@ -18,7 +17,6 @@ else:
     from typing import Self
 
 
-@beartype
 @dataclass
 class RescaleIntensity(TransformerMixin, BaseEstimator):
     """Pipeline step to perform rescaling the intensity of the labels.
@@ -47,7 +45,7 @@ class RescaleIntensity(TransformerMixin, BaseEstimator):
         """
         return self
 
-    def transform(self, y: npt.NDArray[np.number] | npt.NDArray[np.bool_] | da.Array) -> npt.NDArray[np.floating] | da.Array:
+    def transform(self, y: npt.NDArray[np.float_ | np.bool_] | da.Array) -> npt.NDArray[np.float_] | da.Array:
         """Rescale the intensity as described.
 
         :param y: The binary labels.
