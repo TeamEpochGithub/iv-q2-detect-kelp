@@ -17,6 +17,7 @@ def reset_wandb_env():
         "WANDB_PROJECT",
         "WANDB_ENTITY",
         "WANDB_API_KEY",
+        "WANDB_SWEEP_ID",
     }
     for k, v in os.environ.items():
         if k.startswith("WANDB_") and k not in exclude:
@@ -55,7 +56,7 @@ def main():
         p.start()
         workers.append(Worker(queue=q, process=p))
 
-    sweep_run = wandb.init()
+    sweep_run = wandb.init(group="haaa")
     sweep_id = sweep_run.sweep_id or "unknown"
     sweep_url = sweep_run.get_sweep_url()
     project_url = sweep_run.get_project_url()
