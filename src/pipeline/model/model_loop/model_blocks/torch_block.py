@@ -28,7 +28,6 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
-from src.globals import count
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
     from typing_extensions import Self
