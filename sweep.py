@@ -61,8 +61,8 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-    X = X[:200]
-    y = y[:200]
+    X = X[:1000]
+    y = y[:1000]
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
