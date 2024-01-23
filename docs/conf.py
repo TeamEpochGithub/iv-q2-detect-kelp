@@ -17,7 +17,7 @@ REPO_URL: Final[str] = f"https://gitlab.ewi.tudelft.nl/dreamteam-epoch/epoch-iv/
 sys.path.insert(0, Path("../..").resolve().as_posix())
 
 project: Final[str] = "Detect Kelp"
-copyright: Final[str] = "2024, Team Epoch."
+copyright: Final[str] = "2024, Team Epoch."  # noqa: A001
 author: Final[str] = "Team Epoch"
 
 source_suffix: Final[dict[str, str]] = {

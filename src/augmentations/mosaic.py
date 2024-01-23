@@ -16,15 +16,14 @@ class Mosaic(Augmentation):
 
     def __post_init__(self) -> None:
         """Initialize the Mosaic augmentation."""
-        # Initialize the random number generator
         self.rng = np.random.default_rng(42)
 
-    def transforms(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], i: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    def transforms(self, images: npt.NDArray[np.float_], masks: npt.NDArray[np.float_], i: int) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:  # noqa: ARG002
         """Apply the augmentation to the data.
 
-        :param x: Batch of input features.
-        :param y: Batch of labels.
-        :param i: Index of the image to apply the augmentation to.
+        :param images: Batch of input features.
+        :param masks: Batch of labels.
+        :param i: UNUSED index of the image to apply the augmentation to.
         :return: Augmentation applied to the image and mask at index i
         """
         # Get the indices of the images to apply the augmentation to, make sure they are not the same. USe choice instead of integers to avoid duplicates

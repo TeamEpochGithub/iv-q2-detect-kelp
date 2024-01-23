@@ -1,6 +1,7 @@
 """Feature engineering step that create features based on land and elevation."""
 import sys
 from dataclasses import dataclass
+from typing import Literal
 
 import dask.array as da
 import numpy as np
@@ -8,12 +9,10 @@ import scipy
 from numpy import typing as npt
 from sklearn.base import BaseEstimator, TransformerMixin
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
-    from typing import Literal
-
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
-    from typing import Literal, Self
+    from typing import Self
 
 
 def _distance(elev: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
@@ -75,7 +74,7 @@ class Shore(BaseEstimator, TransformerMixin):
         if self.mode not in mode_to_func:
             raise ValueError(f"Invalid mode '{self.mode}', must be one of {list(mode_to_func.keys())}")
 
-    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Fit the transformer, does not compute anything.
 
         :param X: The data to fit
@@ -84,7 +83,7 @@ class Shore(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
 
         :param X: The data to transform

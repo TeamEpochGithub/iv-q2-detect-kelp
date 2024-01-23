@@ -56,7 +56,7 @@ def create_layout() -> html.Div:
             # Image selection and display
             dcc.Dropdown(
                 id="image-dropdown",
-                options=[{"label": id, "value": id} for id in ids],  # Replace with your image IDs
+                options=[{"label": image_id, "value": image_id} for image_id in ids],  # Replace with your image IDs
                 value=[ids[0]],
                 multi=True,
                 style={"color": "black"},
@@ -65,7 +65,7 @@ def create_layout() -> html.Div:
             dbc.Button("Refresh", id="refresh-button", color="primary", className="mr-1"),
             # Image display blocks based on configuration
             html.Div(id="image-display"),
-        ]
+        ],
     )
 
 
@@ -78,7 +78,7 @@ def create_layout() -> html.Div:
         Input("refresh-button", "n_clicks"),
     ],
 )
-def update_content(selected_images: Iterable[str], selected_layout: str, n_clicks: int) -> list[html.Div]:
+def update_content(selected_images: Iterable[str], selected_layout: str, n_clicks: int) -> list[html.Div]:  # noqa: ARG001
     """Update the content of the image display blocks based on the selected images and layout.
 
     :param selected_images: selected image IDs
