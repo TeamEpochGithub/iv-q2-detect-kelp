@@ -111,7 +111,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
             logger.error("Worker failed")
             break
 
-        if result.sweep_score < 0.1:
+        if result.sweep_score < 0.25:
             logger.debug("Worker score too low, stopping run")
             break
 
