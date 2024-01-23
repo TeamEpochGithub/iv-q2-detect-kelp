@@ -77,7 +77,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     workers = []
     for num in range(cfg.n_splits):
         q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=fold_run, kwargs=dict(sweep_q=sweep_q, worker_q=q))
+        p = multiprocessing.Process(target=try_fold_run, kwargs=dict(sweep_q=sweep_q, worker_q=q))
         p.start()
         workers.append(Worker(queue=q, process=p))
 
@@ -107,8 +107,20 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         # Log metric to sweep_run
         metrics.append(result.sweep_score)
 
+        if result.sweep_score == -1:
+            logger.error("Worker failed")
+            break
+
     sweep_run.log(dict(sweep_score=sum(metrics) / len(metrics)))
     wandb.join()
+
+
+def try_fold_run(sweep_q, worker_q):
+    try:
+        fold_run(sweep_q, worker_q)
+    except Exception as e:
+        logger.error(e)
+        sweep_q.put(WorkerDoneData(sweep_score=-1))
 
 
 def fold_run(sweep_q, worker_q):
