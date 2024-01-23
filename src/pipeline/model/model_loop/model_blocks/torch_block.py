@@ -29,7 +29,7 @@ from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -182,7 +182,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return self
 
     def _training_loop(
-        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+        self,
+        train_loader: DataLoader[tuple[Tensor, Tensor]],
+        test_loader: DataLoader[tuple[Tensor, Tensor]],
+        train_losses: list[float],
+        val_losses: list[float],
     ) -> None:
         """Training loop for the model.
 
@@ -213,9 +217,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
-                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
-                            )
-                        }
+                                xs=range(epoch + 1),
+                                ys=[train_losses, val_losses],
+                                keys=["Train", "Validation"],
+                                title="Training/Loss",
+                                xname="Epoch",
+                            ),
+                        },
                     )
 
                 # TODO(#38): Train full early stopping

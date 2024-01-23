@@ -17,7 +17,6 @@ import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
-from wandb.sdk.lib import RunDisabled
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -89,7 +88,10 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
 
 
 def update_model_cfg_test_size(
-    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None, test_size: int = -1, *, is_train: bool | None
+    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None,
+    test_size: int = -1,
+    *,
+    is_train: bool | None,
 ) -> dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None:
     """Update the test size in the model config.
 
@@ -127,7 +129,13 @@ def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array
     return X, y
 
 
-def setup_wandb(cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None) -> wandb.sdk.wandb_run.Run | RunDisabled | None:
+def setup_wandb(
+    cfg: DictConfig,
+    job_type: str,
+    output_dir: Path,
+    name: str | None = None,
+    group: str | None = None,
+) -> wandb.sdk.wandb_run.Run | wandb.sdk.lib.RunDisabled | None:
     """Initialize Weights & Biases and log the config and code.
 
     :param cfg: The config object. Created with Hydra or OmegaConf.

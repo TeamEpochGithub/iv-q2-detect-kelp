@@ -1,7 +1,8 @@
 """Threshold the predictions of the model."""
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Annotated
 
 import dask.array as da
 import numpy as np
@@ -50,13 +51,12 @@ class Threshold(TransformerMixin, BaseEstimator):
     threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
     max_iterations: Annotated[int, Gt(0)] = 500
 
-    # noinspection PyPep8Naming
-    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, **kwargs: Any) -> Self:  # noqa: ANN401
+    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Iterable[int]) -> Self:  # noqa: ARG002
         """Fit the threshold.
 
         :param X: Output data of a model.
         :param y: Target data. Must have the same flattened shape as X.
-        :param kwargs: Unused additional arguments, for compatibility.
+        :param test_indices: UNUSED indices of the test data in X. Exists for compatibility with the Pipeline.
         :return: Optimized threshold.
         """
         if self.threshold is not None:
@@ -82,7 +82,6 @@ class Threshold(TransformerMixin, BaseEstimator):
         logger.info(f"Optimized threshold: {self.threshold}")
         return self
 
-    # noinspection PyPep8Naming
     def transform(self, X: npt.NDArray[np.float_] | da.Array) -> npt.NDArray[np.bool_] | da.Array:
         """Transform the predictions.
 
