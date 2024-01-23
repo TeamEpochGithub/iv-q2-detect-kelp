@@ -26,7 +26,9 @@ class Transformations:
         self.rng = np.random.default_rng(42)
 
     def transform(
-        self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]
+        self,
+        x_arr: npt.NDArray[np.float_],
+        y_arr: npt.NDArray[np.float_],
     ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]] | tuple[torch.Tensor, torch.Tensor]:
         """Apply all the augmentations to the current batch.
 

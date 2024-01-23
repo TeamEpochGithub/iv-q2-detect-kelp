@@ -28,6 +28,11 @@ class ScalerBlock(PretrainBlock):
 
     scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
+    def __post_init__(self) -> None:
+        """Post init hook."""
+        super().__post_init__()
+        self.train_indices: None | list[int] = None
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 

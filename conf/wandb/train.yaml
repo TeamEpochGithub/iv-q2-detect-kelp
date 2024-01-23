@@ -1,4 +1,4 @@
-enabled: False
+enabled: True
 log_config: True
 log_code:
   enabled: True
