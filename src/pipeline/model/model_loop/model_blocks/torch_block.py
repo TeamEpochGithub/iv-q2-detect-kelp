@@ -11,7 +11,6 @@ from typing import Annotated, Any
 import dask.array as da
 import numpy as np
 import torch
-import wandb
 from annotated_types import Gt
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -22,6 +21,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -181,7 +181,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return self
 
     def _training_loop(
-        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+        self,
+        train_loader: DataLoader[tuple[Tensor, Tensor]],
+        test_loader: DataLoader[tuple[Tensor, Tensor]],
+        train_losses: list[float],
+        val_losses: list[float],
     ) -> None:
         """Training loop for the model.
 
@@ -212,9 +216,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
-                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
-                            )
-                        }
+                                xs=range(epoch + 1),
+                                ys=[train_losses, val_losses],
+                                keys=["Train", "Validation"],
+                                title="Training/Loss",
+                                xname="Epoch",
+                            ),
+                        },
                     )
 
                 # TODO(#38): Train full early stopping

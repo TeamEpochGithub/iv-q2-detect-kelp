@@ -13,7 +13,7 @@ from sklearn.base import BaseEstimator
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -28,12 +28,14 @@ class ScalerBlock(PretrainBlock):
 
     scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
-    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
+    def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
-        :param X: Data to fit. Shape should be (N, C, H, W)
-        :param y: Target data. Shape should be (N, H, W)
-        :return: Fitted scaler
+        :param X: Data to fit. Shape should be (N, C, H, W).
+        :param y: Target data. Shape should be (N, H, W).
+        :param train_indices: Indices of the training data in X.
+        :param save_pretrain_with_split: Whether to save this block with the split.
+        :return: The fitted transformer
         """
         # Check if the scaler exists
         if save_pretrain_with_split:

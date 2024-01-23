@@ -12,7 +12,7 @@ from numpy import typing as npt
 from src.logging_utils.logger import logger
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -23,21 +23,22 @@ class GBDT(PretrainBlock):
     """Add feature column consisting of per-pixel predictions of a GBDT model.
 
     :param max_images: The maximum number of images to use for training. If None, all training images will be used.
-    :param test_split: The test split to use for early stopping. Split will be made amongst training images.
+    :param early_stopping_split: The test split to use for early stopping. Split will be made amongst training images.
+    :param trained_model: The trained model to use. If None, it will be loaded from disk.
     """
 
     max_images: int | None = None
     early_stopping_split: float = 0.2
-
-    def __post_init__(self) -> None:
-        """Initialize the GBDT model."""
-        self.trained_model = None
+    trained_model: catboost.CatBoostClassifier | None = None
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
         """Fit the model.
 
         :param X: The data to fit
         :param y: The target variable
+        :param train_indices: Indices of the training data in X.
+        :param save_pretrain: Whether to save this block.
+        :param save_pretrain_with_split: Whether to save this block with the split.
         :return: The fitted transformer
         """
         if save_pretrain_with_split:
@@ -93,7 +94,6 @@ class GBDT(PretrainBlock):
         """Transform the data. This will load the model from disk and add a column for each pixel.
 
         :param X: The data to transform
-        :param y: The target variable
         :return: The transformed data
         """
         logger.info("Transforming with GBDT...")

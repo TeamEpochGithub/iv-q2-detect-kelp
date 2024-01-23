@@ -6,7 +6,7 @@ import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -29,21 +29,21 @@ class NormDiff(BaseEstimator, TransformerMixin):
     a: int
     b: int
 
-    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
-        """Fit the transformer.
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
+        """Do nothing. Exists for Pipeline compatibility.
 
-        :param X: The data to fit
-        :param y: The target variable
-        :return: The fitted transformer
+        :param X: UNUSED data to fit.
+        :param y: UNUSED target variable.
+        :return: The fitted transformer.
         """
         return self
 
-    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
+    def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
 
-        :param X: The data to transform
-        :param y: The target variable
-        :return: The transformed data
+        :param X: The data to transform.
+        :param y: UNUSED target variable. Exists for Pipeline compatibility.
+        :return: The transformed data.
         """
         # perform the normalized difference
         result = (X[:, self.a] - X[:, self.b]) / (X[:, self.a] + X[:, self.b])

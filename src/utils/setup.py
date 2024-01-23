@@ -7,13 +7,13 @@ from pathlib import Path
 from typing import Any, cast
 
 import dask.array
-import wandb
 from dask_image.imread import imread
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 from sklearn import set_config
 from sklearn.utils import estimator_html_repr
 
+import wandb
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
@@ -88,7 +88,10 @@ def setup_pipeline(pipeline_cfg: DictConfig, output_dir: Path, is_train: bool | 
 
 
 def update_model_cfg_test_size(
-    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None, test_size: int = -1, *, is_train: bool | None
+    model_cfg_dict: dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None,
+    test_size: int = -1,
+    *,
+    is_train: bool | None,
 ) -> dict[str | bytes | int | Enum | float | bool, Any] | list[Any] | str | None:
     """Update the test size in the model config.
 
@@ -98,7 +101,7 @@ def update_model_cfg_test_size(
     :return: The updated model config.
     """
     if isinstance(model_cfg_dict, dict):
-        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []).values():
+        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
             model_block["test_size"] = test_size
         for pretrain_block in model_cfg_dict.get("model_loop_pipeline", {}).get("pretrain_pipeline", {}).get("pretrain_steps", []):
             pretrain_block["test_size"] = test_size
@@ -127,7 +130,11 @@ def setup_train_data(data_path: str, target_path: str) -> tuple[dask.array.Array
 
 
 def setup_wandb(
-    cfg: DictConfig, job_type: str, output_dir: Path, name: str | None = None, group: str | None = None
+    cfg: DictConfig,
+    job_type: str,
+    output_dir: Path,
+    name: str | None = None,
+    group: str | None = None,
 ) -> wandb.sdk.wandb_run.Run | wandb.sdk.lib.RunDisabled | None:
     """Initialize Weights & Biases and log the config and code.
 
