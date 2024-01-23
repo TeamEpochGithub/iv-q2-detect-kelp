@@ -92,7 +92,7 @@ class GBDT(PretrainBlock):
         elif self.type == "XGBoost":
             logger.info("Fitting XGBoost model...")
             model = XGBClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10)
-            model.fit(X_train, y_train, eval_set=(X_test, y_test))
+            model.fit(X_train, y_train, eval_set=[(X_test, y_test)])
         elif self.type == "LightGBM":
             logger.info("Fitting LightGBM model...")
             model = LGBMClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10, verbose=1, num_iterations=50)

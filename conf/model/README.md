@@ -3,6 +3,26 @@
 
 ## Model
 
+## Preprocessing
+
+
+### Feature transformation
+
+### Feature columns
+
+
+
+
+## Pretrain
+
+
+### Steps
+
+#### GBDT 
+model_loop_pipeline.pretrain_pipeline.pretrain_steps.0.max_images: 500 (0 - 5635)
+model_loop_pipeline.pretrain_pipeline.pretrain_steps.0.type: Catboost [Catboost, LightGBM, XGBoost]
+model_loop_pipeline.pretrain_pipeline.pretrain_steps.0.early_stopping_split: 0.2 (0 - 1)
+
 ### Loss functions
 
 ```python
