@@ -99,17 +99,17 @@ model_loop_pipeline:
             _target_: albumentations.Compose
             transforms:
               - _target_: albumentations.VerticalFlip
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.HorizontalFlip
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.RandomRotate90
-                p: 0.2
+                p: 0.4
               - _target_: albumentations.GaussianBlur
                 blur_limit: 7
                 p: 0.05
           aug:
             - _target_: src.augmentations.mosaic.Mosaic
-              p: 0.15
+              p: 0.25
 
 post_processing_pipeline:
   post_processing_steps:
