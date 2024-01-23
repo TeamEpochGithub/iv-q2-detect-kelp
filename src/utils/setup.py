@@ -101,7 +101,7 @@ def update_model_cfg_test_size(
     :return: The updated model config.
     """
     if isinstance(model_cfg_dict, dict):
-        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []).values():
+        for model_block in model_cfg_dict.get("model_loop_pipeline", {}).get("model_blocks_pipeline", {}).get("model_blocks", []):
             model_block["test_size"] = test_size
         for pretrain_block in model_cfg_dict.get("model_loop_pipeline", {}).get("pretrain_pipeline", {}).get("pretrain_steps", []):
             pretrain_block["test_size"] = test_size
