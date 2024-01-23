@@ -9,6 +9,8 @@ from torch import nn
 class DiceLoss(nn.Module):
     """Dice loss, also known as soft Sorenson-Dice loss or Tversky loss."""
 
+    multiply_kelp: bool = False
+
     def __post_init__(self) -> None:
         """Initialize class."""
         super().__init__()
@@ -27,4 +29,6 @@ class DiceLoss(nn.Module):
         intersection = (inputs * targets).sum()
         dice = (2.0 * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
 
-        return 1 - dice
+        # Number of 1s in target
+        num_ones = targets.sum() if self.multiply_kelp else 1.0
+        return (1 - dice) * num_ones
