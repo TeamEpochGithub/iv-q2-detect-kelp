@@ -1,4 +1,4 @@
-"""cv.py is the main script for doing cv and will take in the raw data, do cv and log the cv results."""
+"""The main script for Cross Validation. Takes in the raw data, does CV and logs the results."""
 import copy
 import os
 import warnings
@@ -7,13 +7,12 @@ from pathlib import Path
 
 import hydra
 import randomname
+import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
-from sklearn.model_selection import StratifiedKFold
 
-import wandb
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -56,14 +55,10 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
-    # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
-    kf = StratifiedKFold(n_splits=cfg.n_splits)
-    stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
-
     # Set up Weights & Biases group name
     wandb_group_name = randomname.get_name()
 
-    for i, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
+    for i, (train_indices, test_indices) in enumerate(instantiate(cfg.splitter).split(X, y)):
         # https://github.com/wandb/wandb/issues/5119
         # This is a workaround for the issue where sweeps override the run id annoyingly
         reset_wandb_env()
