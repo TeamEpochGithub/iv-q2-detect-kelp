@@ -196,7 +196,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
-            
+
             # Log train loss
             if wandb.run:
                 wandb.log({"Training/Train Loss": train_losses[-1]}, step=epoch + 1)

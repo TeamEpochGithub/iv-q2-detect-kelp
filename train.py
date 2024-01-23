@@ -32,6 +32,7 @@ cs = ConfigStore.instance()
 cs.store(name="base_train", node=TrainConfig)
 count = 0
 
+
 @hydra.main(version_base=None, config_path="conf", config_name="train")
 def run_train(cfg: DictConfig) -> None:
     """Train a model pipeline with a train-test split. Entry point for Hydra which loads the config file."""
