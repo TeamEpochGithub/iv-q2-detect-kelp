@@ -1,6 +1,7 @@
 """TorchBlock class."""
 import copy
 import functools
+import gc
 import sys
 import time
 from collections.abc import Callable
@@ -25,6 +26,7 @@ import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 
@@ -152,8 +154,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
 
         # Train model
         logger.info("Training the model")
@@ -267,6 +269,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Step the scheduler
         if self.initialized_scheduler is not None:
             self.initialized_scheduler.step()
+
+        # Remove the cuda cache
+        torch.cuda.empty_cache()
+        gc.collect()
 
         return sum(losses) / len(losses)
 

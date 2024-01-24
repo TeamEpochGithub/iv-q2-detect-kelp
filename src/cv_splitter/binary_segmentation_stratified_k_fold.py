@@ -33,7 +33,7 @@ class BinarySegmentationStratifiedKFold:
 
         :param X: The data to split.
         :param y: The target variable, used only for computing the coverages if not given.
-        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
+        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set. Exists for compatibility.
         :return: The training and test set indices for that split.
         """
         if self.coverages is None:

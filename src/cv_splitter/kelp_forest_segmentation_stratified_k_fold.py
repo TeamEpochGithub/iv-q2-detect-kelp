@@ -34,7 +34,7 @@ class KelpForestSegmentationStratifiedKFold:
 
         :param X: The data to split.
         :param y: The target variable to try to predict in the case of supervised learning.
-        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
+        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set. Exists for compatibility.
         :return: The training and test set indices for that split.
         """
         if self.metadata_path.exists():
