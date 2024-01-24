@@ -20,9 +20,9 @@ else:
 class ToZero(BaseEstimator, TransformerMixin):
     """Pipeline step set all feature data outside the kelp region to zero.
 
-    ::param range_to_zero: A list of tuples of the form (low, high) where low and high are the lower and upper bounds of the kelp region.
-    ::param nan_to_zero: If true, convert all nan values to 0.
-    ::param nan_value: If nan_to_zero is true, convert all values equal to nan_value to 0.
+    :param range_to_zero: A list of tuples of the form (low, high) where low and high are the lower and upper bounds of the kelp region.
+    :param nan_to_zero: If true, convert all nan values to 0.
+    :param nan_value: If nan_to_zero is true, convert all values equal to nan_value to 0.
     """
 
     range_to_zero: list[list[float]] = field(default_factory=list)
@@ -74,7 +74,7 @@ class ToZero(BaseEstimator, TransformerMixin):
     def set_out_of_range_to_zero(self, X: da.Array) -> da.Array:
         """Set all values outside of the kelp region to zero.
 
-        ::param X: The data to transform
+        :param X: The data to transform
         :return: Transformed dataset
         """
 
