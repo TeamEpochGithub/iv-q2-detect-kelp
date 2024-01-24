@@ -14,7 +14,7 @@ parameters: # Will use the model file in cv.yaml and override the values there w
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.model.model.encoder_name:
     values: [resnet18, resnet34, efficientnet-b0, mobilenet_v2, vgg11, vgg13]
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.model.model.activation:
-    values: [sigmoid, clamp]
+    values: [sigmoid, clamp, tanh]
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.optimizer._args_.0.path:
     values: [torch.optim.Adam, torch.optim.AdamW]
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.optimizer.lr:
