@@ -61,8 +61,8 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-    X = X[:1000]
-    y = y[:1000]
+    X = X[:50]
+    y = y[:50]
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.n_splits)
@@ -85,8 +85,16 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     sweep_run = setup_wandb(cfg, "sweep", output_dir, name=wandb_group_name, group=wandb_group_name)
 
     metrics = []
+    failed = False # If any worker fails, stop the run
     for num, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
         worker = workers[num]
+
+        # If failed, stop the run
+        if failed:
+            logger.debug(f"Stopping worker {num}")
+            worker.process.terminate()
+            continue
+
         # Start worker
         worker.queue.put(
             WorkerInitData(
@@ -107,13 +115,17 @@ def run_cv_cfg(cfg: DictConfig) -> None:
         # Log metric to sweep_run
         metrics.append(result.sweep_score)
 
-        if result.sweep_score == -1:
+        # If failed, stop the run by setting failed to True
+        if result.sweep_score == -0.1:
             logger.error("Worker failed")
-            break
+            failed = True
+            continue
 
+        # If score is too low, stop the run by setting failed to True
         if result.sweep_score < 0.25:
             logger.debug("Worker score too low, stopping run")
-            break
+            failed = True
+            continue
 
     sweep_run.log(dict(sweep_score=sum(metrics) / len(metrics)))
     wandb.join()
@@ -124,10 +136,12 @@ def try_fold_run(sweep_q, worker_q):
         fold_run(sweep_q, worker_q)
     except Exception as e:
         logger.error(e)
-        sweep_q.put(WorkerDoneData(sweep_score=-1))
+        wandb.join()
+        sweep_q.put(WorkerDoneData(sweep_score=-0.1))
 
 
 def fold_run(sweep_q, worker_q):
+    
     # Get the data from the queue
     worker_data = worker_q.get()
     cfg = worker_data.cfg
