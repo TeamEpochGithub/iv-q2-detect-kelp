@@ -5,13 +5,11 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import dask
 import dask.array as da
-import joblib
 from sklearn.base import BaseEstimator
 
 from src.logging_utils.logger import logger
-from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
+from src.pipeline.model.model_loop.pretrain.scaler_block import ScalerBlock
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -20,7 +18,7 @@ else:
 
 
 @dataclass
-class ScalerBlock(PretrainBlock):
+class CustomScalerBlock(ScalerBlock):
     """Scaler block to fit and transform the data.
 
     :param scaler: Scaler.
@@ -75,37 +73,11 @@ class ScalerBlock(PretrainBlock):
         if not hasattr(self.scaler, "scale_"):
             self.load_scaler()
 
-        # ignore warning about large chunks when reshaping, as we are doing it on purpose for the scalar
-        # ignores type error because this is literally the example from the dask docs
-        with dask.config.set(**{"array.slicing.split_large_chunks": False}):  # type: ignore[arg-type]
-            # Apply the scaler
-            X = self.scaler.transform(X)
+        # Apply the scaler
+        X = self.scaler.transform(X)
 
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
         if self.train_indices is not None and self.save_pretrain_with_split:
             return self.save_pretrain(X, self.train_indices)
         return X
-
-    def save_scaler(self) -> None:
-        """Save the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
-        logger.info(f"Saving scaler to tm/{self.prev_hash}.scaler")
-        joblib.dump(self.scaler, f"tm/{self.prev_hash}.scaler")
-        logger.info(f"Saved scaler to tm/{self.prev_hash}.scaler")
-
-    def load_scaler(self) -> None:
-        """Load the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
-        # Check if the scaler exists
-        if not Path(f"tm/{self.prev_hash}.scaler").exists():
-            logger.error(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
-            sys.exit(1)
-
-        logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
-        self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")
-        logger.info(f"Loaded scaler from tm/{self.prev_hash}.scaler")
