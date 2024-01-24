@@ -47,4 +47,4 @@ parameters: # Will use the model file in cv.yaml and override the values there w
       min: 0.0
       max: 0.5
   model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.batch_size:
-    values: [8, 16, 24]
+    values: [36, 48, 64, 128, 256]
