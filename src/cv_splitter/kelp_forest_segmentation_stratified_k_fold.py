@@ -1,6 +1,6 @@
 """A wrapper around BinarySegmentationStratifiedKFold that uses the metadata file specific to the Kelp Forest Segmentation competition data."""
 import logging
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
@@ -29,12 +29,11 @@ class KelpForestSegmentationStratifiedKFold:
     shuffle: bool = True
     random_state: int | None = None
 
-    def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array, groups: Iterable[int] | None = None) -> Iterator[tuple[list[int], list[int]]]:
+    def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array) -> Iterator[tuple[list[int], list[int]]]:
         """Generate indices to split data into training and test set.
 
         :param X: The data to split.
         :param y: The target variable to try to predict in the case of supervised learning.
-        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
         :return: The training and test set indices for that split.
         """
         if self.metadata_path.exists():
