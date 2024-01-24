@@ -6,6 +6,7 @@ import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from src.logging_utils.logger import logger
 from src.pipeline.model.feature.column.offset import compute_offset
 
 if sys.version_info < (3, 11):
@@ -50,6 +51,8 @@ class OffsetDiff(BaseEstimator, TransformerMixin):
         :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data.
         """
+
+        logger.info("Computing offset difference...")
         offset_a = compute_offset(X[:, self.a], X[:, self.elevation])
         offset_b = compute_offset(X[:, self.b], X[:, self.elevation])
         result = offset_a - offset_b
