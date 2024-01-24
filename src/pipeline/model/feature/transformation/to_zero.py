@@ -33,7 +33,6 @@ class ToZero(BaseEstimator, TransformerMixin):
         """Initialize the transformer."""
         # Validate kelp_to_zero to make sure that list is of length 2 and that the first value is less than the second
         for i, band in enumerate(self.range_to_zero):
-
             if len(band) != 2:
                 logger.error(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
                 raise ValueError(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
@@ -59,32 +58,37 @@ class ToZero(BaseEstimator, TransformerMixin):
         time_start = time.time()
 
         X = X.astype(np.float32)
-        X = set_out_of_range_to_zero(X, self.range_to_zero)
+        X = self.set_out_of_range_to_zero(X)
         # Apply nan_to_zero if true
         if self.nan_to_zero:
             # If a custom nan value is set, convert that value to 0, else convert all nan values to 0
             if self.nan_value == 0:
-                X = np.where(da.isnan(X), 0.0, X)
+                X = da.where(da.isnan(X), 0.0, X)
             else:
-                X = np.where(self.nan_value == X, 0.0, X)
+                X = da.where(self.nan_value == X, 0.0, X)
 
         logger.info(f"No Kelp Zero complete in: {time.time() - time_start} seconds.")
 
         return X
 
+    def set_out_of_range_to_zero(self, X: da.Array) -> da.Array:
+        """Set all values outside of the kelp region to zero.
 
-def set_out_of_range_to_zero(X, range_to_zero):
-    # Create a function that applies the conditional operation
-    def apply_conditions(x, low, high):
-        return da.where((x < low) | (x > high), 0.0, x)
+        ::param X: The data to transform
+        :return: Transformed dataset
+        """
 
-    # Apply this function across the channels
-    results = []
-    for c, band in tqdm(enumerate(range_to_zero)):
-        low = band[0]
-        high = band[1]
-        modified_channel = apply_conditions(X[:, c, :, :], low, high)
-        results.append(modified_channel)
+        # Create a function that applies the conditional operation
+        def apply_conditions(x: da.Array, low: float, high: float) -> da.Array:
+            return da.where((x < low) | (x > high), 0.0, x)
 
-    # Stack the modified channels back together
-    return da.stack(results, axis=1) if len(results) > 1 else X
+        # Apply this function across the channels
+        results = []
+        for c, band in tqdm(enumerate(self.range_to_zero)):
+            low = band[0]
+            high = band[1]
+            modified_channel = apply_conditions(X[:, c, :, :], low, high)
+            results.append(modified_channel)
+
+        # Stack the modified channels back together
+        return da.stack(results, axis=1) if len(results) > 1 else X

@@ -31,7 +31,7 @@ class Test(TestCase):
         band_copy_pipeline = BandCopy(1)
 
         cache = CacheColumnBlock(
-            "data/test", column=-1)
+            "../data/test", column=-1)
         column_block_pipeline = ColumnBlockPipeline(band_copy_pipeline, cache)
         column_pipeline = ColumnPipeline([column_block_pipeline])
 

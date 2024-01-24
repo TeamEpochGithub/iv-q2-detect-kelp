@@ -51,7 +51,6 @@ class OffsetDiff(BaseEstimator, TransformerMixin):
         :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data.
         """
-
         logger.info("Computing offset difference...")
         offset_a = compute_offset(X[:, self.a], X[:, self.elevation])
         offset_b = compute_offset(X[:, self.b], X[:, self.elevation])
