@@ -1,6 +1,7 @@
 """TorchBlock class."""
 import copy
 import functools
+import gc
 import sys
 import time
 from collections.abc import Callable
@@ -267,6 +268,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Step the scheduler
         if self.initialized_scheduler is not None:
             self.initialized_scheduler.step()
+
+        # Remove the cuda cache
+        torch.cuda.empty_cache()
+        gc.collect()
 
         return sum(losses) / len(losses)
 
