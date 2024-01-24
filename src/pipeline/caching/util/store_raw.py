@@ -24,25 +24,36 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
     # Check if the data exists on disk
     if os.path.exists(data_path):
         # Check if path has any tif files
+        array = None
         if glob.glob(f"{data_path}/*.tif"):
             logger.info(f"Loading tif data from {data_path}")
             array = imread(f"{data_path}/*.tif").transpose(0, 3, 1, 2)
-            return array.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         if glob.glob(f"{data_path}/*.npy"):
             logger.info(f"Loading npy data from {data_path}")
             array = da.from_npy_stack(data_path).astype(np.float32)
+
+        if array is not None:
+
+            # Check if the shape of the data on disk matches the shape of the dask array
+            if array.shape != dask_array.shape:
+                logger.warning(f"Shape of data on disk does not match shape of dask array, cache corrupt at {data_path}")
+                raise CachePipelineError(
+                    f"Shape of data on disk ({array.shape}) does not match shape of dask array ({dask_array.shape})"
+                )
+            
+            # Rechunk the array
             if array.ndim == 4:
                 array = array.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
             elif array.ndim == 3:
                 array = array.rechunk({0: "auto", 1: -1, 2: -1})
             return array
 
+
     # Check if the dask array is defined
     if dask_array is None:
         raise CachePipelineError("dask_array is required to store raw data")
 
     # Iterate over the data paths and store the data
-    logger.info("Storing data to disk")
     start_time = time.time()
 
     # Iterate over the dask array and store each image
@@ -55,7 +66,7 @@ def store_raw(data_path: str, dask_array: da.Array) -> da.Array:
         dask_array = dask_array.rechunk({0: "auto", 1: -1, 2: -1})
 
     end_time = time.time()
-    logger.debug(f"Finished storing data to disk in: {end_time - start_time} seconds")
+    logger.info(f"Finished storing data: {dask_array.shape} to disk in: {end_time - start_time} seconds")
 
     # Return the dask array
     return dask_array

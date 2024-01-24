@@ -180,6 +180,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         if save_model:
             self.save_model()
 
+        # Empty data from memory
+        train_dataset.empty_cache()
+        test_dataset.empty_cache()
+        del train_dataset
+        del test_dataset
+
         return self
 
     def _training_loop(
@@ -341,9 +347,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.debug(f"Training model: {self.model.__class__.__name__}")
         logger.info(f"Predicting on the test data with {'all' if cache_size == -1 else cache_size} samples in memory")
         X_dataset = Dask2TorchDataset(X, y=None)
+        start_time = time.time()
         logger.info("Loading test images into RAM...")
         X_dataset.create_cache(cache_size)
-        logger.info("Done loading test images into RAM - Starting predictions")
+        logger.info(f"Created test cache in {time.time() - start_time} seconds")
         X_dataloader = DataLoader(X_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: batch)
         self.model.eval()
         preds = []
