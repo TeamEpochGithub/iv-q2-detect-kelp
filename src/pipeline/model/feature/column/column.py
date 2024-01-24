@@ -46,7 +46,6 @@ class ColumnPipeline(Pipeline):
         :param fit_params: Fit parameters
         :return: Fitted and transformed data
         """
-        logger.info("Preprocessing of transformations complete")
         print_section_separator("Preprocessing - Columns")
         logger.info("Fitting column pipeline")
         start_time = time.time()
