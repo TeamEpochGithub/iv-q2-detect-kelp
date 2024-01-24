@@ -105,7 +105,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
-    kf = StratifiedKFold(n_splits=cfg.n_splits)
+    kf = StratifiedKFold(n_splits=cfg.splitter.n_splits)
     stratification_key = y.compute().reshape(y.shape[0], -1).max(axis=1)
 
     # Set up Weights & Biases group name
@@ -115,7 +115,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     # Workers will be blocked on a queue waiting to start
     sweep_q: Queue[WorkerDoneData] = multiprocessing.Queue()
     workers = []
-    for _ in range(cfg.n_splits):
+    for _ in range(cfg.splitter.n_splits):
         q: Queue[WorkerInitData] = multiprocessing.Queue()
         p = multiprocessing.Process(target=try_fold_run, kwargs={"sweep_q": sweep_q, "worker_q": q})
         p.start()
