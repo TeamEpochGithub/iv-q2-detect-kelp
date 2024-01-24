@@ -2,4 +2,4 @@ enabled: True
 log_config: True
 log_code:
   enabled: True
-  exclude: ^(dashboard/|data/|docs/|external/|notebooks/|tests/|venv/|.venv/)
+  exclude: ^(dashboard/|data/|docs/|external/|notebooks/|tests/|venv.*/|.venv.*/)

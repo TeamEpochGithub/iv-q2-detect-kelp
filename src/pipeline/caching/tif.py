@@ -7,7 +7,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.pipeline.caching.util.store_raw import store_raw
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -22,12 +22,12 @@ class CacheTIFBlock(BaseEstimator, TransformerMixin):
 
     data_path: str
 
-    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:
-        """Fit the data.
+    def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
+        """Do nothing. Exists for Pipeline compatibility.
 
-        :param X: The data to fit
-        :param y: The target variable
-        :return: The fitted pipeline
+        :param X: UNUSED data to fit.
+        :param y: UNUSED target variable.
+        :return: Itself.
         """
         return self
 

@@ -4,8 +4,10 @@ import concurrent
 from dataclasses import dataclass
 
 import albumentations
+import kornia
 import numpy as np
 import numpy.typing as npt
+import torch
 
 from src.augmentations.augmentation import Augmentation
 
@@ -16,13 +18,18 @@ class Transformations:
 
     alb: albumentations.Compose | None = None
     aug: list[Augmentation] | None = None
+    korn: kornia.augmentation.AugmentationSequential | None = None
 
     def __post_init__(self) -> None:
         """Initialize the Mosaic augmentation."""
         # Initialize the random number generator
         self.rng = np.random.default_rng(42)
 
-    def transform(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
+    def transform(
+        self,
+        x_arr: npt.NDArray[np.float_],
+        y_arr: npt.NDArray[np.float_],
+    ) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]] | tuple[torch.Tensor, torch.Tensor]:
         """Apply all the augmentations to the current batch.
 
         :param x: Batch of input features.
@@ -34,6 +41,11 @@ class Transformations:
             x_arr, y_arr = self.apply_albumentations(x_arr, y_arr)
         if self.aug is not None:
             x_arr, y_arr = self.apply_augmentations(x_arr, y_arr)
+        if self.korn is not None:
+            x_tensor: torch.Tensor
+            y_tensor: torch.Tensor
+            x_tensor, y_tensor = self.apply_kornia(x_arr, y_arr)
+            return x_tensor, y_tensor
         return x_arr, y_arr
 
     def apply_albumentations(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[npt.NDArray[np.float_], npt.NDArray[np.float_]]:
@@ -97,3 +109,16 @@ class Transformations:
         """
         transformed_dict = self.alb(image=image, mask=mask)  # type: ignore[misc]
         return transformed_dict["image"], transformed_dict["mask"]
+
+    def apply_kornia(self, x_arr: npt.NDArray[np.float_], y_arr: npt.NDArray[np.float_]) -> tuple[torch.Tensor, torch.Tensor]:
+        """Apply the torchvision transforms to both the image and the mask.
+
+        :param x: Batch of input features.
+        :param y: Batch of masks.
+        """
+        # concatenate the x and y to apply the same transforms to both
+        x_tensor = torch.from_numpy(x_arr)
+        y_tensor = torch.from_numpy(y_arr)
+        merged = torch.cat((x_tensor, y_tensor.unsqueeze(1)), dim=1).cuda()
+        merged = self.korn(merged)  # type: ignore[misc]
+        return merged[:, :-1, :, :], merged[:, -1, :, :]

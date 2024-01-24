@@ -11,7 +11,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from src.logging_utils.logger import logger
 from src.pipeline.caching.util.store_raw import store_raw
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -38,6 +38,7 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         :param y: Target data
         :param train_indices: Train indices
         :param save_pretrain: Whether to save the pretrain
+        :param save_pretrain_with_split: Whether to save the pretrain with the split
         :return: self
         """
 

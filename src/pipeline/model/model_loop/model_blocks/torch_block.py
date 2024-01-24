@@ -26,10 +26,11 @@ import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 
-if sys.version_info < (3, 11):  # Self was added in Python 3.11
+if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
@@ -153,8 +154,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=lambda batch: (batch[0], batch[1]))
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
 
         # Train model
         logger.info("Training the model")
@@ -182,7 +183,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return self
 
     def _training_loop(
-        self, train_loader: DataLoader[tuple[Tensor, Tensor]], test_loader: DataLoader[tuple[Tensor, Tensor]], train_losses: list[float], val_losses: list[float]
+        self,
+        train_loader: DataLoader[tuple[Tensor, Tensor]],
+        test_loader: DataLoader[tuple[Tensor, Tensor]],
+        train_losses: list[float],
+        val_losses: list[float],
     ) -> None:
         """Training loop for the model.
 
@@ -213,9 +218,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     wandb.log(
                         {
                             "Training/Loss": wandb.plot.line_series(
-                                xs=range(epoch + 1), ys=[train_losses, val_losses], keys=["Train", "Validation"], title="Training/Loss", xname="Epoch"
-                            )
-                        }
+                                xs=range(epoch + 1),
+                                ys=[train_losses, val_losses],
+                                keys=["Train", "Validation"],
+                                title="Training/Loss",
+                                xname="Epoch",
+                            ),
+                        },
                     )
 
                 # TODO(#38): Train full early stopping
