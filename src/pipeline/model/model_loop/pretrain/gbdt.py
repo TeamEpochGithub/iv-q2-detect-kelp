@@ -128,10 +128,10 @@ class GBDT(PretrainBlock):
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
 
             with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
-                model = pickle.load(f)  # noqa: S301
+                self.model = pickle.load(f)  # noqa: S301
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
-            model = self.trained_model
+            self.model = self.trained_model
 
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
