@@ -1,11 +1,14 @@
-import collections
+"""Sweep.py is used to run a sweep on a model pipeline with K fold split. Entry point for Hydra which loads the config file."""
 import copy
 import multiprocessing
 import os
 import warnings
 from contextlib import nullcontext
+from multiprocessing import Queue
 from pathlib import Path
+from typing import NamedTuple
 
+import dask.array as da
 import hydra
 import randomname
 from distributed import Client
@@ -23,10 +26,49 @@ from src.utils.script.lock import Lock
 from src.utils.script.reset_wandb_env import reset_wandb_env
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
-Worker = collections.namedtuple("Worker", ("queue", "process"))
-WorkerInitData = collections.namedtuple("WorkerInitData", ("cfg", "output_dir", "wandb_group_name", "i", "train_indices", "test_indices", "X", "y"))
 
-WorkerDoneData = collections.namedtuple("WorkerDoneData", ("sweep_score"))
+class Worker(NamedTuple):
+    """A worker.
+
+    :param queue: The queue to get the data from
+    :param process: The process
+    """
+
+    queue: Queue  # type: ignore[type-arg]
+    process: multiprocessing.Process
+
+
+class WorkerInitData(NamedTuple):
+    """The data to initialize a worker.
+
+    :param cfg: The configuration
+    :param output_dir: The output directory
+    :param wandb_group_name: The wandb group name
+    :param i: The fold number
+    :param train_indices: The train indices
+    :param test_indices: The test indices
+    :param X: The X data
+    :param y: The y data
+    """
+
+    cfg: DictConfig
+    output_dir: Path
+    wandb_group_name: str
+    i: int
+    train_indices: list[int]
+    test_indices: list[int]
+    X: da.Array
+    y: da.Array
+
+
+class WorkerDoneData(NamedTuple):
+    """The data a worker returns.
+
+    :param sweep_score: The sweep score
+    """
+
+    sweep_score: float
+
 
 warnings.filterwarnings("ignore", category=UserWarning)
 # Makes hydra give full error messages
@@ -73,11 +115,11 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Spin up workers before calling wandb.init()
     # Workers will be blocked on a queue waiting to start
-    sweep_q = multiprocessing.Queue()
+    sweep_q: Queue[WorkerDoneData] = multiprocessing.Queue()
     workers = []
-    for num in range(cfg.n_splits):
-        q = multiprocessing.Queue()
-        p = multiprocessing.Process(target=try_fold_run, kwargs=dict(sweep_q=sweep_q, worker_q=q))
+    for _ in range(cfg.n_splits):
+        q: Queue[WorkerInitData] = multiprocessing.Queue()
+        p = multiprocessing.Process(target=try_fold_run, kwargs={"sweep_q": sweep_q, "worker_q": q})
         p.start()
         workers.append(Worker(queue=q, process=p))
 
@@ -85,7 +127,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     sweep_run = setup_wandb(cfg, "sweep", output_dir, name=wandb_group_name, group=wandb_group_name)
 
     metrics = []
-    failed = False # If any worker fails, stop the run
+    failed = False  # If any worker fails, stop the run
     for num, (train_indices, test_indices) in enumerate(kf.split(X, stratification_key)):
         worker = workers[num]
 
@@ -127,21 +169,31 @@ def run_cv_cfg(cfg: DictConfig) -> None:
             failed = True
             continue
 
-    sweep_run.log(dict(sweep_score=sum(metrics) / len(metrics)))
+    if sweep_run is not None:
+        sweep_run.log({"sweep_score": sum(metrics) / len(metrics)})
     wandb.join()
 
 
-def try_fold_run(sweep_q, worker_q):
+def try_fold_run(sweep_q: Queue, worker_q: Queue) -> None:  # type: ignore[type-arg]
+    """Run a fold, and catch exceptions.
+
+    :param sweep_q: The queue to put the result in
+    :param worker_q: The queue to get the data from
+    """
     try:
         fold_run(sweep_q, worker_q)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(e)
         wandb.join()
         sweep_q.put(WorkerDoneData(sweep_score=-0.1))
 
 
-def fold_run(sweep_q, worker_q):
-    
+def fold_run(sweep_q: Queue, worker_q: Queue) -> None:  # type: ignore[type-arg]
+    """Run a fold.
+
+    :param sweep_q: The queue to put the result in
+    :param worker_q: The queue to get the data from
+    """
     # Get the data from the queue
     worker_data = worker_q.get()
     cfg = worker_data.cfg
@@ -153,20 +205,35 @@ def fold_run(sweep_q, worker_q):
     X = worker_data.X
     y = worker_data.y
 
+    score = _one_fold(cfg, output_dir, i, wandb_group_name, train_indices, test_indices, X, y)
+
+    sweep_q.put(WorkerDoneData(sweep_score=score))
+
+
+def _one_fold(cfg: DictConfig, output_dir: Path, fold: int, wandb_group_name: str, train_indices: list[int], test_indices: list[int], X: da.Array, y: da.Array) -> float:
+    """Run one fold of cv.
+
+    :param cfg: The configuration
+    :param output_dir: The output directory
+    :param fold: The fold number
+    :param wandb_group_name: The wandb group name
+    :param train_indices: The train indices
+    :param test_indices: The test indices
+    :param X: The X data
+    :param y: The y data
+
+    :return: The score
+    """
     # https://github.com/wandb/wandb/issues/5119
     # This is a workaround for the issue where sweeps override the run id annoyingly
     reset_wandb_env()
 
     # Print section separator
-    print_section_separator(f"CV - Fold {i}")
+    print_section_separator(f"CV - Fold {fold}")
     logger.info(f"Train/Test size: {len(train_indices)}/{len(test_indices)}")
 
     if cfg.wandb.enabled:
-        wandb_fold_run = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{i}", group=wandb_group_name)
-
-    for key, value in os.environ.items():
-        if key.startswith("WANDB_"):
-            logger.info(f"{key}: {value}")
+        wandb_fold_run = setup_wandb(cfg, "cv", output_dir, name=f"{wandb_group_name}_{fold}", group=wandb_group_name)
 
     logger.info("Creating clean pipeline for this fold")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
@@ -192,7 +259,7 @@ def fold_run(sweep_q, worker_q):
 
     logger.info("Finishing wandb run")
     wandb.join()
-    sweep_q.put(WorkerDoneData(sweep_score=score))
+    return score
 
 
 if __name__ == "__main__":
