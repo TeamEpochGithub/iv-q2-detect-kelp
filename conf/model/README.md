@@ -5,7 +5,18 @@
 
 ## Preprocessing
 
-### Feature transformation
+### Feature transformations
+
+```python
+transformations:
+  # ToZero
+  - _target_: src.pipeline.model.feature.transformation.to_zero.ToZero
+    range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1,1.1], [-1, 5]]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+    nan_to_zero: True
+    nan_value: -32768
+    
+```
+
 
 ### Feature columns
 
