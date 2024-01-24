@@ -1,11 +1,9 @@
-"""Pipeline step to stretch features based on kelp ranges."""
+"""Pipeline step to clip features based on kelp ranges."""
 import sys
 import time
 from dataclasses import dataclass, field
 
 import dask.array as da
-import dask_image.ndfilters._gaussian as gaf
-import dask_image.ndfilters._utils as gau
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
@@ -19,11 +17,21 @@ else:
 
 
 @dataclass
-class Stretch(BaseEstimator, TransformerMixin):
-    """Pipeline step to stretch features based on kelp ranges.
+class Clip(BaseEstimator, TransformerMixin):
+    """Pipeline step to clip features based on kelp ranges."""
 
-    """
-    feature_ranges: list[list[float, float]] = field(default_factory=list)
+    feature_ranges: list[list[float]] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        """Initialize the transformer."""
+        # Validate kelp_to_zero to make sure that list is of length 2 and that the first value is less than the second
+        for i, band in enumerate(self.feature_ranges):
+            if len(band) != 2:
+                logger.error(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
+                raise ValueError(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
+            if band[0] > band[1]:
+                logger.error(f"Invalid kelp_to_zero list at index {i}. First value must be less than second value.")
+                raise ValueError(f"Invalid kelp_to_zero list at index {i}. First value must be less than second value.")
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Do nothing. Exists for Pipeline compatibility.
@@ -46,7 +54,7 @@ class Stretch(BaseEstimator, TransformerMixin):
         X = self.clip(X)
 
         # Apply this function across the channels
-        logger.info(f"Stretching complete in: {time.time() - time_start} seconds.")
+        logger.info(f"Clipping complete in: {time.time() - time_start} seconds.")
 
         return X
 
@@ -65,4 +73,3 @@ class Stretch(BaseEstimator, TransformerMixin):
             results.append(modified_channel)
 
         return da.stack(results, axis=1) if len(results) > 1 else X
-
