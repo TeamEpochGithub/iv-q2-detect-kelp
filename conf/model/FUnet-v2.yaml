@@ -49,7 +49,7 @@ model_loop_pipeline:
       - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.ScalerBlock
         scaler:
           _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
-      
+
 
   model_blocks_pipeline:
     model_blocks:

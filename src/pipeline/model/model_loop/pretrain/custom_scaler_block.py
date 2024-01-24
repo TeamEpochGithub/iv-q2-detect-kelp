@@ -80,7 +80,7 @@ class ScalerBlock(PretrainBlock):
         with dask.config.set(**{"array.slicing.split_large_chunks": False}):  # type: ignore[arg-type]
             # Apply the scaler
             X = self.scaler.transform(X)
-            
+
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
         if self.train_indices is not None and self.save_pretrain_with_split:
