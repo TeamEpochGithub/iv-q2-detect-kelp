@@ -28,6 +28,11 @@ class ScalerBlock(PretrainBlock):
 
     scaler: BaseEstimator = field(default_factory=BaseEstimator)
 
+    def __post_init__(self) -> None:
+        """Post init hook."""
+        super().__post_init__()
+        self.train_indices: None | list[int] = None
+
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
@@ -40,6 +45,9 @@ class ScalerBlock(PretrainBlock):
         # Check if the scaler exists
         if save_pretrain_with_split:
             self.train_split_hash(train_indices=train_indices)
+            self.save_pretrain_with_split = True
+        else:
+            self.save_pretrain_with_split = False
         self.train_indices = train_indices
         if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
             logger.info("Scaler already exists, loading it")
@@ -87,7 +95,7 @@ class ScalerBlock(PretrainBlock):
             X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
-        if self.train_indices is not None:
+        if self.train_indices is not None and self.save_pretrain_with_split:
             return self.save_pretrain(X, self.train_indices)
         return X
 

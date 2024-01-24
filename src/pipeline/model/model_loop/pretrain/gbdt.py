@@ -87,27 +87,27 @@ class GBDT(PretrainBlock):
         # Check if labels are continuous or binary
         if self.model_type == "Catboost":
             logger.info("Fitting catboost model...")
-            model = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
-            model.fit(X_train, y_train, eval_set=(X_test, y_test))
+            self.model = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
+            self.model.fit(X_train, y_train, eval_set=(X_test, y_test))
         elif self.model_type == "XGBoost":
             logger.info("Fitting XGBoost model...")
-            model = XGBClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10)
-            model.fit(X_train, y_train, eval_set=[(X_test, y_test)])
+            self.model = XGBClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10)
+            self.model.fit(X_train, y_train, eval_set=[(X_test, y_test)])
         elif self.model_type == "LightGBM":
             logger.info("Fitting LightGBM model...")
-            model = LGBMClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10, verbose=1, num_iterations=50)
-            model.fit(X_train, y_train, eval_set=(X_test, y_test))
+            self.model = LGBMClassifier(n_estimators=100, n_jobs=-1, early_stopping_rounds=10, verbose=1, num_iterations=50)
+            self.model.fit(X_train, y_train, eval_set=(X_test, y_test))
 
-        score = DiceCoefficient()(y_test, model.predict_proba(X_test)[:, 1])
+        score = DiceCoefficient()(y_test, self.model.predict_proba(X_test)[:, 1])
         logger.info(f"Score of fitted model: {score}")
 
         logger.info(f"Fitted GBDT in {time.time() - start_time} seconds total")
 
         # Save the model
-        self.trained_model = model
+        self.trained_model = self.model
         if save_pretrain:
             with open(f"tm/{self.prev_hash}.gbdt", "wb") as f:
-                pickle.dump(model, f)
+                pickle.dump(self.model, f)
             logger.info(f"Saved GBDT to {f'tm/{self.prev_hash}.gbdt'}")
 
         return self
@@ -128,20 +128,23 @@ class GBDT(PretrainBlock):
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
 
             with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
-                model = pickle.load(f)  # noqa: S301
+                self.model = pickle.load(f)  # noqa: S301
             logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
-            model = self.trained_model
+            self.model = self.trained_model
 
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
+        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
 
-        # Predict in parallel with dask map blocks
-        def predict(x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
-            # x has shape (B, C, H, W), transpose and reshape for catboost to (N, C)
-            x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
+    # Predict in parallel with dask map blocks
+    def transform_chunk(self, x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+        """Transform a chunk of data.
 
-            # Predict and reshape back to (N, 1, H, W)
-            pred = model.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
-            return np.concatenate([x, pred], axis=1)
-
-        return X.map_blocks(predict, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+        :param x: The data to transform
+        :return: The transformed data
+        """
+        # x has shape (B, C, H, W), transpose and reshape for catboost to (N, C)
+        x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
+        # Predict and reshape back to (N, 1, H, W)
+        pred = self.model.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
+        return np.concatenate([x, pred], axis=1)

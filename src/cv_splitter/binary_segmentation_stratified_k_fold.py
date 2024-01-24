@@ -1,5 +1,5 @@
 """Stratified k-fold cross-validation splitter for binary segmentation tasks."""
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Annotated
 
@@ -28,12 +28,11 @@ class BinarySegmentationStratifiedKFold:
 
     _bins: npt.NDArray[np.uintp] = field(init=False)
 
-    def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array, groups: Iterable[int] | None = None) -> Iterator[tuple[list[int], list[int]]]:  # noqa: ARG002
+    def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array) -> Iterator[tuple[list[int], list[int]]]:
         """Generate indices to split data into training and test set.
 
         :param X: The data to split.
         :param y: The target variable, used only for computing the coverages if not given.
-        :param groups: UNUSED Group labels for the samples used while splitting the dataset into train/test set.
         :return: The training and test set indices for that split.
         """
         if self.coverages is None:
