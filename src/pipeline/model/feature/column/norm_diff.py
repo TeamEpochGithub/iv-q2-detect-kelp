@@ -6,6 +6,8 @@ import dask
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from src.logging_utils.logger import logger
+
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
@@ -46,6 +48,9 @@ class NormDiff(BaseEstimator, TransformerMixin):
         :return: The transformed data.
         """
         # perform the normalized difference
+        logger.info("Computing normalized difference...")
         result = (X[:, self.a] - X[:, self.b]) / (X[:, self.a] + X[:, self.b])
+        # Fill nans with 0
+        result = da.nan_to_num(result)
         X = dask.array.concatenate([X, result[:, None]], axis=1)
         return X.rechunk()

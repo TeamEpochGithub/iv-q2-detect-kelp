@@ -45,9 +45,7 @@ class ScalerBlock(PretrainBlock):
         # Check if the scaler exists
         if save_pretrain_with_split:
             self.train_split_hash(train_indices=train_indices)
-            self.save_pretrain_with_split = True
-        else:
-            self.save_pretrain_with_split = False
+        self.save_pretrain_with_split = save_pretrain_with_split
         self.train_indices = train_indices
         if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
             logger.info("Scaler already exists, loading it")

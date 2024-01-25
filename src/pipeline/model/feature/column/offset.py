@@ -7,6 +7,8 @@ import dask.array as da
 import numpy as np
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from src.logging_utils.logger import logger
+
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
@@ -66,6 +68,7 @@ class Offset(BaseEstimator, TransformerMixin):
         :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data.
         """
+        logger.info("Computing offset...")
         result = compute_offset(X[:, self.band], X[:, self.elevation])
         X = dask.array.concatenate([X, result[:, None]], axis=1)
         return X.rechunk()

@@ -61,8 +61,8 @@ class Test(TestCase):
 
             import cv2
             #Save to file
-            cv2.imwrite(f"test_{i}_image.png", image.transpose(1, 2, 0))
-            cv2.imwrite(f"test_{i}_mask.png", mask)
+            # cv2.imwrite(f"test_{i}_image.png", image.transpose(1, 2, 0))
+            # cv2.imwrite(f"test_{i}_mask.png", mask)
 
             self.assertEqual(image.shape, (3,256,256))
             self.assertEqual(mask.shape,(256,256))
