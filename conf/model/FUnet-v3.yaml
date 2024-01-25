@@ -5,6 +5,12 @@ defaults:
 feature_pipeline:
   processed_path: data/processed
   transformation_pipeline:
+    transformations:
+      # Clip
+      - _target_: src.pipeline.model.feature.transformation.clip.Clip
+        feature_ranges: [ [ 6250, 12000 ], [ 6500, 13250 ], [ 6500, 12000 ], [ 5750, 11250 ], [ 6500, 12000 ], [ 0, 1 ], [ 0, 5 ] ]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+
+
   column_pipeline:
     columns:
 
@@ -40,16 +46,32 @@ feature_pipeline:
           data_path: data/processed/cache
           column: -1
 
+      # ODVI
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.offset_diff.OffsetDiff
+          a: 1 # NIR
+          b: 2 # Red
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
 target_pipeline:
 
 
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
-      - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
+      - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
-          _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
-
+          _target_: dask_ml.preprocessing.StandardScaler
+      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
+        model_type: XGBoost
+        max_images: 100
+        early_stopping_split: 0.2
+      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
+        columns: [ 1, 7, 8, 9, 10, 11 ]
 
   model_blocks_pipeline:
     model_blocks:
@@ -61,7 +83,7 @@ model_loop_pipeline:
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
             encoder_name: vgg11
-            in_channels: 10
+            in_channels: 6
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
@@ -73,9 +95,9 @@ model_loop_pipeline:
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-          multiply_kelp: True
-        epochs: 100
-        batch_size: 16
+          multiply_kelp: False
+        epochs: 10
+        batch_size: 8
         patience: 20
         transformations:
           _target_: src.augmentations.transformations.Transformations
@@ -83,17 +105,17 @@ model_loop_pipeline:
             _target_: albumentations.Compose
             transforms:
               - _target_: albumentations.VerticalFlip
-                p: 0.4
+                p: 0.2
               - _target_: albumentations.HorizontalFlip
-                p: 0.4
+                p: 0.2
               - _target_: albumentations.RandomRotate90
-                p: 0.4
+                p: 0.2
               - _target_: albumentations.GaussianBlur
                 blur_limit: 7
                 p: 0.05
           aug:
             - _target_: src.augmentations.mosaic.Mosaic
-              p: 0.25
+              p: 0.15
 
 post_processing_pipeline:
   post_processing_steps:
