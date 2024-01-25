@@ -94,7 +94,7 @@ model_loop_pipeline:
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 2
+        epochs: 100
         batch_size: 16
         patience: 15
         transformations:
@@ -103,18 +103,18 @@ model_loop_pipeline:
             _target_: kornia.augmentation.AugmentationSequential
             _args_:
               - _target_: kornia.augmentation.RandomHorizontalFlip
-                p: 1
+                p: 0.5
               - _target_: kornia.augmentation.RandomVerticalFlip
-                p: 1
+                p: 0.5
               - _target_: kornia.augmentation.RandomRotation
                 degrees: 90
-                p: 1
+                p: 0.5
               - _target_: kornia.augmentation.RandomGaussianBlur
                 kernel_size: [3, 3]
-                p: 1
+                p: 0.5
                 sigma: [0.1, 2.0]
               - _target_: kornia.augmentation.RandomMosaic
-                p: 1
+                p: 0.5
                 output_size: [350,350]
 
 post_processing_pipeline:
