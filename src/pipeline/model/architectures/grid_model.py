@@ -6,7 +6,7 @@ from src.utils.extract_patches import extract_patches
 from src.utils.reconstruct_from_patches import reconstruct_from_patches
 
 
-class Model224(nn.Module):
+class GridModel(nn.Module):
     """Model architecture with padding.This class is used to wrap a pytorch model and add padding to the input image if necessary.
 
     :param model: Pytorch model to be used
