@@ -79,7 +79,6 @@ model_loop_pipeline:
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
 
-
   model_blocks_pipeline:
     model_blocks:
       # Pytorch model

@@ -146,7 +146,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
                 test_indices=test_indices,
                 X=X,
                 y=y,
-            )
+            ),
         )
         # Get metric from worker
         result = sweep_q.get()

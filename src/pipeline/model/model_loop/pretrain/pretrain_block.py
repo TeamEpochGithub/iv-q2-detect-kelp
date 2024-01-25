@@ -62,7 +62,7 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
 
         return curr_hash
 
-    def save_pretrain(self, X: da.Array, train_indices: list[int]) -> da.Array:
+    def save_pretrain(self, X: da.Array) -> da.Array:
         """Save the pretrain data.
 
         :param X: Data to save
@@ -72,7 +72,7 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         start_time = time.time()
         logger.info("Saving pretrain data...")
         # Save the pretrain data
-        result = store_raw("data/training/" + hash(self.prev_hash + str(train_indices)), X)
+        result = store_raw("data/training/" + hash(self.prev_hash), X)
         logger.info("Saved pretrain data in %s seconds", time.time() - start_time)
         return result
 

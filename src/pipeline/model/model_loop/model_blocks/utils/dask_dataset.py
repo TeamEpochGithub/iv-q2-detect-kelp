@@ -1,4 +1,5 @@
 """Module to convert a dask array to a torch dataset."""
+import gc
 from typing import Any
 
 import dask.array as da
@@ -85,11 +86,20 @@ class Dask2TorchDataset(Dataset[Any]):
         :param size: Maximum number of samples to load into memory. If -1, load all samples.
         """
         if size == -1 or size >= self.daskX.shape[0]:
-            idx = self.daskX.shape[0]
+            self.memX = self.daskX.compute()
+            self.daskX = da.from_array(np.array([]))
+            if self.daskY is not None:
+                self.memY = self.daskY.compute()
+                self.daskY = da.from_array(np.array([]))
         else:
-            idx = size
-        self.memX = self.daskX[:idx].compute()
-        self.daskX = self.daskX[idx:]
-        if self.daskY is not None:
-            self.memY = self.daskY[:idx].compute()
-            self.daskY = self.daskY[idx:]
+            self.memX = self.daskX[:size].compute()
+            self.daskX = self.daskX[size:]
+            if self.daskY is not None:
+                self.memY = self.daskY[:size].compute()
+                self.daskY = self.daskY[size:]
+
+    def empty_cache(self) -> None:
+        """Delete the cache."""
+        self.memX = np.array([])
+        self.memY = np.array([])
+        gc.collect()

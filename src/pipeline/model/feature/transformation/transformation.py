@@ -55,6 +55,7 @@ class TransformationPipeline(Pipeline):
         :param fit_params: Fit parameters
         :return: Fitted and transformed data
         """
+        print_section_separator("Preprocessing - Transformations")
         logger.info("Fitting transformation pipeline")
         start_time = time.time()
         X = super().fit_transform(X, y, **fit_params)
