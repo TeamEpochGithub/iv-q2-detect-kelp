@@ -1,7 +1,6 @@
 from unittest import TestCase
+
 import dask.array as da
-import numpy as np
-# test the Offset class
 import numpy as np
 
 from src.pipeline.model.feature.transformation.clip import Clip
@@ -19,17 +18,17 @@ class TestClip(TestCase):
             to_zero.fit_transform(X)
 
     def test_stretch(self):
-        # create a fake dataset
+        # Create a fake dataset
         X = np.random.rand(10, 7, 350, 350)
 
         stretch_ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.9], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]
 
-        # create the transformer
+        # Create the transformer
         s = Clip(feature_ranges=stretch_ranges)
 
         X = da.from_array(X, chunks=(1, 1, 350, 350))
 
-        # fit and transform
+        # Cit and transform
         X = s.fit_transform(X)
 
         # Loop through the ranges and assert that the values are zero
