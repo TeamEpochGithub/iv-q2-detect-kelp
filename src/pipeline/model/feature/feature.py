@@ -32,7 +32,7 @@ class FeaturePipeline(Pipeline):
             self.load_from_cache = True
 
         self.set_hash("")
-        super().__init__(self._get_steps(), memory=self._get_memory())
+        super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, Pipeline]]:
         """_get_steps function returns the steps for the pipeline.
@@ -70,15 +70,6 @@ class FeaturePipeline(Pipeline):
 
         # Update the steps in the pipeline after changing the load from cache flag
         super().__init__(self._get_steps(), memory=self._get_memory())
-
-    def _get_memory(self) -> str | None:
-        """_get_memory function returns the memory location for the pipeline.
-
-        :return: memory location
-        """
-        if self.processed_path:
-            return self.processed_path + "/" + self.transformation_hash + "/pipeline_cache"
-        return None
 
     def set_hash(self, prev_hash: str) -> str:
         """set_hash function sets the hash for the pipeline.
