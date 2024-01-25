@@ -210,3 +210,5 @@ plots/images/train
 
 # ignore Lock file used
 .lock
+
+notebooks/similarity
