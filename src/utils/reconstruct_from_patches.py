@@ -9,12 +9,29 @@ def reconstruct_from_patches(patches: torch.Tensor, batch_size: int) -> torch.Te
     :param batch_size: Batch size.
     :return: Reconstructed image.
     """
-    reconstructed = torch.zeros([batch_size, 350, 350])
-    patches = torch.reshape(patches, (batch_size, 4, 224, 224))
-    reconstructed[:, :224, :224] += patches[:, 0, :, :]
-    reconstructed[:, :224, -224:] += patches[:, 1, :, :]
-    reconstructed[:, -224:, :224] += patches[:, 2, :, :]
-    reconstructed[:, -224:, -224:] += patches[:, 3, :, ::]
-    reconstructed[:, 126:224, :] = reconstructed[:, 126:224, :] * 0.5
-    reconstructed[:, :, 126:224] = reconstructed[:, :, 126:224] * 0.5
+    if len(patches.shape) == 3:
+        patches = patches.unsqueeze(1)
+    reconstructed = torch.empty([batch_size, 350, 350], requires_grad=True).to(patches.device)
+    # assign the top right and left sides of the image
+    # Note that the patched images hold 224x224 images not 350x350
+    reconstructed[:, :126, :126] = patches[:batch_size, 0, :126, :126]
+    reconstructed[:, :126, -126:] = patches[batch_size : 2 * batch_size, 0, :126, -126:]
+    # assign the bottom right and left sides of the image
+    reconstructed[:, -126:, :126] = patches[2 * batch_size : 3 * batch_size, 0, -126:, :126]
+    reconstructed[:, -126:, -126:] = patches[3 * batch_size : 4 * batch_size, 0, -126:, -126:]
+    # assign the top middle
+    reconstructed[:, :126, 126:-126] = (patches[:batch_size, 0, :126, -98:] + patches[batch_size : 2 * batch_size, 0, :126, :98]) * 0.5
+    # assign the bottom middle
+    reconstructed[:, -126:, 126:-126] = (patches[2 * batch_size : 3 * batch_size, 0, -126:, -98:] + patches[3 * batch_size : 4 * batch_size, 0, -126:, :98]) * 0.5
+    # assign the middle left
+    reconstructed[:, 126:-126, :126] = (patches[:batch_size, 0, -98:, :126] + patches[2 * batch_size : 3 * batch_size, 0, :98, :126]) * 0.5
+    # assign the middle right
+    reconstructed[:, 126:-126, -126:] = (patches[batch_size : 2 * batch_size, 0, -98:, -126:] + patches[3 * batch_size : 4 * batch_size, 0, :98, -126:]) * 0.5
+    # assign the middle
+    reconstructed[:, 126:-126, 126:-126] = (
+        patches[:batch_size, 0, -98:, -98:]
+        + patches[batch_size : 2 * batch_size, 0, -98:, :98]
+        + patches[2 * batch_size : 3 * batch_size, 0, :98, -98:]
+        + patches[3 * batch_size : 4 * batch_size, 0, :98, :98]
+    ) * 0.25
     return reconstructed

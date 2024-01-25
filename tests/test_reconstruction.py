@@ -10,10 +10,10 @@ class TestShore(TestCase):
         example_model.weight.data.fill_(1. / 6)
         # Set the bias to 0
         example_model.bias.data.fill_(0.)
-        test_batch = torch.ones([32,6,350,350])
+        test_batch = torch.rand([32,1,350,350],requires_grad=True).repeat(1,6,1,1)
+        test_output = torch.mean(test_batch.clone(), dim=1)
+        patched_input = extract_patches(test_batch)
         with torch.no_grad():
-            example_output = example_model(test_batch)
-        patches = extract_patches(example_output)
-        reconstructed = reconstruct_from_patches(patches, 32)
-        example_output = torch.ones([32,350,350])
-        assert torch.all(reconstructed == example_output)
+            example_output = example_model(patched_input)
+        reconstructed = reconstruct_from_patches(example_output, 32)
+        assert torch.allclose(reconstructed, test_output)
