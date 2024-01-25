@@ -31,7 +31,6 @@ class ScalerBlock(PretrainBlock):
     def __post_init__(self) -> None:
         """Post init hook."""
         super().__post_init__()
-        self.train_indices: None | list[int] = None
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
@@ -46,8 +45,7 @@ class ScalerBlock(PretrainBlock):
         if save_pretrain_with_split:
             self.train_split_hash(train_indices=train_indices)
         self.cache_pretrain = save_pretrain
-
-        self.train_indices = train_indices
+        
         if Path(f"tm/{self.prev_hash}.scaler").exists() and save_pretrain:
             logger.info("Scaler already exists, loading it")
             return self
