@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Delete everything in tm/
 rm -rf tm/*
 # Delete everything in data/processed/
