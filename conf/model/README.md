@@ -14,9 +14,8 @@ transformations:
     range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1,1.1], [-1, 5]]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
     nan_to_zero: True
     nan_value: -32768
-    
-```
 
+```
 
 ### Feature columns
 
@@ -42,6 +41,7 @@ model_loop_pipeline.pretrain_pipeline.pretrain_steps.?.early_stopping_split: 0.2
 ### Loss functions
 
 ```python
+import torch.nn
 import src.modules.loss.focal_tversky_loss
 
 criterion:
@@ -82,6 +82,8 @@ gamma: ??? (1.0)
 criterion:
 _target_: src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss
 
+criterion:
+_target_: torch.nn.KLDivLoss
 
 
 ```
