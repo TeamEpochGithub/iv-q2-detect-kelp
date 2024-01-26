@@ -97,23 +97,16 @@ class ScalerBlock(PretrainBlock):
         return X
 
     def save_scaler(self) -> None:
-        """Save the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
+        """Save the scaler using joblib."""
         logger.info(f"Saving scaler to tm/{self.prev_hash}.scaler")
         joblib.dump(self.scaler, f"tm/{self.prev_hash}.scaler")
         logger.info(f"Saved scaler to tm/{self.prev_hash}.scaler")
 
     def load_scaler(self) -> None:
-        """Load the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
+        """Load the scaler using joblib."""
         # Check if the scaler exists
         if not Path(f"tm/{self.prev_hash}.scaler").exists():
-            logger.error(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
-            sys.exit(1)
+            raise FileNotFoundError(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
 
         logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
         self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")

@@ -1,6 +1,5 @@
 """Error class for the ensemble pipeline."""
-from src.logging_utils.logged_error import LoggedError
 
 
-class EnsemblePipelineError(LoggedError):
+class EnsemblePipelineError(Exception):
     """EnsemblePipelineError is an error that occurs when the ensemble pipeline fails."""

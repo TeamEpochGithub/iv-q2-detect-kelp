@@ -1,6 +1,5 @@
 """Error module for the caching pipeline."""
-from src.logging_utils.logged_error import LoggedError
 
 
-class CachePipelineError(LoggedError):
+class CachePipelineError(Exception):
     """CachePipelineError is an error that occurs when the cache pipeline fails."""
