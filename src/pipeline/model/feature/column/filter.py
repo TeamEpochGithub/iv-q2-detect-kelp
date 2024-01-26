@@ -54,25 +54,21 @@ class Filter(BaseEstimator, TransformerMixin):
         """
         return self
 
-    def __repr__(self):
-        #Get the arguments of the functools.partial object filters
+    def __repr__(self) -> str:
 
         total_args = ""
         for filter in self.filters:
-            print(filter)
-            #Filter is a functools.partial object, grab the underlying function
+            # Filter is a functools.partial object, grab the underlying function
             filter_name = str(filter.func.__name__)
             filter_args = str(filter.keywords)
             # Now filter_args is a dict, convert to string without ''
             filter_args = filter_args.replace("'", "")
             filter_args = filter_args.replace(":", "")
-            #Now this is a function with a memory address, grab the name and arguments
+            # Now this is a function with a memory address, grab the name and arguments
             total_args += f"{filter_name}-{filter_args}"
 
         to_repr = f"Filter(filters={total_args},channels={self.channels})"
-        print(to_repr)
         return to_repr
-
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
@@ -99,5 +95,3 @@ class Filter(BaseEstimator, TransformerMixin):
 
         logger.info(f"Filter transform complete in: {time.time() - start_time} seconds")
         return X
-
-

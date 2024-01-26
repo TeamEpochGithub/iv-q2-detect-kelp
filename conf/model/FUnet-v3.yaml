@@ -5,7 +5,10 @@ defaults:
 feature_pipeline:
   processed_path: data/processed
   transformation_pipeline:
-
+    transformations:
+      - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
+        nan_to_zero: True
+        nan_value: -32768
 
   column_pipeline:
     columns:
@@ -59,15 +62,22 @@ feature_pipeline:
           filters:
             - _target_: functools.partial
               _args_:
-              - _target_: hydra.utils.get_method
-                path: dask_image.ndfilters.sobel
-          channels: [7] #NDVI
+                - _target_: hydra.utils.get_method
+                  path: dask_image.ndfilters.sobel
+          channels: [ 7 ] #NDVI
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
-target_pipeline:
 
+target_pipeline:
+  processed_path: data/processed/target
+  transformation_pipeline:
+    transformations:
+      - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
+        sigma: 2.0001
+  column_pipeline:
+    columns: [ ]
 
 model_loop_pipeline:
   pretrain_pipeline:
@@ -80,7 +90,7 @@ model_loop_pipeline:
         max_images: 100
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [ 1, 7, 8, 9, 10, 11,12 ]
+        columns: [ 1, 7, 8, 9, 10, 11,12]
 
   model_blocks_pipeline:
     model_blocks:
@@ -104,7 +114,7 @@ model_loop_pipeline:
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-          multiply_kelp: False
+          multiply_kelp: True
         epochs: 10
         batch_size: 8
         patience: 20
