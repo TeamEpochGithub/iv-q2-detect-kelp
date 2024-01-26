@@ -321,7 +321,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """Load the model from the tm folder."""
         # Load the model if it exists
         if not Path(f"tm/{self.prev_hash}.pt").exists():
-            logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
             raise FileNotFoundError(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
 
         logger.info(f"Loading model from tm/{self.prev_hash}.pt")
