@@ -1,4 +1,5 @@
 """Base class for ensemble pipelines."""
+import copy
 import sys
 from abc import abstractmethod
 from dataclasses import dataclass, field
@@ -8,6 +9,7 @@ import dask.array as da
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
+from src.logging_utils import logger
 
 from src.pipeline.model.model import ModelPipeline
 
@@ -77,7 +79,16 @@ class EnsembleBase(Pipeline):
             model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
             # Remove the model name from the fit params key
             model_fit_params = {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
-            model.fit(X, y, **model_fit_params)
+
+            target_pipeline = model.get_target_pipeline()
+            new_y = copy.deepcopy(y)
+
+            if target_pipeline is not None:
+                logger.info("Now fitting the target pipeline...")
+                new_y = target_pipeline.fit_transform(new_y)
+            
+
+            model.fit(X, new_y, **model_fit_params)
         return self
 
     @abstractmethod

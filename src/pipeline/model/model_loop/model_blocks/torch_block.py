@@ -100,6 +100,8 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         self.model.to(self.device)
 
+        self.best_model_state_dict: dict[str, Tensor] | None = None
+
         # Early stopping
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
@@ -179,6 +181,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self._training_loop(train_loader, test_loader, train_losses, val_losses)
 
         logger.info("Done training the model")
+
+        if self.best_model_state_dict is not None:
+            self.model.load_state_dict(self.best_model_state_dict)
+
         if save_model:
             self.save_model()
 

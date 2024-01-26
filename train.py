@@ -77,12 +77,13 @@ def run_train_cfg(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig in
     fit_params = generate_train_params(cfg, model_pipeline, train_indices=train_indices, test_indices=test_indices)
 
     # Fit the pipeline
-    target_pipeline = model_pipeline.get_target_pipeline()
     original_y = copy.deepcopy(y)
+    if "model" in cfg:
+        target_pipeline = model_pipeline.get_target_pipeline()
 
-    if target_pipeline is not None:
-        logger.info("Now fitting the target pipeline...")
-        y = target_pipeline.fit_transform(y)
+        if target_pipeline is not None:
+            logger.info("Now fitting the target pipeline...")
+            y = target_pipeline.fit_transform(y)
 
     print_section_separator("Fit_transform model pipeline")
     predictions = model_pipeline.fit_transform(X, y, **fit_params)
