@@ -149,7 +149,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         logger.info(f"Created train cache in {time.time() - start_time} seconds")
         start_time = time.time()
-        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transformations)
+        test_dataset = Dask2TorchDataset(X_test, y_test)
         logger.info(f"Created test dataset in {time.time() - start_time} seconds")
         start_time = time.time()
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
