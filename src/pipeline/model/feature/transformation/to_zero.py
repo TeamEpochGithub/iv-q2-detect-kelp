@@ -34,10 +34,8 @@ class ToZero(BaseEstimator, TransformerMixin):
         # Validate kelp_to_zero to make sure that list is of length 2 and that the first value is less than the second
         for i, band in enumerate(self.range_to_zero):
             if len(band) != 2:
-                logger.error(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
                 raise ValueError(f"Invalid kelp_to_zero list at index {i}. Tuple must be of length 2.")
             if band[0] > band[1]:
-                logger.error(f"Invalid kelp_to_zero list at index {i}. First value must be less than second value.")
                 raise ValueError(f"Invalid kelp_to_zero list at index {i}. First value must be less than second value.")
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import dask.array as da
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from src.logging_utils.logger import logger
 from src.pipeline.caching.util.error import CachePipelineError
 from src.pipeline.caching.util.store_raw import store_raw
 
@@ -44,7 +43,6 @@ class CacheColumnBlock(BaseEstimator, TransformerMixin):
         # Check if the data path is set
         if not self.data_path:
             if X is None:
-                logger.error("data_paths are required")
                 raise CachePipelineError("data_path is required")
 
             return X
