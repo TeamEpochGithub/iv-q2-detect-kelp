@@ -1,4 +1,4 @@
-"""TorchBlock class."""
+"""Pipeline step for a PyTorch Model."""
 import copy
 import functools
 import gc
@@ -12,7 +12,8 @@ from typing import Annotated, Any
 import dask.array as da
 import numpy as np
 import torch
-from annotated_types import Gt
+import wandb
+from annotated_types import Gt, Interval
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
@@ -22,7 +23,6 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -47,6 +47,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param epochs: Number of epochs.
     :param batch_size: Batch size.
     :param patience: Patience for early stopping.
+    :param test_size: The relative size of the test set ∈ [0, 1].
+    :param transformations: Transformations to apply to the data.
+    :param layerwise_lr_decay: Layerwise learning rate decay.
     """
 
     model: nn.Module
@@ -56,16 +59,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
-    test_size: float = 0.2  # Hashing purposes
+    # noinspection PyTypeHints
+    test_size: Annotated[float, Interval(ge=0, le=1)] = 0.2  # Hashing purposes
     transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
-        # Set the hash
         self.set_hash("")
 
-        # Set model is saved to true
         self.save_model_to_disk = True
 
         if self.layerwise_lr_decay is None:
@@ -110,6 +112,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param train_indices: Indices of the training data.
         :param test_indices: Indices of the test data.
         :param cache_size: Number of samples to load into memory.
+        :param save_model: Whether to save the model to disk.
         :return: Fitted model.
         """
         # Check if the model exists
@@ -119,7 +122,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             return self
 
         # TODO(Jasper): Add scheduler to the loop if it is not none
-        # TODO(Epoch): Add scheduler to the loop if it is not none
         # Train the model with self.model named model, print model name to print_section_separator
         # Print the model name to print_section_separator
         print_section_separator(f"Training model: {self.model.__class__.__name__}")
@@ -139,7 +141,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Setting cache size to -1 will load all samples into memory
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
-        # np.round is there to make sure we dont miss a sample due to int to float conversion
+        # np.round is there to make sure we don't miss a sample due to int to float conversion
         start_time = time.time()
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transformations)
         logger.info(f"Created train dataset in {time.time() - start_time} seconds")
@@ -309,24 +311,18 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return sum(losses) / len(losses)
 
     def save_model(self) -> None:
-        """Save the model in the tm folder.
-
-        :param block_hash: Hash of the model pipeline
-        """
+        """Save the model in the tm folder."""
         logger.info(f"Saving model to tm/{self.prev_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
+        torch.save(self.best_model_state_dict, f"tm/{self.prev_hash}.pt")
         logger.info(f"Model saved to tm/{self.prev_hash}.pt")
         self.model_is_saved = True
 
     def load_model(self) -> None:
-        """Load the model from the tm folder.
-
-        :param block_hash: Hash of the model pipeline
-        """
+        """Load the model from the tm folder."""
         # Load the model if it exists
         if not Path(f"tm/{self.prev_hash}.pt").exists():
             logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
-            sys.exit(1)
+            raise FileNotFoundError(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
 
         logger.info(f"Loading model from tm/{self.prev_hash}.pt")
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
@@ -382,13 +378,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Store the best model so far based on validation loss
         if self.last_val_loss < self.lowest_val_loss:
             self.lowest_val_loss = self.last_val_loss
-            self.best_model = copy.deepcopy(self.model.state_dict())
+            self.best_model_state_dict = copy.deepcopy(self.model.state_dict())
             self.early_stopping_counter = 0
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
                 logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
-                self.model.load_state_dict(self.best_model)
+                self.model.load_state_dict(self.best_model_state_dict)
                 return True
         return False
 
