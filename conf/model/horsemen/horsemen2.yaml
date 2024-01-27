@@ -1,5 +1,5 @@
 defaults:
-  - pipeline/default@_here_
+  - ../pipeline/default@_here_
   - _self_
 
 feature_pipeline:
