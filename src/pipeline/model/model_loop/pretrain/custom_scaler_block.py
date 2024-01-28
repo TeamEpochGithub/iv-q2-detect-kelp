@@ -75,6 +75,6 @@ class CustomScalerBlock(ScalerBlock):
 
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
-        if self.cache_pretrain:
+        if hasattr(self, "cache_pretrain") and self.cache_pretrain:
             return self.save_pretrain(X)
         return X

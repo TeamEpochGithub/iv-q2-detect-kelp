@@ -12,7 +12,6 @@ from typing import Annotated, Any
 import dask.array as da
 import numpy as np
 import torch
-import wandb
 from annotated_types import Gt, Interval
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -23,6 +22,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -156,7 +156,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)  # type: ignore[arg-type]
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
 
         # Train model
@@ -177,8 +177,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         # Train the model
         self._training_loop(train_loader, test_loader, train_losses, val_losses)
-
         logger.info("Done training the model")
+
+        if hasattr(self, "best_model_state_dict"):
+            logger.info(f"Reverting to model with best validation loss {self.lowest_val_loss}")
+            self.model.load_state_dict(self.best_model_state_dict)
+
         if save_model:
             self.save_model()
 
@@ -206,7 +210,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         for epoch in range(self.epochs):
             # Train using train_loader
-            train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
+            train_loss = self._train_one_epoch(train_loader, epoch)
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
 
@@ -245,16 +249,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # Log the trained epochs to wandb if we finished training
                 wandb.log({"Epochs": epoch + 1})
 
-    def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
+    def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], epoch: int) -> float:
         """Train the model for one epoch.
 
         :param dataloader: Dataloader for the training data.
-        :param desc: Description for the tqdm progress bar.
+        :param epoch: Epoch number.
         :return: Average loss for the epoch.
         """
         losses = []
         self.model.train()
-        pbar = tqdm(dataloader, unit="batch")
+        pbar = tqdm(dataloader, unit="batch", desc=f"Epoch {epoch} Train")
         for batch in pbar:
             X_batch, y_batch = batch
             X_batch = X_batch.to(self.device).float()
@@ -271,12 +275,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
             # Print tqdm
             losses.append(loss.item())
-            pbar.set_description(desc=desc)
             pbar.set_postfix(loss=sum(losses) / len(losses))
 
         # Step the scheduler
         if self.initialized_scheduler is not None:
-            self.initialized_scheduler.step()
+            self.initialized_scheduler.step(epoch=epoch)
 
         # Remove the cuda cache
         torch.cuda.empty_cache()
@@ -313,7 +316,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     def save_model(self) -> None:
         """Save the model in the tm folder."""
         logger.info(f"Saving model to tm/{self.prev_hash}.pt")
-        torch.save(self.best_model_state_dict, f"tm/{self.prev_hash}.pt")
+        torch.save(self.model, f"tm/{self.prev_hash}.pt")
         logger.info(f"Model saved to tm/{self.prev_hash}.pt")
         self.model_is_saved = True
 
@@ -325,7 +328,20 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             raise FileNotFoundError(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
 
         logger.info(f"Loading model from tm/{self.prev_hash}.pt")
-        self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
+        checkpoint = torch.load(f"tm/{self.prev_hash}.pt")
+
+        # Load the weights from the checkpoint
+        if isinstance(checkpoint, nn.DataParallel):
+            model = checkpoint.module
+        else:
+            model = checkpoint
+
+        # Set the current model to the loaded model
+        if isinstance(self.model, nn.DataParallel):
+            self.model.module.load_state_dict(model.state_dict())
+        else:
+            self.model.load_state_dict(model.state_dict())
+
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
     def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
@@ -383,8 +399,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
-                logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
-                self.model.load_state_dict(self.best_model_state_dict)
+                logger.info("Ran out of patience, stopping early")
                 return True
         return False
 
