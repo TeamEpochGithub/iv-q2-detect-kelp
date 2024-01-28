@@ -18,13 +18,11 @@ def check_hash_submit(cfg: DictConfig) -> tuple[list[str], list[str]]:
     # Check if models are cached already, if not give an error
     for model_hash in model_hashes:
         if not glob.glob(f"tm/{model_hash}.pt"):
-            logger.error(f"Model {model_hash} not found. Please train the model first and ensure the test_size is also the same.")
             raise FileNotFoundError(f"Model {model_hash} not found. Please train the model first.")
 
     # Check if scalers are cached already, if not give an error
     for scaler_hash in scaler_hashes:
         if scaler_hash is not None and not glob.glob(f"tm/{scaler_hash}.scaler"):
-            logger.error(f"Scaler {scaler_hash} not found. Please train the model first.")
             raise FileNotFoundError(f"Scaler {scaler_hash} not found. Please train the model first.")
 
     return model_hashes, scaler_hashes

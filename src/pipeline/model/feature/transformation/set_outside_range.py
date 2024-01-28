@@ -1,10 +1,13 @@
 """Pipeline step set all feature data outside the kelp region to zero."""
 import sys
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from typing import Annotated
 
 import dask.array as da
 import numpy as np
+from annotated_types import Len
 from sklearn.base import BaseEstimator, TransformerMixin
 from tqdm import tqdm
 
@@ -26,33 +29,30 @@ class SetOutsideRange(BaseEstimator, TransformerMixin):
     :param nan_value: If nan_to_zero is true, convert all values equal to nan_value to 0.
     """
 
-    ranges: list[list[float]] = field(default_factory=list)
-    values: list[float] = field(default_factory=list)
+    # noinspection PyTypeHints
+    ranges: Sequence[Annotated[Sequence[float], Len(2, 2)]] = field(default_factory=list)
+    values: Sequence[float] = field(default_factory=list)
     nan_to_zero: bool = True
     nan_value: int = 0
 
     def __post_init__(self) -> None:
-        """Initialize the transformer."""
-        # Validate ranges to make sure that list is of length 2 and that the first value is less than the second
+        """Validate the ranges."""
         for i, band in enumerate(self.ranges):
             if len(band) != 2:
-                logger.error(f"Invalid ranges list at index {i}. Tuple must be of length 2.")
                 raise ValueError(f"Invalid ranges list at index {i}. Tuple must be of length 2.")
             if band[0] > band[1]:
-                logger.error(f"Invalid ranges list at index {i}. First value must be less than second value.")
                 raise ValueError(f"Invalid ranges list at index {i}. First value must be less than second value.")
 
         # Validate that ranges and values are equal length
         if len(self.ranges) != len(self.values):
-            logger.error(f"Invalid ranges list. Ranges and values must be equal length.")
-            raise ValueError(f"Invalid ranges list. Ranges and values must be equal length.")
+            raise ValueError("Invalid ranges list. Ranges and values must be equal length.")
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Do nothing. Exists for Pipeline compatibility.
 
         :param X: UNUSED data to fit.
         :param y: UNUSED target variable.
-        :return: The fitted transformer.
+        :return: Itself.
         """
         return self
 
@@ -79,7 +79,7 @@ class SetOutsideRange(BaseEstimator, TransformerMixin):
         return X
 
     def set_out_of_range(self, X: da.Array) -> da.Array:
-        """Set all values outside of the kelp region to zero.
+        """Set all values outside the kelp region to zero.
 
         :param X: The data to transform
         :return: Transformed dataset

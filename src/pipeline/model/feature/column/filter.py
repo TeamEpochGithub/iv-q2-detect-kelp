@@ -10,40 +10,35 @@ import dask_image.ndfilters as dask_filter
 import skimage
 from sklearn.base import BaseEstimator, TransformerMixin
 
+from src.logging_utils.logger import logger
+
 if sys.version_info < (3, 11):
     from typing_extensions import Self
 else:
     from typing import Self
 
-from src.logging_utils.logger import logger
 
-
-@dataclass
+@dataclass(repr=False)
 class Filter(BaseEstimator, TransformerMixin):
     """Filter applies.
 
-    :param band: The band to copy
+    :param filters: A list of filters to apply to the data.
+    :param channels: A list of channels to apply the filters to.
     """
 
     filters: list[skimage.filters] | list[dask_filter]
     channels: list[int]
 
     def __post_init__(self) -> None:
-
-        # Check that channels is not None
+        """Validate the filters & channels."""
         if self.filters is None:
-            logger.error("Filters must be defined in the Convolutions Column step.")
-            raise ValueError("Filters must be defined")
+            raise ValueError("Filters must be defined in the Convolutions Column step.")
 
-        # Check that kernel_types is not None
         if self.channels is None:
-            logger.error("Channels must be defined in the Convolutions Column step.")
-            raise ValueError("Channels must be defined")
+            raise ValueError("Channels must be defined in the Convolutions Column step.")
 
-        # Check if filters and channels are the same length
         if len(self.filters) != len(self.channels):
-            logger.error("Filters and channels must be the same length in the Convolutions Column step.")
-            raise ValueError("Filters and channels must be the same length")
+            raise ValueError("Filters and channels must be the same length in the Convolutions Column step.")
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Do nothing. Exists for Pipeline compatibility.
@@ -55,20 +50,19 @@ class Filter(BaseEstimator, TransformerMixin):
         return self
 
     def __repr__(self) -> str:
-
+        """Return a string representation of the object."""
         total_args = ""
-        for filter in self.filters:
+        for image_filter in self.filters:
             # Filter is a functools.partial object, grab the underlying function
-            filter_name = str(filter.func.__name__)
-            filter_args = str(filter.keywords)
+            filter_name = str(image_filter.func.__name__)
+            filter_args = str(image_filter.keywords)
             # Now filter_args is a dict, convert to string without ''
             filter_args = filter_args.replace("'", "")
             filter_args = filter_args.replace(":", "")
             # Now this is a function with a memory address, grab the name and arguments
             total_args += f"{filter_name}-{filter_args}"
 
-        to_repr = f"Filter(filters={total_args},channels={self.channels})"
-        return to_repr
+        return f"Filter(filters={total_args},channels={self.channels})"
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
@@ -77,15 +71,14 @@ class Filter(BaseEstimator, TransformerMixin):
         :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data.
         """
-
         start_time = time.time()
 
         # Loop through all the channels and apply the filter
-        for i, (filter, channel) in enumerate(zip(self.filters, self.channels)):
+        for image_filter, channel in zip(self.filters, self.channels, strict=False):
             # Apply the filter
-            filter_name = filter.__class__.__name__
+            filter_name = image_filter.__class__.__name__
             logger.info(f"Applying {filter_name} to channel {channel}")
-            filtered_channel = filter(X[:, channel])
+            filtered_channel = image_filter(X[:, channel])
 
             # Set copy to dtype float32
             filtered_channel = filtered_channel.astype("float32")
