@@ -63,10 +63,7 @@ class VisualizationBlock(BaseEstimator, TransformerMixin):
             os.makedirs(preds_loc)
 
         dice = DiceCoefficient()
-        dice_coefs = []
-        intersections = []
-        sum_targets = []
-        sum_preds = []
+        dice_coefs, intersections, sum_targets, sum_preds = [], [], [], []
 
         logger.info("Calculating dice coefficients...")
         for i, (pred, filename) in enumerate(zip(self.preds, filenames, strict=False)):
