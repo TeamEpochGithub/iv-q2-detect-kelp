@@ -7,12 +7,12 @@ from pathlib import Path
 
 import hydra
 import randomname
-import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 
+import wandb
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -49,7 +49,7 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     coloredlogs.install()
 
-    #Set seed
+    # Set seed
     set_torch_seed()
 
     # Check for missing keys in the config file
@@ -63,14 +63,6 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     wandb_group_name = randomname.get_name()
 
     for i, (train_indices, test_indices) in enumerate(instantiate(cfg.splitter).split(X, y)):
-        set_torch_seed()
-        print(train_indices)
-        print(len(train_indices))
-        print(test_indices)
-        print(len(test_indices))
-        continue
-
-
         # https://github.com/wandb/wandb/issues/5119
         # This is a workaround for the issue where sweeps override the run id annoyingly
         reset_wandb_env()

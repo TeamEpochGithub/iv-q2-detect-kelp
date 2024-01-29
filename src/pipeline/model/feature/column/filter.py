@@ -2,12 +2,14 @@
 
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import dask
 import dask.array as da
 import dask_image.ndfilters as dask_filter
-import skimage
+import numpy as np
+import numpy.typing as npt
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
@@ -26,7 +28,7 @@ class Filter(BaseEstimator, TransformerMixin):
     :param channels: A list of channels to apply the filters to.
     """
 
-    filters: list[skimage.filters] | list[dask_filter]
+    filters: list[Callable[..., npt.NDArray[np.float_] | da.Array]] | list[dask_filter]
     channels: list[int]
 
     def __post_init__(self) -> None:
@@ -54,8 +56,8 @@ class Filter(BaseEstimator, TransformerMixin):
         total_args = ""
         for image_filter in self.filters:
             # Filter is a functools.partial object, grab the underlying function
-            filter_name = str(image_filter.func.__name__)
-            filter_args = str(image_filter.keywords)
+            filter_name = str(image_filter.func.__name__)  # type: ignore[union-attr]
+            filter_args = str(image_filter.keywords)  # type: ignore[union-attr]
             # Now filter_args is a dict, convert to string without ''
             filter_args = filter_args.replace("'", "")
             filter_args = filter_args.replace(":", "")
