@@ -3,7 +3,7 @@ from unittest import TestCase
 import dask.array as da
 import numpy as np
 
-from src.pipeline.model.feature.transformation.to_zero import ToZero
+from src.pipeline.model.feature.transformation.set_outside_range import SetOutsideRange
 
 
 class TestToZero(TestCase):
@@ -14,7 +14,7 @@ class TestToZero(TestCase):
         error_range = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.9, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
 
         with self.assertRaises(ValueError):
-            to_zero = ToZero(range_to_zero=error_range)
+            to_zero = SetOutsideRange(ranges=error_range)
             to_zero.fit_transform(X)
 
     def test_to_zero_default(self):
@@ -29,7 +29,7 @@ class TestToZero(TestCase):
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
 
-        to_zero = ToZero(range_to_zero=ranges)
+        to_zero = SetOutsideRange(ranges=ranges)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
@@ -65,7 +65,7 @@ class TestToZero(TestCase):
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
 
-        to_zero = ToZero(range_to_zero=ranges, nan_to_zero=False)
+        to_zero = SetOutsideRange(ranges=ranges, nan_to_zero=False)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
@@ -95,7 +95,7 @@ class TestToZero(TestCase):
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
 
-        to_zero = ToZero(range_to_zero=ranges, nan_to_zero=False, nan_value=10)
+        to_zero = SetOutsideRange(ranges=ranges, nan_to_zero=False, nan_value=10)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
