@@ -11,13 +11,13 @@ from typing import NamedTuple
 import dask.array as da
 import hydra
 import randomname
-import wandb
 from distributed import Client
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
 from omegaconf import DictConfig
 from sklearn.model_selection import StratifiedKFold
 
+import wandb
 from src.config.cross_validation_config import CVConfig
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -103,8 +103,6 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-    X = X[:1000]
-    y = y[:1000]
 
     # Perform stratified k-fold cross validation, where the group of each image is determined by having kelp or not.
     kf = StratifiedKFold(n_splits=cfg.splitter.n_splits)
