@@ -99,7 +99,7 @@ class VisualizationBlock(BaseEstimator, TransformerMixin):
 
         # Write the results to a csv file
         with open(f"{output_dir}/results.csv", "w") as f:
-            f.write("image_key,in_val, sum_targets,sum_preds,intersections,dice_coef,\n")
+            f.write("image_key,in_val,sum_targets,sum_preds,intersections,dice_coef,\n")
             for i, (filename, dice_coef) in enumerate(zip(filenames, dice_coefs, strict=False)):
                 files = filename.split("_")
                 image_key = files[0]
