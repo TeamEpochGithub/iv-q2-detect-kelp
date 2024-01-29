@@ -9,19 +9,37 @@
 
 ```python
 transformations:
+# ToZero
+- _target_: src.pipeline.model.feature.transformation.to_zero.SetOutsideRange
+range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1, 1.1], [-1, 5]]  # [SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+nan_to_zero: True
+nan_value: -32768
+- _target_: src.pipeline.model.feature.transformation.clip.Clip
+feature_ranges: [[6250, 12000], [6500, 13250], [6500, 12000], [5750, 11250], [6500, 12000], [0, 1], [0, 5]]  # [SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
   # ToZero
-  - _target_: src.pipeline.model.feature.transformation.to_zero.ToZero
-    range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1,1.1], [-1, 5]]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
-    nan_to_zero: True
-    nan_value: -32768
-  - _target_: src.pipeline.model.feature.transformation.clip.Clip
-    feature_ranges: [ [ 6250, 12000 ], [ 6500, 13250 ], [ 6500, 12000 ], [ 5750, 11250 ], [ 6500, 12000 ], [ 0, 1 ], [ 0, 5 ] ]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+- _target_: src.pipeline.model.feature.transformation.to_zero.ToZero
+range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1,1.1], [-1, 5]]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+nan_to_zero: True
+nan_value: -32768
+- _target_: src.pipeline.model.feature.transformation.clip.Clip
+feature_ranges: [ [ 6250, 12000 ], [ 6500, 13250 ], [ 6500, 12000 ], [ 5750, 11250 ], [ 6500, 12000 ], [ 0, 1 ], [ 0, 5 ] ]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
 
 ```
 
 ```
 
 ### Feature columns
+
+```python
+target_pipeline:
+  processed_path: data/processed/target
+  transformation_pipeline:
+    transformations:
+      - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
+        sigma: 2
+  column_pipeline:
+    columns: []
+```
 
 ## Pretrain
 

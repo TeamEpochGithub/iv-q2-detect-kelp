@@ -23,7 +23,7 @@ class BinarySegmentationStratifiedKFold:
 
     n_splits: Annotated[int, Ge(2)] = 5
     shuffle: bool = True
-    random_state: int | None = None
+    random_state: int | None = 42
     coverages: npt.NDArray[np.float_] | None = None
 
     _bins: npt.NDArray[np.uintp] = field(init=False)

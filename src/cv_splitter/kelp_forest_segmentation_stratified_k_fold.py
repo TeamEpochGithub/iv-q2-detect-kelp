@@ -27,7 +27,7 @@ class KelpForestSegmentationStratifiedKFold:
     metadata_path: Path
     n_splits: Annotated[int, Ge(2)] = 5
     shuffle: bool = True
-    random_state: int | None = None
+    random_state: int | None = 42
 
     def split(self, X: npt.ArrayLike, y: npt.NDArray[np.bool_] | da.Array, groups: Iterable[int] | None = None) -> Iterator[tuple[list[int], list[int]]]:  # noqa: ARG002
         """Generate indices to split data into training and test set.
