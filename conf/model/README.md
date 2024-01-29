@@ -16,6 +16,9 @@ transformations:
     nan_value: -32768
   - _target_: src.pipeline.model.feature.transformation.clip.Clip
     feature_ranges: [ [ 6250, 12000 ], [ 6500, 13250 ], [ 6500, 12000 ], [ 5750, 11250 ], [ 6500, 12000 ], [ 0, 1 ], [ 0, 5 ] ]  #[SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
+
+```
+
 ```
 
 ### Feature columns
