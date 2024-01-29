@@ -47,7 +47,7 @@ class AuxiliaryModel(nn.Module):
         if self.activation is not None:
             y = self.activation(y)
 
-        softmax_result = self.softmax(y[:, 1:])
-        y = torch.cat((y[:, :1], softmax_result), dim=1)
+        #softmax_result = self.softmax(y[:, 1:])
+        #y = torch.cat((y[:, :1], softmax_result), dim=1)
 
         return y

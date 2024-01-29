@@ -14,7 +14,7 @@ class AuxiliaryLoss(nn.Module):
     def __post_init__(self) -> None:
         """Initialize the AuxiliaryLoss."""
         super().__init__()
-        self.classification_loss = nn.CrossEntropyLoss()
+        self.classification_loss = nn.BCELoss()
         self.regression_loss = DiceLoss()
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
@@ -38,6 +38,6 @@ class AuxiliaryLoss(nn.Module):
 
         classification_loss = self.classification_loss(preds[:, 1:], targets[:, 1:])
 
-        loss = regression_loss + classification_loss * self.classification_weight
+        loss = (regression_loss + classification_loss * self.classification_weight) / (1 + self.classification_weight)
 
         return loss
