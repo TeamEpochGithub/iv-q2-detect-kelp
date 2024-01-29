@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 import dask
 import dask.array as da
-import dask_image.ndfilters as dask_filter
 import numpy as np
 import numpy.typing as npt
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -28,7 +27,7 @@ class Filter(BaseEstimator, TransformerMixin):
     :param channels: A list of channels to apply the filters to.
     """
 
-    filters: list[Callable[..., npt.NDArray[np.float_] | da.Array]] | list[dask_filter]
+    filters: list[Callable[..., da.Array | npt.NDArray[np.float_]]]
     channels: list[int]
 
     def __post_init__(self) -> None:
@@ -52,19 +51,12 @@ class Filter(BaseEstimator, TransformerMixin):
         return self
 
     def __repr__(self) -> str:
-        """Return a string representation of the object."""
-        total_args = ""
-        for image_filter in self.filters:
-            # Filter is a functools.partial object, grab the underlying function
-            filter_name = str(image_filter.func.__name__)  # type: ignore[union-attr]
-            filter_args = str(image_filter.keywords)  # type: ignore[union-attr]
-            # Now filter_args is a dict, convert to string without ''
-            filter_args = filter_args.replace("'", "")
-            filter_args = filter_args.replace(":", "")
-            # Now this is a function with a memory address, grab the name and arguments
-            total_args += f"{filter_name}-{filter_args}"
+        """Return the string representation of the filter.
 
-        return f"Filter(filters={total_args},channels={self.channels})"
+        :return: The string representation of the filter.
+        """
+        total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
+        return f"Filter(filters={''.join(total_args)},channels={self.channels})"
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
@@ -78,7 +70,7 @@ class Filter(BaseEstimator, TransformerMixin):
         # Loop through all the channels and apply the filter
         for image_filter, channel in zip(self.filters, self.channels, strict=False):
             # Apply the filter
-            filter_name = image_filter.__class__.__name__
+            filter_name = image_filter.func.__name__  # type: ignore[attr-defined]
             logger.info(f"Applying {filter_name} to channel {channel}")
             filtered_channel = image_filter(X[:, channel])
 
@@ -90,3 +82,14 @@ class Filter(BaseEstimator, TransformerMixin):
 
         logger.info(f"Filter transform complete in: {time.time() - start_time} seconds")
         return X
+
+
+def image_filter_to_str(image_filter: Callable[..., da.Array | npt.NDArray[np.float_]]) -> str:
+    """Convert an image filter to a string.
+
+    :param image_filter: The image filter to convert.
+    :return: The string representation of the image filter.
+    """
+    filter_name = image_filter.func.__name__  # type: ignore[attr-defined]
+    filter_args = str(image_filter.keywords).replace("'", "").replace(":", "")  # type: ignore[attr-defined]
+    return f"{filter_name}-{filter_args}"

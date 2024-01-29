@@ -31,13 +31,15 @@ class ScalerBlock(PretrainBlock):
     def __post_init__(self) -> None:
         """Post init hook."""
         super().__post_init__()
+        self.cache_pretrain: bool = True
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W).
         :param y: Target data. Shape should be (N, H, W).
-        :param train_indices: Indices of the training data in X.
+        :param train_indices: Indices of the training data in X
+        :param save_pretrain: Whether to save the pretrain.
         :param save_pretrain_with_split: Whether to save this block with the split.
         :return: The fitted transformer
         """
@@ -92,7 +94,7 @@ class ScalerBlock(PretrainBlock):
             X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
-        if hasattr(self, "cache_pretrain") and self.cache_pretrain:
+        if self.cache_pretrain:
             return self.save_pretrain(X)
 
         return X

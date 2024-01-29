@@ -117,7 +117,7 @@ model_loop_pipeline:
           multiply_kelp: True
         epochs: 100
         batch_size: 8
-        patience: 20
+        patience: 1
         transformations:
           _target_: src.augmentations.transformations.Transformations
           alb:

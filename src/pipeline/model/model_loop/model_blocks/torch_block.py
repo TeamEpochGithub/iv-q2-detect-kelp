@@ -4,8 +4,8 @@ import functools
 import gc
 import sys
 import time
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -61,6 +61,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     patience: Annotated[int, Gt(0)] = 5
     # noinspection PyTypeHints
     test_size: Annotated[float, Interval(ge=0, le=1)] = 0.2  # Hashing purposes
+    best_model_state_dict: Mapping[str, Any] = field(default_factory=dict, init=False, repr=False)
     transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
 
@@ -179,7 +180,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self._training_loop(train_loader, test_loader, train_losses, val_losses)
         logger.info("Done training the model")
 
-        if hasattr(self, "best_model_state_dict"):
+        if self.best_model_state_dict:
             logger.info(f"Reverting to model with best validation loss {self.lowest_val_loss}")
             self.model.load_state_dict(self.best_model_state_dict)
 
