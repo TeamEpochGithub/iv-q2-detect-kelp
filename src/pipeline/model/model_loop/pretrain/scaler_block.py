@@ -92,8 +92,9 @@ class ScalerBlock(PretrainBlock):
             X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
         logger.info("Lazily transformed the data using the scaler")
         logger.info(f"Shape of the data after transforming: {X.shape}")
-        if self.cache_pretrain:
+        if hasattr(self, "cache_pretrain") and self.cache_pretrain:
             return self.save_pretrain(X)
+
         return X
 
     def save_scaler(self) -> None:
