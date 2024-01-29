@@ -19,6 +19,7 @@ from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
 from src.utils.script.lock import Lock
 from src.utils.script.reset_wandb_env import reset_wandb_env
+from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -48,6 +49,9 @@ def run_cv_cfg(cfg: DictConfig) -> None:
 
     coloredlogs.install()
 
+    #Set seed
+    set_torch_seed()
+
     # Check for missing keys in the config file
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
@@ -59,6 +63,14 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     wandb_group_name = randomname.get_name()
 
     for i, (train_indices, test_indices) in enumerate(instantiate(cfg.splitter).split(X, y)):
+        set_torch_seed()
+        print(train_indices)
+        print(len(train_indices))
+        print(test_indices)
+        print(len(test_indices))
+        continue
+
+
         # https://github.com/wandb/wandb/issues/5119
         # This is a workaround for the issue where sweeps override the run id annoyingly
         reset_wandb_env()
