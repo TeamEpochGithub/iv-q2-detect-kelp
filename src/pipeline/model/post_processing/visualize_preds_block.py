@@ -29,6 +29,7 @@ class VisualizationBlock(BaseEstimator, TransformerMixin):
     """
 
     raw_data_path: str
+    save_train: bool = False
 
     def fit(self, X: npt.NDArray[np.float64 | np.float32 | np.int32], y: da.Array, *, test_indices: list[int] | None = None) -> Self:
         """Store the predicted images and their corresponding scores to the output folder.
@@ -46,10 +47,16 @@ class VisualizationBlock(BaseEstimator, TransformerMixin):
             test_indices = []
         output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
         test_indices.sort()
-        self.preds = X[test_indices]
-        self.targets = y[test_indices].compute()
         _, filenames = setup_test_data(self.raw_data_path)
-        filenames = list(np.array(filenames)[test_indices])
+
+        if self.save_train:
+            self.preds = X
+            self.targets = y.compute()
+            filenames = list(np.array(filenames))
+        else:
+            self.preds = X[test_indices]
+            self.targets = y[test_indices].compute()
+            filenames = list(np.array(filenames)[test_indices])
 
         preds_loc = f"{output_dir}/preds"
         if not os.path.exists(preds_loc):
@@ -86,14 +93,20 @@ class VisualizationBlock(BaseEstimator, TransformerMixin):
         sum_targets = list(np.array(sum_targets)[idxs])
         sum_preds = list(np.array(sum_preds)[idxs])
         filenames = list(np.array(filenames)[idxs])
+        if self.save_train:
+            # Create a column called in_val to indicate whether the image is in the validation set (1) or not (0)
+            in_val = np.zeros(len(filenames))
+            in_val[test_indices] = 1
+        else:
+            in_val = np.ones(len(filenames))
 
         # Write the results to a csv file
         with open(f"{output_dir}/results.csv", "w") as f:
-            f.write("image_key,sum_targets,sum_preds,intersections,dice_coef\n")
+            f.write("image_key,in_val, sum_targets,sum_preds,intersections,dice_coef,\n")
             for i, (filename, dice_coef) in enumerate(zip(filenames, dice_coefs, strict=False)):
                 files = filename.split("_")
                 image_key = files[0]
-                f.write(f"{image_key}, {sum_targets[i]}, {sum_preds[i]}, {intersections[i]}, {dice_coef}\n")
+                f.write(f"{image_key}, {in_val[i]}, {sum_targets[i]}, {sum_preds[i]}, {intersections[i]}, {dice_coef}\n")
 
             f.close()
         logger.info("Done storing the results")
