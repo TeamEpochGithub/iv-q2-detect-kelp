@@ -142,4 +142,3 @@ post_processing_pipeline:
       raw_data_path: data/raw/train_satellite
       save_train: True
     - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold: 0.9
