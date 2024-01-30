@@ -1,18 +1,18 @@
-"""TorchBlock class."""
+"""Pipeline step for a PyTorch Model."""
 import copy
 import functools
 import gc
 import sys
 import time
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Annotated, Any
 
 import dask.array as da
 import numpy as np
 import torch
-from annotated_types import Gt
+from annotated_types import Gt, Interval
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
@@ -47,6 +47,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     :param epochs: Number of epochs.
     :param batch_size: Batch size.
     :param patience: Patience for early stopping.
+    :param test_size: The relative size of the test set ∈ [0, 1].
+    :param transformations: Transformations to apply to the data.
+    :param layerwise_lr_decay: Layerwise learning rate decay.
     """
 
     model: nn.Module
@@ -56,16 +59,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
-    test_size: float = 0.2  # Hashing purposes
+    # noinspection PyTypeHints
+    test_size: Annotated[float, Interval(ge=0, le=1)] = 0.2  # Hashing purposes
+    best_model_state_dict: Mapping[str, Any] = field(default_factory=dict, init=False, repr=False)
     transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
-        # Set the hash
         self.set_hash("")
 
-        # Set model is saved to true
         self.save_model_to_disk = True
 
         if self.layerwise_lr_decay is None:
@@ -110,6 +113,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         :param train_indices: Indices of the training data.
         :param test_indices: Indices of the test data.
         :param cache_size: Number of samples to load into memory.
+        :param save_model: Whether to save the model to disk.
         :return: Fitted model.
         """
         # Check if the model exists
@@ -119,7 +123,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             return self
 
         # TODO(Jasper): Add scheduler to the loop if it is not none
-        # TODO(Epoch): Add scheduler to the loop if it is not none
         # Train the model with self.model named model, print model name to print_section_separator
         # Print the model name to print_section_separator
         print_section_separator(f"Training model: {self.model.__class__.__name__}")
@@ -139,7 +142,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Setting cache size to -1 will load all samples into memory
         # If it is not -1 then it will load cache_size * train_ratio samples into memory for training
         # and cache_size * (1 - train_ratio) samples into memory for testing
-        # np.round is there to make sure we dont miss a sample due to int to float conversion
+        # np.round is there to make sure we don't miss a sample due to int to float conversion
         start_time = time.time()
         train_dataset = Dask2TorchDataset(X_train, y_train, transforms=self.transformations)
         logger.info(f"Created train dataset in {time.time() - start_time} seconds")
@@ -147,14 +150,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         train_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * train_ratio)))
         logger.info(f"Created train cache in {time.time() - start_time} seconds")
         start_time = time.time()
-        test_dataset = Dask2TorchDataset(X_test, y_test, transforms=self.transformations)
+        test_dataset = Dask2TorchDataset(X_test, y_test)
         logger.info(f"Created test dataset in {time.time() - start_time} seconds")
         start_time = time.time()
         test_dataset.create_cache(cache_size if cache_size == -1 else int(np.round(cache_size * (1 - train_ratio))))
         logger.info(f"Created test cache in {time.time() - start_time} seconds")
 
         # Create dataloaders from the datasets
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, collate_fn=collate_fn)  # type: ignore[arg-type]
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False, collate_fn=collate_fn)  # type: ignore[arg-type]
 
         # Train model
@@ -175,8 +178,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         # Train the model
         self._training_loop(train_loader, test_loader, train_losses, val_losses)
-
         logger.info("Done training the model")
+
+        if self.best_model_state_dict:
+            logger.info(f"Reverting to model with best validation loss {self.lowest_val_loss}")
+            self.model.load_state_dict(self.best_model_state_dict)
+
         if save_model:
             self.save_model()
 
@@ -204,7 +211,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         """
         for epoch in range(self.epochs):
             # Train using train_loader
-            train_loss = self._train_one_epoch(train_loader, desc=f"Epoch {epoch} Train")
+            train_loss = self._train_one_epoch(train_loader, epoch)
             logger.debug(f"Epoch {epoch} Train Loss: {train_loss}")
             train_losses.append(train_loss)
 
@@ -243,16 +250,16 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # Log the trained epochs to wandb if we finished training
                 wandb.log({"Epochs": epoch + 1})
 
-    def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], desc: str) -> float:
+    def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], epoch: int) -> float:
         """Train the model for one epoch.
 
         :param dataloader: Dataloader for the training data.
-        :param desc: Description for the tqdm progress bar.
+        :param epoch: Epoch number.
         :return: Average loss for the epoch.
         """
         losses = []
         self.model.train()
-        pbar = tqdm(dataloader, unit="batch")
+        pbar = tqdm(dataloader, unit="batch", desc=f"Epoch {epoch} Train")
         for batch in pbar:
             X_batch, y_batch = batch
             X_batch = X_batch.to(self.device).float()
@@ -269,12 +276,11 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
             # Print tqdm
             losses.append(loss.item())
-            pbar.set_description(desc=desc)
             pbar.set_postfix(loss=sum(losses) / len(losses))
 
         # Step the scheduler
         if self.initialized_scheduler is not None:
-            self.initialized_scheduler.step()
+            self.initialized_scheduler.step(epoch=epoch)
 
         # Remove the cuda cache
         torch.cuda.empty_cache()
@@ -309,27 +315,33 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         return sum(losses) / len(losses)
 
     def save_model(self) -> None:
-        """Save the model in the tm folder.
-
-        :param block_hash: Hash of the model pipeline
-        """
+        """Save the model in the tm folder."""
         logger.info(f"Saving model to tm/{self.prev_hash}.pt")
-        torch.save(self.model.state_dict(), f"tm/{self.prev_hash}.pt")
+        torch.save(self.model, f"tm/{self.prev_hash}.pt")
         logger.info(f"Model saved to tm/{self.prev_hash}.pt")
         self.model_is_saved = True
 
     def load_model(self) -> None:
-        """Load the model from the tm folder.
-
-        :param block_hash: Hash of the model pipeline
-        """
+        """Load the model from the tm folder."""
         # Load the model if it exists
         if not Path(f"tm/{self.prev_hash}.pt").exists():
-            logger.error(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
-            sys.exit(1)
+            raise FileNotFoundError(f"Model does not exist at tm/{self.prev_hash}.pt, train the model first")
 
         logger.info(f"Loading model from tm/{self.prev_hash}.pt")
-        self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
+        checkpoint = torch.load(f"tm/{self.prev_hash}.pt")
+
+        # Load the weights from the checkpoint
+        if isinstance(checkpoint, nn.DataParallel):
+            model = checkpoint.module
+        else:
+            model = checkpoint
+
+        # Set the current model to the loaded model
+        if isinstance(self.model, nn.DataParallel):
+            self.model.module.load_state_dict(model.state_dict())
+        else:
+            self.model.load_state_dict(model.state_dict())
+
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
     def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
@@ -382,13 +394,12 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Store the best model so far based on validation loss
         if self.last_val_loss < self.lowest_val_loss:
             self.lowest_val_loss = self.last_val_loss
-            self.best_model = copy.deepcopy(self.model.state_dict())
+            self.best_model_state_dict = copy.deepcopy(self.model.state_dict())
             self.early_stopping_counter = 0
         else:
             self.early_stopping_counter += 1
             if self.early_stopping_counter >= self.patience:
-                logger.info(f"Loading best model with validation loss {self.lowest_val_loss}")
-                self.model.load_state_dict(self.best_model)
+                logger.info("Ran out of patience, stopping early")
                 return True
         return False
 

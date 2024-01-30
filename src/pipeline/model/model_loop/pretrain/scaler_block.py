@@ -31,13 +31,15 @@ class ScalerBlock(PretrainBlock):
     def __post_init__(self) -> None:
         """Post init hook."""
         super().__post_init__()
+        self.cache_pretrain: bool = True
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:  # noqa: ARG002
         """Fit the scaler.
 
         :param X: Data to fit. Shape should be (N, C, H, W).
         :param y: Target data. Shape should be (N, H, W).
-        :param train_indices: Indices of the training data in X.
+        :param train_indices: Indices of the training data in X
+        :param save_pretrain: Whether to save the pretrain.
         :param save_pretrain_with_split: Whether to save this block with the split.
         :return: The fitted transformer
         """
@@ -94,26 +96,20 @@ class ScalerBlock(PretrainBlock):
         logger.info(f"Shape of the data after transforming: {X.shape}")
         if self.cache_pretrain:
             return self.save_pretrain(X)
+
         return X
 
     def save_scaler(self) -> None:
-        """Save the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
+        """Save the scaler using joblib."""
         logger.info(f"Saving scaler to tm/{self.prev_hash}.scaler")
         joblib.dump(self.scaler, f"tm/{self.prev_hash}.scaler")
         logger.info(f"Saved scaler to tm/{self.prev_hash}.scaler")
 
     def load_scaler(self) -> None:
-        """Load the scaler using joblib.
-
-        :param scaler_hash: Hash of the scaler.
-        """
+        """Load the scaler using joblib."""
         # Check if the scaler exists
         if not Path(f"tm/{self.prev_hash}.scaler").exists():
-            logger.error(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
-            sys.exit(1)
+            raise FileNotFoundError(f"Scaler at tm/{self.prev_hash}.scaler does not exist, train the scaler first")
 
         logger.info(f"Loading scaler from tm/{self.prev_hash}.scaler")
         self.scaler = joblib.load(f"tm/{self.prev_hash}.scaler")
