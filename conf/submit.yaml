@@ -1,8 +1,8 @@
 defaults:
   - base_submit
   - hydra/logging
-  - model: feats
+  - model: cv_validate
 
 raw_data_path: data/raw/test_satellite
 raw_target_path: data/raw/train_kelp
-test_size: 0.2
+test_size: 0
