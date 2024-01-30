@@ -56,7 +56,7 @@ target_pipeline:
   transformation_pipeline:
     transformations:
       - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
-        sigma: 1
+        sigma: 0.5
   column_pipeline:
     columns: []
 
@@ -81,7 +81,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: mobilenet_v2
+            encoder_name: vgg11
             in_channels: 6
             classes: 3
             activation: sigmoid
@@ -90,12 +90,12 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
-          lr: 0.0005
+          lr: 0.00005
         scheduler:
         criterion:
-          _target_: src.modules.loss.auxiliary_loss.AuxiliaryLoss
-          classification_weight: 1
-        epochs: 5
+          _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
+          classification_weight: 20
+        epochs: 100
         batch_size: 8
         patience: 15
         transformations:
@@ -104,18 +104,18 @@ model_loop_pipeline:
             _target_: kornia.augmentation.AugmentationSequential
             _args_:
               - _target_: kornia.augmentation.RandomHorizontalFlip
-                p: 0.5
+                p: 0.25
               - _target_: kornia.augmentation.RandomVerticalFlip
-                p: 0.5
+                p: 0.25
               - _target_: kornia.augmentation.RandomRotation
                 degrees: 90
-                p: 0.5
+                p: 0.05
               - _target_: kornia.augmentation.RandomGaussianBlur
                 kernel_size: [3, 3]
-                p: 0.5
+                p: 0.2
                 sigma: [0.1, 2.0]
               - _target_: kornia.augmentation.RandomMosaic
-                p: 0.5
+                p: 0.25
                 output_size: [350,350]
 
 post_processing_pipeline:
