@@ -26,12 +26,14 @@ from src.pipeline.model.model_loop.model_blocks.auxiliary_block import Auxiliary
 from src.modules.loss.auxiliary_loss_double import AuxiliaryLossDouble
 from functools import partial
 
+from src.pipeline.model.model_loop.model_blocks.torch_block import TorchBlock
+
 
 @dataclass
 class DLEnsemble(EnsembleBase):
     optimizer: functools.partial[Optimizer] = field(default_factory=partial(Optimizer, lr=0.001))
     scheduler: Callable[[Optimizer], LRScheduler] | None = None
-    criterion: nn.Module = AuxiliaryLossDouble()
+    criterion: nn.Module = field(default_factory=nn.Module())
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
@@ -128,12 +130,12 @@ class DLEnsemble(EnsembleBase):
         :return: The segmentation head
         """
         segmentation_head = nn.Sequential(
-            nn.Conv2d(input_shape[1], 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
+            nn.Conv2d(input_shape[1], 1, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)),
             nn.Sigmoid(),
         )
 
         # Create auxiliary block
-        aux_block = AuxiliaryBlock(
+        aux_block = TorchBlock(
             model=segmentation_head,
             optimizer=self.optimizer,
             scheduler=self.scheduler,

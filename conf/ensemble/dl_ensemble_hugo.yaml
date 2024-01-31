@@ -1,0 +1,20 @@
+defaults:
+  - /model/hugo@models.aux
+
+_target_: src.pipeline.ensemble.dl_ensemble.DLEnsemble
+_convert_: 'partial'
+
+optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.AdamW
+  lr: 0.0005
+scheduler:
+criterion:
+  _target_: src.modules.loss.dice_loss.DiceLoss
+epochs: 100
+batch_size: 32
+patience: 10
+
+post_ensemble_steps:
