@@ -112,6 +112,16 @@ model_loop_pipeline:
               path: torch.optim.Adam
           lr: 0.001
         scheduler:
+          _target_: functools.partial
+          _args_:
+            - _target_: hydra.utils.get_class
+              path: timm.scheduler.cosine_lr.CosineLRScheduler
+          t_initial: 60
+          cycle_mul: 1
+          cycle_decay: 1
+          cycle_limit: 1
+          warmup_t: 5
+          warmup_lr_init: 1e-5
         criterion:
           _target_: src.modules.loss.jaccard_loss.JaccardLoss
         epochs: 100

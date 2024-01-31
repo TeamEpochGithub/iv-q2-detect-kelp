@@ -104,10 +104,12 @@ class DLEnsemble(EnsembleBase):
             model.fit(X, new_y, **model_fit_params)
 
         # Create empty numpy array
-        model_predictions = np.empty((X.shape[0], 0,350,350))
+        model_predictions = np.empty((X.shape[0], 16,350,350))
 
         for model in self.models.values():
-            model_predictions = np.concatenate([model_predictions, model.predict(X, **self.feature_map_args)], axis=1)
+            # Add the predictions to the numpy array
+            model_predictions = model_predictions + model.predict(X, **self.feature_map_args)
+            #model_predictions = np.concatenate([model_predictions, model.predict(X, **self.feature_map_args)], axis=1)
 
         # Train the segmentation head if needed
         self.segmentation_head = self._create_segmentation_head(model_predictions.shape)
