@@ -131,7 +131,7 @@ def generate_ensemble_params(
                 "post_processing_pipeline_step": {name: {"test_indices": test_indices} for name, _ in model_pipeline.named_steps.post_processing_pipeline_step.steps}
                 if "post_processing_pipeline_step" in model_pipeline.named_steps
                 else {},
-                }
+            }
             for name, model_pipeline in ensemble_pipeline.models.items()
         }
         if ensemble_pipeline

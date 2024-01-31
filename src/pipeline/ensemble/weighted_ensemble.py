@@ -5,8 +5,8 @@ from typing import Any
 
 import dask.array as da
 import numpy as np
-from src.logging_utils.logger import logger
 
+from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.ensemble.error import EnsemblePipelineError
 
@@ -68,11 +68,7 @@ class WeightedEnsemble(EnsembleBase):
             else:
                 predictions = predictions + model.fit_transform(X, new_y, **model_fit_params) * self.weights[i]
         for step in self.post_ensemble_steps:
-            predictions = step.transform(predictions)
+            # Apply the post ensemble steps
+            predictions = step.fit_transform(predictions, y)
 
-        # Make sure predictions are 0 or 1, use threshold of 0.5
-        predictions[predictions > 0.5] = 1
-        predictions[predictions <= 0.5] = 0
-
-        
         return np.array(predictions)
