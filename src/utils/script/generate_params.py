@@ -132,7 +132,7 @@ def generate_ensemble_params(
                 if "post_processing_pipeline_step" in model_pipeline.named_steps
                 else {},
                 }
-            for name, model_pipeline in ensemble_pipeline.steps
+            for name, model_pipeline in ensemble_pipeline.models.items()
         }
         if ensemble_pipeline
         else {}
