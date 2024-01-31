@@ -12,7 +12,6 @@ from typing import Annotated, Any
 import dask.array as da
 import numpy as np
 import torch
-import wandb
 from annotated_types import Gt, Interval
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -23,6 +22,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -333,7 +333,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         self.model.load_state_dict(torch.load(f"tm/{self.prev_hash}.pt"))
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array, cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -359,6 +359,15 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             for data in tepoch:
                 X_batch = data
                 X_batch = X_batch.to(self.device).float()
+
+                if feature_map:
+                    # forward pass
+                    if hasattr(self.model, "model") and hasattr(self.model.model, "segmentation_head"):
+                        self.model.model.segmentation_head = nn.Identity()
+                    y_pred = self.model(X_batch).cpu().numpy()
+                    preds.extend(y_pred)
+                    continue
+                
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
                 preds.extend(y_pred)

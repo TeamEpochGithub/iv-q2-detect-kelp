@@ -85,6 +85,15 @@ class Dask2TorchDataset(Dataset[Any]):
 
         :param size: Maximum number of samples to load into memory. If -1, load all samples.
         """
+        # If type of self.daskX is numpy array, it means that the cache is already loaded so move to self.memX
+        if isinstance(self.daskX, np.ndarray):
+            self.memX = np.array(self.daskX)
+            self.daskX = da.from_array(np.array([]))
+            if self.daskY is not None:
+                self.memY = np.array(self.daskY)
+                self.daskY = da.from_array(np.array([]))
+            return
+        
         if size == -1 or size >= self.daskX.shape[0]:
             self.memX = self.daskX.compute()
             self.daskX = da.from_array(np.array([]))

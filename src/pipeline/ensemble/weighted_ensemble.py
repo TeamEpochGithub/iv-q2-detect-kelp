@@ -5,8 +5,8 @@ from typing import Any
 
 import dask.array as da
 import numpy as np
-from src.logging_utils.logger import logger
 
+from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.ensemble.error import EnsemblePipelineError
 
@@ -74,5 +74,4 @@ class WeightedEnsemble(EnsembleBase):
         predictions[predictions > 0.5] = 1
         predictions[predictions <= 0.5] = 0
 
-        
         return np.array(predictions)
