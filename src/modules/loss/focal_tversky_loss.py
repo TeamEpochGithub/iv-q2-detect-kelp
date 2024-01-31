@@ -12,6 +12,7 @@ class FocalTverskyLoss(nn.Module):
     alpha: float = 0.5
     beta: float = 0.5
     gamma: float = 1.0
+    multiply_kelp: bool = False
 
     def __post_init__(self) -> None:
         """Initialize class."""
@@ -35,5 +36,5 @@ class FocalTverskyLoss(nn.Module):
         FN = (targets * (1 - inputs)).sum()
 
         Tversky = (TP + smooth) / (TP + self.alpha * FP + self.beta * FN + smooth)
-
-        return (1 - Tversky) ** self.gamma
+        num_ones = targets.sum() if self.multiply_kelp else 1.0
+        return ((1 - Tversky) ** self.gamma) * num_ones

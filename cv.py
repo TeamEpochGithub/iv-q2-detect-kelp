@@ -19,6 +19,7 @@ from src.logging_utils.section_separator import print_section_separator
 from src.utils.script.generate_params import generate_cv_params
 from src.utils.script.lock import Lock
 from src.utils.script.reset_wandb_env import reset_wandb_env
+from src.utils.seed_torch import set_torch_seed
 from src.utils.setup import setup_config, setup_pipeline, setup_train_data, setup_wandb
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -47,6 +48,9 @@ def run_cv_cfg(cfg: DictConfig) -> None:
     import coloredlogs
 
     coloredlogs.install()
+
+    # Set seed
+    set_torch_seed()
 
     # Check for missing keys in the config file
     setup_config(cfg)
