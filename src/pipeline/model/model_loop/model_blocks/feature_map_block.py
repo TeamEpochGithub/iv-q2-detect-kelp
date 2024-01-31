@@ -37,7 +37,7 @@ else:
 
 
 @dataclass
-class AuxiliaryBlock(BaseEstimator, TransformerMixin):
+class FeatureMapBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
 
     :param model: Model to train.
@@ -359,6 +359,10 @@ class AuxiliaryBlock(BaseEstimator, TransformerMixin):
             for data in tepoch:
                 X_batch = data
                 X_batch = X_batch.to(self.device).float()
+
+                # Remove last layer of model
+                #self.model = nn.Sequential(*list(self.model.children())[:-1])
+
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
 

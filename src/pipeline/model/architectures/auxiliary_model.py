@@ -26,8 +26,6 @@ class AuxiliaryModel(nn.Module):
         if padding > 0:
             self.padding_layer = nn.ZeroPad2d((padding, padding, padding, padding))
 
-        self.softmax = nn.Softmax(dim=1)
-
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
 
@@ -39,15 +37,18 @@ class AuxiliaryModel(nn.Module):
             x = self.padding_layer(x)
 
         # Forward pass
-        y = self.model(x).squeeze(axis=1)
+        y_r, y_c = self.model(x)
+        y = torch.stack((y_r, y_c), dim=1).squeeze(axis=1)
 
         # Remove the padding if necessary
         if self.padding > 0:
-            y = y[:,:, self.padding : -self.padding, self.padding : -self.padding]
+            if y.ndim == 2:
+                y = y[self.padding : -self.padding, self.padding : -self.padding]
+            elif y.ndim == 3:
+                y = y[:, self.padding : -self.padding, self.padding : -self.padding]
+            elif y.ndim == 4:
+                y = y[:, :, self.padding : -self.padding, self.padding : -self.padding]
         if self.activation is not None:
             y = self.activation(y)
-
-        #softmax_result = self.softmax(y[:, 1:])
-        #y = torch.cat((y[:, :1], softmax_result), dim=1)
 
         return y

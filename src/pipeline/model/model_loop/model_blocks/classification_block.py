@@ -37,7 +37,7 @@ else:
 
 
 @dataclass
-class AuxiliaryBlock(BaseEstimator, TransformerMixin):
+class ClassificationBlock(BaseEstimator, TransformerMixin):
     """Base model for the project.
 
     :param model: Model to train.
@@ -268,7 +268,7 @@ class AuxiliaryBlock(BaseEstimator, TransformerMixin):
 
             # Forward pass
             y_pred = self.model(X_batch).squeeze(1)
-            loss = self.criterion(y_pred, y_batch)
+            loss = self.criterion(y_pred, y_batch.long())
 
             # Backward pass
             self.initialized_optimizer.zero_grad()
@@ -308,7 +308,7 @@ class AuxiliaryBlock(BaseEstimator, TransformerMixin):
 
                 # Forward pass
                 y_pred = self.model(X_batch).squeeze(1)
-                loss = self.criterion(y_pred, y_batch)
+                loss = self.criterion(y_pred, y_batch.long())
 
                 # Print losses
                 losses.append(loss.item())
@@ -362,22 +362,10 @@ class AuxiliaryBlock(BaseEstimator, TransformerMixin):
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
 
-                # Union over 1st channel with threshold 0.5 and argmax of the 2nd and 3rd channel
-                regression_preds = y_pred[:, 0] > 0.5
-                classification_preds = y_pred[:, 1:].argmax(axis=1)
+                # Classification argmax
+                y_pred = np.argmax(y_pred, axis=1)
 
-                stacked_preds = np.stack([regression_preds, classification_preds], axis=1)
-
-                # Perform the logical OR operation on the two channels
-                union_preds = np.logical_or(stacked_preds[:, 0], stacked_preds[:, 1])
-
-                # Convert the boolean array to an integer array
-                union_preds = union_preds.astype(np.uint8)
-
-                #preds.extend(union_preds)
-                preds.extend(classification_preds.astype(np.uint8))
-                #preds.extend(regression_preds.astype(np.uint8))
-
+                preds.extend(y_pred)
         logger.info("Done predicting")
 
         return np.array(preds)

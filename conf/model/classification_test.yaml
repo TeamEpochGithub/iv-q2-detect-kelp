@@ -75,7 +75,7 @@ model_loop_pipeline:
   model_blocks_pipeline:
     model_blocks:
       # Pytorch model
-      - _target_: src.pipeline.model.model_loop.model_blocks.auxiliary_block.AuxiliaryBlock
+      - _target_: src.pipeline.model.model_loop.model_blocks.classification_block.ClassificationBlock
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
@@ -83,7 +83,7 @@ model_loop_pipeline:
             _target_: segmentation_models_pytorch.Unet
             encoder_name: vgg11
             in_channels: 6
-            classes: 3
+            classes: 2
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
@@ -93,11 +93,11 @@ model_loop_pipeline:
           lr: 0.0005
         scheduler:
         criterion:
-          _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
-          classification_weight: 20
-        epochs: 100
+          _target_: segmentation_models_pytorch.losses.LovaszLoss
+          mode: multiclass
+        epochs: 10
         batch_size: 8
-        patience: 10
+        patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations
           korn:
