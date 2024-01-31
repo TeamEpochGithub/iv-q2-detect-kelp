@@ -68,6 +68,7 @@ class LogicalEnsemble(EnsembleBase):
                 logger.info("Now fitting the target pipeline...")
                 new_y = target_pipeline.fit_transform(new_y)
 
+            logger.info("")
             if predictions is None:
                 predictions = model.fit_transform(X, new_y, **model_fit_params)
             else:

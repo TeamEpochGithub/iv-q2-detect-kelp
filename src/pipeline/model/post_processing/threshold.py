@@ -91,4 +91,5 @@ class Threshold(TransformerMixin, BaseEstimator):
         if self.threshold is None:
             raise NotFittedError("Threshold has not been set")
 
+        logger.info(f"Thresholding at {self.threshold}")
         return self.threshold < X

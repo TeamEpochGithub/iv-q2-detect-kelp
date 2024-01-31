@@ -54,7 +54,7 @@ class WeightedEnsemble(EnsembleBase):
         for i, (name, model) in enumerate(self.models.items()):
             model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
             # Remove the model name from the fit params key
-            model_fit_params = {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
+            model_fit_params = {key[len(name) + 2:]: value for key, value in model_fit_params.items()}
 
             target_pipeline = model.get_target_pipeline()
             new_y = copy.deepcopy(y)
@@ -63,10 +63,15 @@ class WeightedEnsemble(EnsembleBase):
                 logger.info("Now fitting the target pipeline...")
                 new_y = target_pipeline.fit_transform(new_y)
 
+            curr_pred = model.fit_transform(X, new_y, **model_fit_params)
+
+            # Check if curr_predictions is np.bool type
+            if curr_pred.dtype == np.bool_:
+                logger.warning("The predictions of the model are already thresholded. This will turn into majority vote...")
             if predictions is None:
-                predictions = model.fit_transform(X, new_y, **model_fit_params) * self.weights[i]
+                predictions = curr_pred * self.weights[i]
             else:
-                predictions = predictions + model.fit_transform(X, new_y, **model_fit_params) * self.weights[i]
+                predictions += curr_pred * self.weights[i]
         for step in self.post_ensemble_steps:
             # Apply the post ensemble steps
             predictions = step.fit_transform(predictions, y)
