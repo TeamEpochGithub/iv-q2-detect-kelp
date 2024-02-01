@@ -1,10 +1,12 @@
 """EnsemblePipeline is the class used to create the ensemble pipeline."""
+import copy
 from dataclasses import dataclass, field
 from typing import Any
 
 import dask.array as da
 import numpy as np
 
+from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.ensemble.error import EnsemblePipelineError
 
@@ -49,11 +51,29 @@ class WeightedEnsemble(EnsembleBase):
         :return: The averaged predictions
         """
         predictions = None
-        for i, model in enumerate(self.models.values()):
+        for i, (name, model) in enumerate(self.models.items()):
+            model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
+            # Remove the model name from the fit params key
+            model_fit_params = {key[len(name) + 2:]: value for key, value in model_fit_params.items()}
+
+            target_pipeline = model.get_target_pipeline()
+            new_y = copy.deepcopy(y)
+
+            if target_pipeline is not None:
+                logger.info("Now fitting the target pipeline...")
+                new_y = target_pipeline.fit_transform(new_y)
+
+            curr_pred = model.fit_transform(X, new_y, **model_fit_params)
+
+            # Check if curr_predictions is np.bool type
+            if curr_pred.dtype == np.bool_:
+                logger.warning("The predictions of the model are already thresholded. This will turn into majority vote...")
             if predictions is None:
-                predictions = model.fit_transform(X, y, **fit_params) * self.weights[i]
+                predictions = curr_pred * self.weights[i]
             else:
-                predictions = predictions + model.transform(X) * self.weights[i]
+                predictions += curr_pred * self.weights[i]
         for step in self.post_ensemble_steps:
-            predictions = step.transform(predictions)
+            # Apply the post ensemble steps
+            predictions = step.fit_transform(predictions, y)
+
         return np.array(predictions)
