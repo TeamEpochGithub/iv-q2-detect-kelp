@@ -51,7 +51,7 @@ class Threshold(TransformerMixin, BaseEstimator):
     threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
     max_iterations: Annotated[int, Gt(0)] = 500
 
-    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Iterable[int]) -> Self:  # noqa: ARG002
+    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Iterable[int] | None = None) -> Self:  # noqa: ARG002
         """Fit the threshold.
 
         :param X: Output data of a model.
@@ -91,4 +91,5 @@ class Threshold(TransformerMixin, BaseEstimator):
         if self.threshold is None:
             raise NotFittedError("Threshold has not been set")
 
+        logger.info(f"Thresholding at {self.threshold}")
         return self.threshold < X

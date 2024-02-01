@@ -128,8 +128,11 @@ def generate_ensemble_params(
                 }
                 if "model_loop_pipeline_step" in model_pipeline.named_steps and model_pipeline.model_loop_pipeline
                 else {},
+                "post_processing_pipeline_step": {name: {"test_indices": test_indices} for name, _ in model_pipeline.named_steps.post_processing_pipeline_step.steps}
+                if "post_processing_pipeline_step" in model_pipeline.named_steps
+                else {},
             }
-            for name, model_pipeline in ensemble_pipeline.steps
+            for name, model_pipeline in ensemble_pipeline.models.items()
         }
         if ensemble_pipeline
         else {}

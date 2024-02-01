@@ -1,15 +1,10 @@
 defaults:
-  - pipeline/default@_here_
+  - ../pipeline/default@_here_
   - _self_
 
 feature_pipeline:
   processed_path: data/processed
   transformation_pipeline:
-    transformations:
-      - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
-        nan_to_zero: True
-        nan_value: -32768
-
   column_pipeline:
     columns:
 
@@ -56,41 +51,26 @@ feature_pipeline:
           data_path: data/processed/cache
           column: -1
 
-      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
-        column_block:
-          _target_: src.pipeline.model.feature.column.filter.Filter
-          filters:
-            - _target_: functools.partial
-              _args_:
-                - _target_: hydra.utils.get_method
-                  path: dask_image.ndfilters.sobel
-          channels: [ 7 ] #NDVI
-        cache_block:
-          _target_: src.pipeline.caching.column.CacheColumnBlock
-          data_path: data/processed/cache
-          column: -1
-
 target_pipeline:
   processed_path: data/processed/target
   transformation_pipeline:
     transformations:
       - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
-        sigma: 2.0001
+        sigma: 1
   column_pipeline:
-    columns: [ ]
+    columns: []
 
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
+        max_images: 200
+        early_stopping_split: 0.2
+      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
+        columns: [1, 7, 8, 9, 10, 11]
       - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
         scaler:
           _target_: dask_ml.preprocessing.StandardScaler
-      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        model_type: XGBoost
-        max_images: 100
-        early_stopping_split: 0.2
-      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [ 1, 7, 8, 9, 10, 11,12]
 
   model_blocks_pipeline:
     model_blocks:
@@ -101,41 +81,42 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: vgg11
-            in_channels: 7
+            encoder_name: mobilenet_v2
+            in_channels: 6
             classes: 1
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
           _args_:
             - _target_: hydra.utils.get_class
-              path: torch.optim.Adam
-          lr: 0.001
+              path: torch.optim.AdamW
+          lr: 0.00005
         scheduler:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-        epochs: 10
+        epochs: 50
         batch_size: 8
-        patience: 20
+        patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations
-          alb:
-            _target_: albumentations.Compose
-            transforms:
-              - _target_: albumentations.VerticalFlip
-                p: 0.2
-              - _target_: albumentations.HorizontalFlip
-                p: 0.2
-              - _target_: albumentations.RandomRotate90
-                p: 0.2
-              - _target_: albumentations.GaussianBlur
-                blur_limit: 7
+          korn:
+            _target_: kornia.augmentation.AugmentationSequential
+            _args_:
+              - _target_: kornia.augmentation.RandomHorizontalFlip
+                p: 0.25
+              - _target_: kornia.augmentation.RandomVerticalFlip
+                p: 0.25
+              - _target_: kornia.augmentation.RandomRotation
+                degrees: 90
                 p: 0.05
-          aug:
-            - _target_: src.augmentations.mosaic.Mosaic
-              p: 0.15
+              - _target_: kornia.augmentation.RandomGaussianBlur
+                kernel_size: [3, 3]
+                p: 0.2
+                sigma: [0.1, 2.0]
+              - _target_: kornia.augmentation.RandomMosaic
+                p: 0.25
+                output_size: [350,350]
 
 post_processing_pipeline:
   post_processing_steps:
-    - _target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
-      raw_data_path: data/raw/train_satellite
+    - _target_: src.pipeline.model.post_processing.threshold.Threshold
