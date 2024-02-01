@@ -18,7 +18,7 @@ class Dask2TorchDataset(Dataset[Any]):
     :param y: Labels.
     """
 
-    def __init__(self, X: da.Array, y: da.Array | None, *, transforms: Transformations | None = None) -> None:
+    def __init__(self, X: da.Array | npt.NDArray[np.float64], y: da.Array | npt.NDArray[np.float64] | None, *, transforms: Transformations | None = None) -> None:
         """Initialize the Dask2TorchDataset.
 
         :param X: Input features.
@@ -29,7 +29,7 @@ class Dask2TorchDataset(Dataset[Any]):
         self.daskX = X
         self.memIdx = 0
         self.memY: npt.NDArray[np.float_] | None
-        self.daskY: da.Array | None
+        self.daskY: da.Array | npt.NDArray[np.float64] | None
         if y is not None:
             self.memY = np.array([])
             self.daskY = y
@@ -57,14 +57,14 @@ class Dask2TorchDataset(Dataset[Any]):
         in_mem_idxs = [idxs[i] for i in range(len(idxs)) if idxs[i] < len(self.memX)]
 
         # Compute the not in mem items and concat with the ones already in mem
-        if len(not_in_mem_idxs) > 0:
+        if len(not_in_mem_idxs) > 0 and isinstance(self.daskX, da.Array):
             x_arr = np.concatenate((self.memX[in_mem_idxs], self.daskX[not_in_mem_idxs].compute()), axis=0)
         else:
             x_arr = self.memX[in_mem_idxs]
 
         if self.daskY is not None and self.memY is not None:
             # If y exists do the same for y
-            if len(not_in_mem_idxs) > 0:
+            if len(not_in_mem_idxs) > 0 and isinstance(self.daskY, da.Array):
                 y_arr = np.concatenate((self.memY[in_mem_idxs], self.daskY[not_in_mem_idxs].compute()), axis=0)
             else:
                 y_arr = self.memY[in_mem_idxs]
@@ -86,29 +86,43 @@ class Dask2TorchDataset(Dataset[Any]):
         :param size: Maximum number of samples to load into memory. If -1, load all samples.
         """
         # If type of self.daskX is numpy array, it means that the cache is already loaded so move to self.memX
-        if isinstance(self.daskX, np.ndarray):
-            self.memX = np.array(self.daskX)
-            self.daskX = da.from_array(np.array([]))
+        if isinstance(self.daskX, np.ndarray) or size == -1 or size >= self.daskX.shape[0]:
+            self.memX, self.daskX = self.handle_array(self.daskX, self.memX)
             if self.daskY is not None:
-                self.memY = np.array(self.daskY)
-                self.daskY = da.from_array(np.array([]))
-            return
-
-        if size == -1 or size >= self.daskX.shape[0]:
-            self.memX = self.daskX.compute()
-            self.daskX = da.from_array(np.array([]))
-            if self.daskY is not None:
-                self.memY = self.daskY.compute()
-                self.daskY = da.from_array(np.array([]))
+                self.memY, self.daskY = self.handle_array(self.daskY, self.memY)
         else:
             self.memX = self.daskX[:size].compute()
             self.daskX = self.daskX[size:]
             if self.daskY is not None:
-                self.memY = self.daskY[:size].compute()
-                self.daskY = self.daskY[size:]
+                if isinstance(self.daskY, np.ndarray):
+                    self.memY, self.daskY = self.handle_array(self.daskY, self.memY)
+                else:
+                    self.memY = self.daskY[:size].compute()
+                    self.daskY = self.daskY[size:]
 
     def empty_cache(self) -> None:
         """Delete the cache."""
         self.memX = np.array([])
         self.memY = np.array([])
         gc.collect()
+
+    def handle_array(
+        self,
+        dask_arr: npt.NDArray[np.float_] | da.Array,
+        mem_arr: npt.NDArray[np.float_] | None,
+    ) -> tuple[npt.NDArray[np.float_], da.Array | npt.NDArray[np.float64]]:
+        """Handle the array to be in the correct format.
+
+        :param dask_arr: The dask array
+        :param mem_arr: The memory array
+        :return: The memory and dask arrays
+        """
+        if isinstance(dask_arr, np.ndarray):
+            mem_arr = np.array(dask_arr)
+            dask_arr = da.from_array(np.array([]))
+        elif isinstance(dask_arr, da.Array):
+            mem_arr = dask_arr.compute()
+            dask_arr = da.from_array(np.array([]))
+        if mem_arr is None:
+            mem_arr = np.array([])
+        return mem_arr, dask_arr

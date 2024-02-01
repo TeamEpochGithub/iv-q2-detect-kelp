@@ -23,11 +23,11 @@ scheduler:
   warmup_t: 5
   warmup_lr_init: 1e-5
 criterion:
-  _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
-  classification_weight: 20
+  _target_: src.modules.loss.dice_loss.DiceLoss
+  multiply_kelp: True
 epochs: 100
 batch_size: 16
 patience: 10
-output_channels: 3
+output_channels: 1
 
 post_ensemble_steps:

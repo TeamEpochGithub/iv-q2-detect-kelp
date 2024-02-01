@@ -41,9 +41,9 @@ class DLEnsemble(EnsembleBase):
     :param output_channels: The number of output channels to use
     """
 
-    optimizer: functools.partial[Optimizer] = field(default_factory=Callable[[], partial[Optimizer]])
+    optimizer: functools.partial[Optimizer] = field(default_factory=lambda: partial(Optimizer))
     scheduler: Callable[[Optimizer], LRScheduler] | None = None
-    criterion: nn.Module = field(default_factory=nn.Module())
+    criterion: nn.Module = field(default_factory=nn.Module)
     epochs: Annotated[int, Gt(0)] = 10
     batch_size: Annotated[int, Gt(0)] = 32
     patience: Annotated[int, Gt(0)] = 5
@@ -91,9 +91,7 @@ class DLEnsemble(EnsembleBase):
         """
         # Train the models if needed and get the feature maps
         for name, model in self.models.items():
-            model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
-            # Remove the model name from the fit params key
-            model_fit_params = {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
+            model_fit_params = self._get_model_fit_params(name, **fit_params)
 
             target_pipeline = model.get_target_pipeline()
             new_y = copy.deepcopy(y)
@@ -125,7 +123,7 @@ class DLEnsemble(EnsembleBase):
 
         return np.array(predictions)
 
-    def _create_segmentation_head(self, input_shape: tuple[int, int, int, int]) -> TorchBlock:
+    def _create_segmentation_head(self, input_shape: tuple[int, ...]) -> TorchBlock:
         """Create the segmentation head.
 
         :param input_shape: The input shape

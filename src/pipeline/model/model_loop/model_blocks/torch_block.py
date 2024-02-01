@@ -11,6 +11,7 @@ from typing import Annotated, Any
 
 import dask.array as da
 import numpy as np
+import numpy.typing as npt
 import torch
 from annotated_types import Gt, Interval
 from joblib import hash
@@ -344,7 +345,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array | npt.NDArray[np.float64], cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -408,7 +409,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         return np.array(preds)
 
-    def transform(self, X: da.Array) -> np.ndarray[Any, Any]:
+    def transform(self, X: da.Array | npt.NDArray[np.float64]) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
