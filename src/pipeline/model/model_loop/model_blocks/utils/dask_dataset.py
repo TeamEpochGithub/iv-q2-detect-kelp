@@ -93,7 +93,7 @@ class Dask2TorchDataset(Dataset[Any]):
                 self.memY = np.array(self.daskY)
                 self.daskY = da.from_array(np.array([]))
             return
-        
+
         if size == -1 or size >= self.daskX.shape[0]:
             self.memX = self.daskX.compute()
             self.daskX = da.from_array(np.array([]))

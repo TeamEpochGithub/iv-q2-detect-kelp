@@ -71,7 +71,7 @@ class WeightedEnsemble(EnsembleBase):
             predictions = step.transform(predictions)
 
         # Make sure predictions are 0 or 1, use threshold of 0.5
-        predictions[predictions > 0.5] = 1
-        predictions[predictions <= 0.5] = 0
+        bool_mask = np.array(predictions) > 0.5
+        predictions = bool_mask.astype(np.int8)
 
         return np.array(predictions)

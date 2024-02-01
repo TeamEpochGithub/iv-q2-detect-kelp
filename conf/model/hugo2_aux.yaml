@@ -101,9 +101,9 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
-            encoder_name: vgg11
+            encoder_name: mobilenet_v2
             in_channels: 7
-            classes: 1
+            classes: 3
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
@@ -123,8 +123,8 @@ model_loop_pipeline:
           warmup_t: 5
           warmup_lr_init: 1e-5
         criterion:
-          _target_: src.modules.loss.dice_loss.DiceLoss
-          multiply_kelp: True
+          _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
+          classification_weight: 20
         epochs: 100
         batch_size: 8
         patience: 15

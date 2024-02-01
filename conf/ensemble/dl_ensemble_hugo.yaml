@@ -1,6 +1,6 @@
 defaults:
-  - /model/hugo1@models.hugo1
-  - /model/hugo2@models.hugo2
+  - /model/hugo1_aux@models.hugo1
+  - /model/hugo2_aux@models.hugo2
 
 _target_: src.pipeline.ensemble.dl_ensemble.DLEnsemble
 _convert_: 'partial'
@@ -23,10 +23,11 @@ scheduler:
   warmup_t: 5
   warmup_lr_init: 1e-5
 criterion:
-  _target_: src.modules.loss.dice_loss.DiceLoss
-  multiply_kelp: True
+  _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
+  classification_weight: 20
 epochs: 100
-batch_size: 32
+batch_size: 16
 patience: 10
+output_channels: 3
 
 post_ensemble_steps:

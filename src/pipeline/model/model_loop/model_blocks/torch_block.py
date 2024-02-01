@@ -380,7 +380,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     y_pred = self.model(X_batch).cpu().numpy()
                     preds.extend(y_pred)
                     continue
-                
+
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
 

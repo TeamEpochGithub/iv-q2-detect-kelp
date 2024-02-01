@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
-from src.logging_utils import logger
+from src.logging_utils.logger import logger
 from src.pipeline.model.model import ModelPipeline
 
 if sys.version_info < (3, 11):  # Self was added in Python 3.11
