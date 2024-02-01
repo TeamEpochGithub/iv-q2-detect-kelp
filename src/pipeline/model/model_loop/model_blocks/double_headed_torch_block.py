@@ -139,7 +139,6 @@ class DoubleHeadedTorchBlock(TorchBlock):
                 # Convert the boolean array to an integer array
                 union_preds = union_preds.astype(np.uint8)
 
-                # preds.extend(union_preds)
                 preds.extend(union_preds)
 
         logger.info("Done predicting")
