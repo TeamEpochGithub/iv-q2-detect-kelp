@@ -101,8 +101,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         self.model.to(self.device)
 
-        self.best_model_state_dict: dict[str, Tensor] | None = None
-
         # Early stopping
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
