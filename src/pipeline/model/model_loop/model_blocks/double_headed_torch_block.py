@@ -1,29 +1,26 @@
-
-from dataclasses import dataclass, field
+"""Double headed torch block."""
 import gc
 import time
+from dataclasses import dataclass
 from typing import Any
-import numpy as np
 
-from torch import Tensor
+import dask.array as da
+import numpy as np
+import numpy.typing as npt
 import torch
+from torch import Tensor
+from torch.utils.data import DataLoader
 from tqdm import tqdm
+
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.pipeline.model.architectures.double_headed_model import DoubleHeadedModel
-
 from src.pipeline.model.model_loop.model_blocks.torch_block import TorchBlock
-from torch.utils.data import DataLoader
-import dask.array as da
-
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
-import numpy.typing as npt
 
 
 @dataclass
 class DoubleHeadedTorchBlock(TorchBlock):
-
-   # model: DoubleHeadedModel = field(default_factory=DoubleHeadedModel)
+    """Double headed torch block."""
 
     def _train_one_epoch(self, dataloader: DataLoader[tuple[Tensor, Tensor]], epoch: int) -> float:
         """Train the model for one epoch.
@@ -41,10 +38,10 @@ class DoubleHeadedTorchBlock(TorchBlock):
             y_batch = y_batch.to(self.device).float()
 
             # Forward pass
-            y_pred_seg, y_pred_reg = self.model(X_batch) # (B, 2, H, W), (B, 1, H, W)
-            y_pred = torch.cat((y_pred_reg, y_pred_seg), dim=1) # (B, 3, H, W)
+            y_pred_seg, y_pred_reg = self.model(X_batch)  # (B, 2, H, W), (B, 1, H, W)
+            y_pred = torch.cat((y_pred_reg, y_pred_seg), dim=1)  # (B, 3, H, W)
 
-            loss = self.criterion(y_pred, y_batch) # Loss is a combination of regression and classification loss (see AuxiliaryLossDouble)
+            loss = self.criterion(y_pred, y_batch)  # Loss is a combination of regression and classification loss (see AuxiliaryLossDouble)
 
             # Backward pass
             self.initialized_optimizer.zero_grad()
@@ -82,9 +79,9 @@ class DoubleHeadedTorchBlock(TorchBlock):
                 y_batch = y_batch.to(self.device).float()
 
                 # Forward pass
-                y_pred_seg, y_pred_reg = self.model(X_batch) # (B, 2, H, W), (B, 1, H, W)
-                y_pred = torch.cat((y_pred_reg, y_pred_seg), dim=1) # (B, 3, H, W)
-                loss = self.criterion(y_pred, y_batch) # Loss is a combination of regression and classification loss (see AuxiliaryLossDouble)
+                y_pred_seg, y_pred_reg = self.model(X_batch)  # (B, 2, H, W), (B, 1, H, W)
+                y_pred = torch.cat((y_pred_reg, y_pred_seg), dim=1)  # (B, 3, H, W)
+                loss = self.criterion(y_pred, y_batch)  # Loss is a combination of regression and classification loss (see AuxiliaryLossDouble)
 
                 # Print losses
                 losses.append(loss.item())

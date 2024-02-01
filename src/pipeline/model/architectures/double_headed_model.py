@@ -6,7 +6,11 @@ from src.modules.model_head import RegressionHead, SegmentationHead
 
 
 class DoubleHeadedModel(nn.Module):
+    """Model architecture for the double headed model.This class is used to wrap a pytorch model and add padding to the input image if necessary.
 
+    :param model: Pytorch model to be used
+    :param padding: padding to be applied to the input image (to allow, for example, Unet to work with 350x350 images)
+    """
 
     def __init__(self, model: nn.Module, padding: int = 0) -> None:
         """Initialize the PaddedModel.
@@ -28,9 +32,9 @@ class DoubleHeadedModel(nn.Module):
 
         self.segmentation_head = SegmentationHead(16, 2)
         self.regression_head = RegressionHead(16, 1)
-        self.remove_heads = False
+        self.remove_head = False
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor] | torch.Tensor:
         """Forward pass.
 
         :param x: input tensor
@@ -43,10 +47,10 @@ class DoubleHeadedModel(nn.Module):
         # Forward pass
         y = self.model(x)
 
-        if self.remove_heads:
-            return y, None
-        
-         # Apply the heads
+        if self.remove_head:
+            return y
+
+        # Apply the heads
         y_seg = self.segmentation_head(y)
         y_reg = self.regression_head(y)
 
@@ -64,7 +68,6 @@ class DoubleHeadedModel(nn.Module):
 
         return y_seg, y_reg
 
-
     def remove_heads(self) -> None:
         """Remove the heads from the model."""
-        self.remove_heads = True
+        self.remove_head = True
