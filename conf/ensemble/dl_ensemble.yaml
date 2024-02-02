@@ -1,0 +1,21 @@
+defaults:
+  - /model/auxiliary_test@models.aux
+
+_target_: src.pipeline.ensemble.dl_ensemble.DLEnsemble
+_convert_: 'partial'
+
+optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.AdamW
+  lr: 0.005
+scheduler:
+criterion:
+  _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
+  classification_weight: 20
+epochs: 10
+batch_size: 8
+patience: 10
+
+post_ensemble_steps:

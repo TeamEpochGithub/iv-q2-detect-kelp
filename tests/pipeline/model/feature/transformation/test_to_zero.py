@@ -28,8 +28,9 @@ class TestToZero(TestCase):
         X[0, 0, 1, 1] = np.nan
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
+        vl = [0, 0, 0, 0, 0, 0, 0]
 
-        to_zero = SetOutsideRange(ranges=ranges)
+        to_zero = SetOutsideRange(ranges=ranges, values=vl)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
@@ -64,8 +65,9 @@ class TestToZero(TestCase):
         X[0, 0, 1, 1] = np.nan
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
+        values = [0, 0, 0, 0, 0, 0, 0]
 
-        to_zero = SetOutsideRange(ranges=ranges, nan_to_zero=False)
+        to_zero = SetOutsideRange(ranges=ranges, nan_to_zero=False, values=values)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
@@ -94,8 +96,8 @@ class TestToZero(TestCase):
         X = np.random.randint(0, 10, size=(10, 7, 350, 350))
 
         ranges = [[0.4, 0.6], [0.3, 0.7], [0.2, 0.8], [0.1, 0.89], [0.4, 0.6], [0.4, 0.6], [0.8, 0.9]]
-
-        to_zero = SetOutsideRange(ranges=ranges, nan_to_zero=False, nan_value=10)
+        values = [0, 0, 0, 0, 0, 0, 0]
+        to_zero = SetOutsideRange(ranges=ranges, values=values, nan_to_zero=False, nan_value=10)
 
         # Convert to dask array
         X = da.from_array(X, chunks=(1, 1, 350, 350))
