@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - model: lyu
+  - model: lyu_res_swin
   - wandb: train
 
 raw_data_path: data/raw/train_satellite

@@ -1,7 +1,7 @@
 """Window attention layer."""
 import torch
-from einops import einsum, rearrange
-from torch import nn
+from einops import rearrange
+from torch import nn, einsum
 
 from src.modules.models.swin.cyclic_shift import CyclicShift
 from src.modules.models.swin.utils import create_mask, get_relative_distances
@@ -78,9 +78,11 @@ class WindowAttention(nn.Module):
         nw_h = n_h // self.window_size
         nw_w = n_w // self.window_size
 
-        q, k, v = (rearrange(t, "b (nw_h w_h) (nw_w w_w) (h d) -> b h (nw_h nw_w) (w_h w_w) d", h=h, w_h=self.window_size, w_w=self.window_size) for t in qkv)
+        q, k, v = map(
+            lambda t: rearrange(t, 'b (nw_h w_h) (nw_w w_w) (h d) -> b h (nw_h nw_w) (w_h w_w) d',
+                                h=h, w_h=self.window_size, w_w=self.window_size), qkv)
 
-        dots = einsum("b h w i d, b h w j d -> b h w i j", q, k) * self.scale
+        dots = einsum('b h w i d, b h w j d -> b h w i j', q, k) * self.scale
 
         # Add the positional embedding
         if self.relative_pos_embedding:
@@ -97,7 +99,7 @@ class WindowAttention(nn.Module):
         attn = dots.softmax(dim=-1)
 
         # Get the output
-        out = einsum("b h w i j, b h w j d -> b h w i d", attn, v)
+        out = einsum('b h w i j, b h w j d -> b h w i d', attn, v)
         out = rearrange(out, "b h (nw_h nw_w) (w_h w_w) d -> b (nw_h w_h) (nw_w w_w) (h d)", h=h, w_h=self.window_size, w_w=self.window_size, nw_h=nw_h, nw_w=nw_w)
         out = self.to_out(out)
 
