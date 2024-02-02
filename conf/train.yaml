@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - ensemble: submission_ensemble
+  - model: FUnet-v3
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
