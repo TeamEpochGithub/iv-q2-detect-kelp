@@ -2,7 +2,7 @@
 import torch
 from torch import nn
 
-from src.modules.model_head import RegressionHead, SegmentationHead
+from src.modules.models.model_head import RegressionHead, SegmentationHead
 
 
 class DoubleHeadedModel(nn.Module):

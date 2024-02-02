@@ -1,5 +1,4 @@
 """Auxiliary loss module, has one loss per head."""
-from dataclasses import dataclass
 
 import torch
 from torch import nn
@@ -8,7 +7,6 @@ from src.logging_utils.logger import logger
 from src.modules.loss.dice_loss import DiceLoss
 
 
-@dataclass
 class AuxiliaryLoss(nn.Module):
     """AuxiliaryLoss class.
 
