@@ -156,7 +156,7 @@ class MixBlock(nn.Module):
 class Res_Swin(nn.Module):
     def __init__(self, img_size=256, hidden_dim=64, layers=(2, 2, 18,
                                                             2), heads=(3, 6, 12, 24), channels=98, head_dim=32,
-                 window_size=8, downscaling_factors=(2, 2, 2, 1), relative_pos_embedding=True):
+                 window_size=8, downscaling_factors=(2, 2, 2, 2), relative_pos_embedding=True):
         super(Res_Swin, self).__init__()
 
         self.base_model = torchvision.models.resnet34(True)
@@ -214,8 +214,8 @@ class Res_Swin(nn.Module):
 
         self.conv3 = Conv_3(hidden_dim * 8, hidden_dim * 4, 3, 1, 1)
 
-        self.avg4 = Channel_wise(hidden_dim * 2, hidden_dim * 4, [hidden_dim * 4,
-                                                                  img_size // 16, img_size // 16])
+        self.avg4 = Channel_wise(hidden_dim * 4, hidden_dim * 4, [hidden_dim * 4,
+                                                                  img_size // 32, img_size // 32])
 
         self.stage4 = StageModule(in_channels=hidden_dim * 4, hidden_dimension=hidden_dim * 8, layers=layers[3],
                                   downscaling_factor=downscaling_factors[3], num_heads=heads[3], head_dim=head_dim,
