@@ -15,11 +15,19 @@ class AuxiliaryLossDouble(nn.Module):
     def __init__(
         self,
         classification_weight: float = 1.0,
-        classification_loss_1: nn.Module = None,
-        classification_loss_2: nn.Module = None,
-        regression_loss_1: nn.Module = None,
-        regression_loss_2: nn.Module = None,
+        classification_loss_1: nn.Module | None = None,
+        classification_loss_2: nn.Module | None = None,
+        regression_loss_1: nn.Module | None = None,
+        regression_loss_2: nn.Module | None = None,
     ) -> None:
+        """Initialize the AuxiliaryLossDouble.
+
+        :param classification_weight: Weight for the classification loss
+        :param classification_loss_1: Loss function for the first classification head
+        :param classification_loss_2: Loss function for the second classification head
+        :param regression_loss_1: Loss function for the first regression head
+        :param regression_loss_2: Loss function for the second regression head
+        """
         super().__init__()
         self.classification_weight = classification_weight
         self.classification_loss_1 = DiceLossSMP(mode="multiclass") if classification_loss_1 is None else classification_loss_1
