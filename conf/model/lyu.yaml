@@ -95,15 +95,15 @@ model_loop_pipeline:
   model_blocks_pipeline:
     model_blocks:
       # Pytorch model
-      - _target_: src.pipeline.model.model_loop.model_blocks.double_headed_torch_block.DoubleHeadedTorchBlock
+      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
         model:
-          _target_: src.pipeline.model.architectures.double_headed_model.DoubleHeadedModel
+          _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: segmentation_models_pytorch.Unet
             encoder_name: vgg11
             in_channels: 7
-            classes: 1
+            classes: 3
             activation: sigmoid
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
@@ -125,7 +125,7 @@ model_loop_pipeline:
         criterion:
           _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
           classification_weight: 20
-        epochs: 11
+        epochs: 12
         batch_size: 8
         patience: 15
         transformations:
