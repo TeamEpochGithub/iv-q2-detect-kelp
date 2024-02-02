@@ -2,11 +2,9 @@
 from dataclasses import dataclass
 
 import torch
+from segmentation_models_pytorch.losses import DiceLoss as DiceLossSMP
 from segmentation_models_pytorch.losses.focal import FocalLoss as FocalLossSMP
 from torch import nn
-
-from src.logging_utils.logger import logger
-from segmentation_models_pytorch.losses import DiceLoss as DiceLossSMP
 
 
 @dataclass
@@ -33,7 +31,6 @@ class AuxiliaryLossDouble(nn.Module):
         :param targets: target tensor
         :return: loss
         """
-
         # Calculate loss for regression and classification and then calculate weighted sum
         regression_loss = self.regression_loss_1(preds[:, :1].contiguous(), targets.contiguous()) + self.regression_loss_2(preds[:, :1].contiguous(), targets.contiguous())
         regression_loss = regression_loss / 2
