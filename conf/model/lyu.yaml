@@ -125,7 +125,7 @@ model_loop_pipeline:
         criterion:
           _target_: src.modules.loss.auxiliary_loss_double.AuxiliaryLossDouble
           classification_weight: 20
-        epochs: 100
+        epochs: 11
         batch_size: 8
         patience: 15
         transformations:
