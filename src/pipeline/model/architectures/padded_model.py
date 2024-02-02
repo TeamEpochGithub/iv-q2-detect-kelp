@@ -1,7 +1,10 @@
 """Padded model architecture, suitable for instantiation for pytorch built-in models."""
-import torch
-from torch import nn
 from typing import Any
+
+import torch
+import torchvision
+from torch import nn
+
 
 class PaddedModel(nn.Module):
     """Model architecture with padding.This class is used to wrap a pytorch model and add padding to the input image if necessary.
@@ -11,7 +14,7 @@ class PaddedModel(nn.Module):
     :param activation: activation function to be applied to the output of the model
     """
 
-    def __init__(self, model: nn.Module, padding: int = 0, activation: None | nn.Module = None, weights: Any = None) -> None:
+    def __init__(self, model: nn.Module, padding: int = 0, activation: None | nn.Module = None, weights: torchvision.models.WeightsEnum = None) -> None:
         """Initialize the PaddedModel.
 
         :param model: Pytorch model to be used
@@ -51,9 +54,10 @@ class PaddedModel(nn.Module):
 
         return y
 
-    def expand_model_channels(self, state_dict, default_in_channels=3, new_in_channels=7):
+    def expand_model_channels(self, state_dict: dict[str, Any], default_in_channels: int = 3, new_in_channels: int = 7) -> dict[str, Any]:
+        """Expand the number of input channels of the model's encoder."""
         for key in list(state_dict.keys()):
-            if 'conv' in key and 'weight' in key:
+            if "conv" in key and "weight" in key:
                 weight = state_dict[key]
                 if weight.size(1) == default_in_channels:
                     new_weight = torch.Tensor(weight.size(0), new_in_channels, *weight.size()[2:])
