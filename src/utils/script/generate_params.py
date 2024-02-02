@@ -138,4 +138,7 @@ def generate_ensemble_params(
         else {}
     )
 
+    new_params["train_indices"] = train_indices  # type: ignore[assignment]
+    new_params["test_indices"] = test_indices  # type: ignore[assignment]
+
     return flatten_dict(new_params)

@@ -99,3 +99,14 @@ class EnsembleBase(Pipeline):
         :param fit_params: The fit parameters
         :return: The averaged predictions
         """
+
+    def _get_model_fit_params(self, name: str, **fit_params: str) -> dict[str, Any]:
+        """Get the model fit params.
+
+        :param name: The name of the model
+        :param fit_params: The fit parameters
+        :return: The model fit parameters in the correct format
+        """
+        model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
+        # Remove the model name from the fit params key
+        return {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
