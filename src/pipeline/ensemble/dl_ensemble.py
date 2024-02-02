@@ -66,7 +66,7 @@ class DLEnsemble(EnsembleBase):
         :param X: The input data
         :return: The predicted target
         """
-        model_predictions = np.empty((X.shape[0], 0, 350, 350))
+        model_predictions = np.empty((X.shape[0], 0, X.shape[2], X.shape[3]))
         for model in self.models.values():
             model_predictions = np.concatenate([model_predictions, model.predict(X, **self.feature_map_args)], axis=1)
 
@@ -103,7 +103,7 @@ class DLEnsemble(EnsembleBase):
             model.fit(X, new_y, **model_fit_params)
 
         # Create empty numpy array
-        model_predictions = np.empty((X.shape[0], 0, 350, 350))
+        model_predictions = np.empty((X.shape[0], 0, X.shape[2], X.shape[3]))
 
         for model in self.models.values():
             # Add the predictions to the numpy array

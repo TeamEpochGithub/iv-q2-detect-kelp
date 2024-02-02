@@ -1,5 +1,4 @@
 """Auxiliary loss for the double head model, has two losses per head."""
-from dataclasses import dataclass
 
 import torch
 from segmentation_models_pytorch.losses import DiceLoss as DiceLossSMP
@@ -7,22 +6,26 @@ from segmentation_models_pytorch.losses.focal import FocalLoss as FocalLossSMP
 from torch import nn
 
 
-@dataclass
 class AuxiliaryLossDouble(nn.Module):
     """AuxiliaryLossDouble class.
 
     :param classification_weight: Weight for the classification loss
     """
 
-    classification_weight: float = 1.0
-
-    def __post_init__(self) -> None:
-        """Initialize the AuxiliaryLoss."""
+    def __init__(
+        self,
+        classification_weight: float = 1.0,
+        classification_loss_1: nn.Module = None,
+        classification_loss_2: nn.Module = None,
+        regression_loss_1: nn.Module = None,
+        regression_loss_2: nn.Module = None,
+    ) -> None:
         super().__init__()
-        self.classification_loss_1 = DiceLossSMP(mode="multiclass")
-        self.classification_loss_2 = FocalLossSMP(mode="multiclass")
-        self.regression_loss_1 = torch.nn.MSELoss()
-        self.regression_loss_2 = torch.nn.L1Loss()
+        self.classification_weight = classification_weight
+        self.classification_loss_1 = DiceLossSMP(mode="multiclass") if classification_loss_1 is None else classification_loss_1
+        self.classification_loss_2 = FocalLossSMP(mode="multiclass") if classification_loss_2 is None else classification_loss_2
+        self.regression_loss_1 = torch.nn.MSELoss() if regression_loss_1 is None else regression_loss_1
+        self.regression_loss_2 = torch.nn.L1Loss() if regression_loss_2 is None else regression_loss_2
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         """Forward pass.

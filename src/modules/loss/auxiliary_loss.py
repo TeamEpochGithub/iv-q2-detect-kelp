@@ -15,13 +15,17 @@ class AuxiliaryLoss(nn.Module):
     :param classification_weight: Weight for the classification loss
     """
 
-    classification_weight: float = 1.0
+    def __init__(self, classification_weight: float = 1.0, classification_loss: nn.Module = nn.BCELoss(), regression_loss: nn.Module = DiceLoss()) -> None:
+        """Initialize the AuxiliaryLoss.
 
-    def __post_init__(self) -> None:
-        """Initialize the AuxiliaryLoss."""
+        :param classification_weight: Weight for the classification loss
+        :param classification_loss: Loss function for the classification head
+        :param regression_loss: Loss function for the regression head
+        """
         super().__init__()
-        self.classification_loss = nn.BCELoss()
-        self.regression_loss = DiceLoss()
+        self.classification_weight = classification_weight
+        self.classification_loss = classification_loss
+        self.regression_loss = regression_loss
 
     def forward(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
         """Forward pass.
