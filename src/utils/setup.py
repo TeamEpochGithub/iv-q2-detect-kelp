@@ -17,6 +17,7 @@ from sklearn.utils import estimator_html_repr
 from src.logging_utils.logger import logger
 from src.pipeline.ensemble.ensemble_base import EnsembleBase
 from src.pipeline.model.model import ModelPipeline
+from src.utils.replace_list_with_dict import replace_list_with_dict
 
 
 def setup_config(cfg: DictConfig) -> None:
@@ -148,7 +149,7 @@ def setup_wandb(
 
     config = OmegaConf.to_container(cfg, resolve=True)
     run = wandb.init(
-        config=config,  # type: ignore[arg-type]
+        config=replace_list_with_dict(config),  # type: ignore[arg-type]
         project="detect-kelp",
         name=name,
         group=group,
