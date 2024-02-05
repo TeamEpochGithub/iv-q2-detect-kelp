@@ -71,7 +71,7 @@ model_loop_pipeline:
 
         # Pytorch model
         model:
-          _target_: src.pipeline.model.architectures.padded_model.PaddedModel
+          _target_: src.pipeline.model.architectures.smp_model.SMPModel
           padding: 1
           activation:
             _target_: torch.nn.Sigmoid
