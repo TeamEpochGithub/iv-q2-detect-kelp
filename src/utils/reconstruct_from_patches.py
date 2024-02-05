@@ -37,4 +37,4 @@ def reconstruct_from_patches(patches: torch.Tensor, batch_size: int, patch_size:
         + patches[2 * batch_size : 3 * batch_size, 0, :idx2, -idx2:]
         + patches[3 * batch_size : 4 * batch_size, 0, :idx2, :idx2]
     ) * 0.25
-    return reconstructed
+    return reconstructed.unsqueeze(1)

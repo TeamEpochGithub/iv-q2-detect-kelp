@@ -124,8 +124,8 @@ model_loop_pipeline:
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
           multiply_kelp: False
-        epochs: 100
-        batch_size: 8
+        epochs: 50
+        batch_size: 4
         patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations
