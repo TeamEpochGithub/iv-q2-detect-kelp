@@ -1,5 +1,6 @@
 """Threshold the predictions of the model."""
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -50,7 +51,7 @@ class Threshold(TransformerMixin, BaseEstimator):
     threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
     max_iterations: Annotated[int, Gt(0)] = 500
 
-    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: list[int] | None = None) -> Self:
+    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Sequence[int] | None = None) -> Self:
         """Fit the threshold.
 
         :param X: Output data of a model.
