@@ -63,7 +63,7 @@ class Threshold(TransformerMixin, BaseEstimator):
             logger.info(f"Threshold manually set to {self.threshold}. Skipping optimization.")
             return self
 
-        if test_indices:
+        if any(test_indices):
             X = X[test_indices]
             y = y[test_indices]
 

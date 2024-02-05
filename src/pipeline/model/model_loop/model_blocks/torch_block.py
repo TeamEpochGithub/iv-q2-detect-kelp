@@ -383,9 +383,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
 
-                if y_pred.shape[1] == 1:
-                    preds.extend(y_pred)
-                elif y_pred.shape[1] == 2:
+                if y_pred.shape[1] == 2:
                     y_pred = np.argmax(y_pred, axis=1)
                     preds.extend(y_pred)
                 elif y_pred.shape[1] == 3:
@@ -400,10 +398,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     # Convert the boolean array to an integer array
                     union_preds = union_preds.astype(np.uint8)
 
-                    # preds.extend(union_preds)
                     preds.extend(union_preds)
                 else:
-                    raise ValueError(f"Invalid number of channels in the output of the model: {y_pred.shape[1]}")
+                    preds.extend(y_pred)
 
         logger.info("Done predicting")
 
