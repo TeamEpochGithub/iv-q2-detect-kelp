@@ -1,7 +1,8 @@
 import torch
-import torch.nn as nn
-from src.modules.models.swin.stage_module import StageModule
 import torchvision
+from torch import nn
+
+from src.modules.models.swin.stage_module import StageModule
 
 
 class Conv_3(nn.Module):
@@ -10,7 +11,7 @@ class Conv_3(nn.Module):
         self.conv3 = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=kernel, stride=stride, padding=padding),
             nn.BatchNorm2d(out_channels, affine=True),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -23,7 +24,7 @@ class DConv(nn.Module):
         self.conv3 = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=kernel, stride=stride, padding=padding, dilation=dilation),
             nn.BatchNorm2d(out_channels, affine=True),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -36,7 +37,7 @@ class Decoder(nn.Module):
         self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
         self.conv_relu = nn.Sequential(
             nn.Conv2d(middle_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            nn.ReLU(inplace=True),
         )
 
     def forward(self, x1, x2):
@@ -52,7 +53,7 @@ class Channel_wise(nn.Module):
         self.avg = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 2, 2),
             nn.Conv2d(out_channels, out_channels, 1),
-            nn.LayerNorm(sizes)
+            nn.LayerNorm(sizes),
         )
 
     def forward(self, x):
@@ -109,6 +110,7 @@ class DConv_5(nn.Module):
         e5 = e5 + e3
         return e5
 
+
 # Mix Block with attention mechanism
 class MixBlock(nn.Module):
     def __init__(self, c_in):
@@ -154,9 +156,18 @@ class MixBlock(nn.Module):
 
 
 class Res_Swin(nn.Module):
-    def __init__(self, img_size=256, hidden_dim=64, layers=(2, 2, 18,
-                                                            2), heads=(3, 6, 12, 24), channels=98, head_dim=32,
-                 window_size=8, downscaling_factors=(2, 2, 2, 2), relative_pos_embedding=True):
+    def __init__(
+        self,
+        img_size=256,
+        hidden_dim=64,
+        layers=(2, 2, 18, 2),
+        heads=(3, 6, 12, 24),
+        channels=98,
+        head_dim=32,
+        window_size=8,
+        downscaling_factors=(2, 2, 2, 2),
+        relative_pos_embedding=True,
+    ):
         super(Res_Swin, self).__init__()
 
         self.base_model = torchvision.models.resnet34(True)
@@ -169,12 +180,18 @@ class Res_Swin(nn.Module):
             Conv_3(hidden_dim, hidden_dim, 3, 1, 1),
         )
 
-        self.stage1 = StageModule(in_channels=hidden_dim, hidden_dimension=hidden_dim, layers=layers[0],
-                                  downscaling_factor=downscaling_factors[0], num_heads=heads[0], head_dim=head_dim,
-                                  window_size=window_size, relative_pos_embedding=relative_pos_embedding)
+        self.stage1 = StageModule(
+            in_channels=hidden_dim,
+            hidden_dimension=hidden_dim,
+            layers=layers[0],
+            downscaling_factor=downscaling_factors[0],
+            num_heads=heads[0],
+            head_dim=head_dim,
+            window_size=window_size,
+            relative_pos_embedding=relative_pos_embedding,
+        )
 
-        self.avg1 = Channel_wise(hidden_dim, hidden_dim, [hidden_dim,
-                                                          img_size // 4, img_size // 4])
+        self.avg1 = Channel_wise(hidden_dim, hidden_dim, [hidden_dim, img_size // 4, img_size // 4])
 
         self.layer1 = DConv_3(hidden_dim)
 
@@ -184,12 +201,18 @@ class Res_Swin(nn.Module):
 
         self.conv1 = Conv_3(hidden_dim * 2, hidden_dim, 3, 1, 1)
 
-        self.stage2 = StageModule(in_channels=hidden_dim, hidden_dimension=hidden_dim * 2, layers=layers[1],
-                                  downscaling_factor=downscaling_factors[1], num_heads=heads[1], head_dim=head_dim,
-                                  window_size=window_size, relative_pos_embedding=relative_pos_embedding)
+        self.stage2 = StageModule(
+            in_channels=hidden_dim,
+            hidden_dimension=hidden_dim * 2,
+            layers=layers[1],
+            downscaling_factor=downscaling_factors[1],
+            num_heads=heads[1],
+            head_dim=head_dim,
+            window_size=window_size,
+            relative_pos_embedding=relative_pos_embedding,
+        )
 
-        self.avg2 = Channel_wise(hidden_dim, hidden_dim * 2, [hidden_dim * 2,
-                                                              img_size // 8, img_size // 8])
+        self.avg2 = Channel_wise(hidden_dim, hidden_dim * 2, [hidden_dim * 2, img_size // 8, img_size // 8])
 
         self.layer2 = DConv_3(hidden_dim * 2)
 
@@ -199,12 +222,18 @@ class Res_Swin(nn.Module):
 
         self.conv2 = Conv_3(hidden_dim * 4, hidden_dim * 2, 3, 1, 1)
 
-        self.avg3 = Channel_wise(hidden_dim * 2, hidden_dim * 4, [hidden_dim * 4,
-                                                                  img_size // 16, img_size // 16])
+        self.avg3 = Channel_wise(hidden_dim * 2, hidden_dim * 4, [hidden_dim * 4, img_size // 16, img_size // 16])
 
-        self.stage3 = StageModule(in_channels=hidden_dim * 2, hidden_dimension=hidden_dim * 4, layers=layers[2],
-                                  downscaling_factor=downscaling_factors[2], num_heads=heads[2], head_dim=head_dim,
-                                  window_size=window_size, relative_pos_embedding=relative_pos_embedding)
+        self.stage3 = StageModule(
+            in_channels=hidden_dim * 2,
+            hidden_dimension=hidden_dim * 4,
+            layers=layers[2],
+            downscaling_factor=downscaling_factors[2],
+            num_heads=heads[2],
+            head_dim=head_dim,
+            window_size=window_size,
+            relative_pos_embedding=relative_pos_embedding,
+        )
 
         self.layer3 = DConv_5(hidden_dim * 4)
 
@@ -214,12 +243,18 @@ class Res_Swin(nn.Module):
 
         self.conv3 = Conv_3(hidden_dim * 8, hidden_dim * 4, 3, 1, 1)
 
-        self.avg4 = Channel_wise(hidden_dim * 4, hidden_dim * 4, [hidden_dim * 4,
-                                                                  img_size // 32, img_size // 32])
+        self.avg4 = Channel_wise(hidden_dim * 4, hidden_dim * 8, [hidden_dim * 8, img_size // 32, img_size // 32])
 
-        self.stage4 = StageModule(in_channels=hidden_dim * 4, hidden_dimension=hidden_dim * 8, layers=layers[3],
-                                  downscaling_factor=downscaling_factors[3], num_heads=heads[3], head_dim=head_dim,
-                                  window_size=window_size, relative_pos_embedding=relative_pos_embedding)
+        self.stage4 = StageModule(
+            in_channels=hidden_dim * 4,
+            hidden_dimension=hidden_dim * 8,
+            layers=layers[3],
+            downscaling_factor=downscaling_factors[3],
+            num_heads=heads[3],
+            head_dim=head_dim,
+            window_size=window_size,
+            relative_pos_embedding=relative_pos_embedding,
+        )
 
         self.layer4 = DConv_2(hidden_dim * 8)
 
@@ -227,14 +262,14 @@ class Res_Swin(nn.Module):
 
         self.mix4 = MixBlock(hidden_dim * 8)
 
-        self.conv4 = Conv_3(hidden_dim*16, hidden_dim * 8, 3, 1, 1)
+        self.conv4 = Conv_3(hidden_dim * 16, hidden_dim * 8, 3, 1, 1)
 
         self.decode4 = Decoder(512, 256 + 256, 256)
         self.decode3 = Decoder(256, 128 + 128, 128)
         self.decode2 = Decoder(128, 64 + 64, 64)
         self.decode1 = Decoder(64, 64 + 64, 64)
         self.decode0 = nn.Sequential(
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True),
             nn.Conv2d(64, 32, kernel_size=3, padding=1, bias=False),
             nn.Conv2d(32, 16, kernel_size=3, padding=1, bias=False),
         )

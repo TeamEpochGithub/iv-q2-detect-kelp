@@ -10,4 +10,4 @@ scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
 test_size: 0.2
 cache_size: -1
-allow_multiple_instances: false
+allow_multiple_instances: true
