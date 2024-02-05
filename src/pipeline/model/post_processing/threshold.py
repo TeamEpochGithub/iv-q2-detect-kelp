@@ -1,6 +1,5 @@
 """Threshold the predictions of the model."""
 import sys
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Annotated
 
@@ -51,7 +50,7 @@ class Threshold(TransformerMixin, BaseEstimator):
     threshold: Annotated[float, Interval(ge=0, le=1)] | None = None
     max_iterations: Annotated[int, Gt(0)] = 500
 
-    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: Iterable[int] | None = None) -> Self:  # noqa: ARG002
+    def fit(self, X: npt.NDArray[np.float_] | da.Array, y: npt.NDArray[np.bool_] | da.Array, test_indices: list[int] | None = None) -> Self:
         """Fit the threshold.
 
         :param X: Output data of a model.
@@ -62,6 +61,10 @@ class Threshold(TransformerMixin, BaseEstimator):
         if self.threshold is not None:
             logger.info(f"Threshold manually set to {self.threshold}. Skipping optimization.")
             return self
+
+        if test_indices is not None and len(test_indices) > 0:
+            X = X[test_indices]
+            y = y[test_indices]
 
         # Using Dask arrays here gives weird warnings about full garbage collections taking too much CPU time
         if isinstance(X, da.Array):
