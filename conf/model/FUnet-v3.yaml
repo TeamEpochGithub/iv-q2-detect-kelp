@@ -60,17 +60,29 @@ feature_pipeline:
             - _target_: functools.partial
               _args_:
               - _target_: hydra.utils.get_method
-                path: skimage.filters.unsharp_mask
-            - _target_: functools.partial
-              _args_:
-              - _target_: hydra.utils.get_method
-                path: skimage.filters.unsharp_mask
-          channels: [1, 7]
+                path: skimage.filters.sobel
+          channels: [7]
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
 
+
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.filter.Filter
+          filters:
+            - _target_: functools.partial
+              _args_:
+              - _target_: hydra.utils.get_method
+                path: skimage.filters.unsharp_mask
+              radius: 1
+              amount: 0.51
+          channels: [7]
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
 target_pipeline:
 
 
@@ -85,7 +97,7 @@ model_loop_pipeline:
         max_images: 100
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [1, 7, 8, 9, 10,11,12,13]
+        columns: [1, 7, 8, 9, 10,11, 12,13]
 
   model_blocks_pipeline:
     model_blocks:
