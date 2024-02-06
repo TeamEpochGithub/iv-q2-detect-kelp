@@ -82,7 +82,7 @@ model_loop_pipeline:
             out_channels: 1
             spatial_dims: 2
         epochs: 50
-        batch_size: 32
+        batch_size: 1
         patience: 20
         layerwise_lr_decay: 1
 

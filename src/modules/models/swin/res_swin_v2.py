@@ -3,7 +3,7 @@ import torchvision
 from torch import nn
 
 from src.modules.models.swin.stage_module import StageModule
-
+import torch.utils.checkpoint as checkpoint
 
 class Conv_3(nn.Module):
     def __init__(self, in_channels, out_channels, kernel, stride, padding, alpha=0.2):
@@ -279,28 +279,32 @@ class Res_Swin(nn.Module):
         e0 = self.layer0(x)
 
         e1_res = self.res_layer1(e0)
-        e1_swin_tmp = self.stage1(e0) + self.avg1(e0)
+        # e1_swin_tmp = self.stage1(e0) + self.avg1(e0)
+        e1_swin_tmp = checkpoint.checkpoint(self.custom(self.stage1), e0) + self.avg1(e0)
         e1_swin = self.layer1(e1_swin_tmp) + e1_swin_tmp
         e1_res, e1_swin = self.mix1(e1_res, e1_swin)
         e1 = torch.cat((e1_res, e1_swin), dim=1)
         e1 = self.conv1(e1)
 
         e2_res = self.res_layer2(e1_res)
-        e2_swin_tmp = self.stage2(e1_swin) + self.avg2(e1_swin)
+        #e2_swin_tmp = self.stage2(e1_swin) + self.avg2(e1_swin)
+        e2_swin_tmp = checkpoint.checkpoint(self.custom(self.stage2), e1_swin) + self.avg2(e1_swin)
         e2_swin = self.layer2(e2_swin_tmp) + e2_swin_tmp
         e2_res, e2_swin = self.mix2(e2_res, e2_swin)
         e2 = torch.cat((e2_res, e2_swin), dim=1)
         e2 = self.conv2(e2)
 
         e3_res = self.res_layer3(e2_res)
-        e3_swin_tmp = self.stage3(e2_swin) + self.avg3(e2_swin)
+        #e3_swin_tmp = self.stage3(e2_swin) + self.avg3(e2_swin)
+        e3_swin_tmp = checkpoint.checkpoint(self.custom(self.stage3), e2_swin) + self.avg3(e2_swin)
         e3_swin = self.layer3(e3_swin_tmp) + e3_swin_tmp
         e3_res, e3_swin = self.mix3(e3_res, e3_swin)
         e3 = torch.cat((e3_res, e3_swin), dim=1)
         e3 = self.conv3(e3)
 
         e4_res = self.res_layer4(e3_res)
-        e4_swin_tmp = self.stage4(e3_swin) + self.avg4(e3_swin)
+        #e4_swin_tmp = self.stage4(e3_swin) + self.avg4(e3_swin)
+        e4_swin_tmp = checkpoint.checkpoint(self.custom(self.stage4), e3_swin) + self.avg4(e3_swin)
         e4_swin = self.layer4(e4_swin_tmp) + e4_swin_tmp
         e4_res, e4_swin = self.mix4(e4_res, e4_swin)
         e4 = torch.cat((e4_res, e4_swin), dim=1)
@@ -313,3 +317,9 @@ class Res_Swin(nn.Module):
         d0 = self.decode0(d1)  # 64,256,256
         out = self.conv_last(d0)  # 1,256,256
         return torch.sigmoid(out)
+
+    def custom(self, module):
+        def custom_forward(*inputs):
+            inputs = module(inputs[0])
+            return inputs
+        return custom_forward
