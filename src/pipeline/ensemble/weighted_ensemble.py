@@ -54,7 +54,7 @@ class WeightedEnsemble(EnsembleBase):
         for i, (name, model) in enumerate(self.models.items()):
             model_fit_params = {key: value for key, value in fit_params.items() if key.startswith(name)}
             # Remove the model name from the fit params key
-            model_fit_params = {key[len(name) + 2:]: value for key, value in model_fit_params.items()}
+            model_fit_params = {key[len(name) + 2 :]: value for key, value in model_fit_params.items()}
 
             target_pipeline = model.get_target_pipeline()
             new_y = copy.deepcopy(y)

@@ -5,7 +5,6 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-import dask
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
@@ -92,10 +91,19 @@ class Filter(BaseEstimator, TransformerMixin):
         """
         X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
-        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + len(self.filters),), X.chunks[2], X.chunks[3]),
-                            meta=np.array((), dtype=np.float32))
+        return X.map_blocks(
+            self.transform_chunk,
+            dtype=np.float32,
+            chunks=(X.chunks[0], (X.chunks[1][0] + len(self.filters),), X.chunks[2], X.chunks[3]),
+            meta=np.array((), dtype=np.float32),
+        )
 
-    def transform_chunk(self, X: np.ndarray) -> np.ndarray:
+    def transform_chunk(self, X: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
+        """Transform a chunk of data.
+
+        :param X: The data to transform.
+        :return: The transformed data.
+        """
         start_time = time.time()
         # Loop through all the channels and apply the filter
         for image_filter, channel in zip(self.filters, self.channels, strict=False):
