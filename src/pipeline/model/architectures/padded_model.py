@@ -7,7 +7,7 @@ import torchvision
 from torch import nn
 
 
-class SMPModel(nn.Module):
+class PaddedModel(nn.Module):
     """Wrapper for pretrained `SMP <https://github.com/qubvel/segmentation_models.pytorch>`_ models.
 
     Use this class to load pretrained weights into SMP models and add padding if necessary.
@@ -52,7 +52,7 @@ class SMPModel(nn.Module):
             x = nn.ZeroPad2d(self.padding)(x)
 
         # Forward pass
-        y = self.model(x).squeeze(axis=1)
+        y = self.model(x)
 
         # Remove the padding if necessary
         if self.padding > 0:
