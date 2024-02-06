@@ -11,6 +11,7 @@ from typing import Annotated, Any
 
 import dask.array as da
 import numpy as np
+import numpy.typing as npt
 import torch
 from annotated_types import Gt, Interval
 from joblib import hash
@@ -344,7 +345,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array, cache_size: int = -1) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array | npt.NDArray[np.float64], cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:
         """Predict on the test data.
 
         :param X: Input features.
@@ -370,14 +371,44 @@ class TorchBlock(BaseEstimator, TransformerMixin):
             for data in tepoch:
                 X_batch = data
                 X_batch = X_batch.to(self.device).float()
+
+                if feature_map:
+                    # forward pass
+                    if hasattr(self.model, "model") and hasattr(self.model.model, "segmentation_head"):
+                        self.model.model.segmentation_head = nn.Identity()
+                    y_pred = self.model(X_batch).cpu().numpy()
+                    preds.extend(y_pred)
+                    continue
+
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
-                preds.extend(y_pred)
+
+                if y_pred.shape[1] == 1:
+                    preds.extend(y_pred)
+                elif y_pred.shape[1] == 2:
+                    y_pred = np.argmax(y_pred, axis=1)
+                    preds.extend(y_pred)
+                elif y_pred.shape[1] == 3:
+                    regression_preds = y_pred[:, 0] > 0.5
+                    classification_preds = y_pred[:, 1:].argmax(axis=1)
+
+                    stacked_preds = np.stack([regression_preds, classification_preds], axis=1)
+
+                    # Perform the logical OR operation on the two channels
+                    union_preds = np.logical_or(stacked_preds[:, 0], stacked_preds[:, 1])
+
+                    # Convert the boolean array to an integer array
+                    union_preds = union_preds.astype(np.uint8)
+
+                    preds.extend(union_preds)
+                else:
+                    raise ValueError(f"Invalid number of channels in the output: {y_pred.shape[1]}")
+
         logger.info("Done predicting")
 
         return np.array(preds)
 
-    def transform(self, X: da.Array) -> np.ndarray[Any, Any]:
+    def transform(self, X: da.Array | npt.NDArray[np.float64]) -> np.ndarray[Any, Any]:
         """Transform method for sklearn pipeline.
 
         :param X: Input features.
