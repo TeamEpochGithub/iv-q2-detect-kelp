@@ -13,7 +13,6 @@ import dask.array as da
 import numpy as np
 import numpy.typing as npt
 import torch
-import wandb
 from annotated_types import Gt, Interval
 from joblib import hash
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -24,6 +23,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
@@ -383,7 +383,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # forward pass
                 y_pred = self.model(X_batch).cpu().numpy()
 
-                if y_pred.shape[1] == 2:
+                if y_pred.shape[1] == 1:
+                    preds.extend(y_pred)
+                elif y_pred.shape[1] == 2:
                     y_pred = np.argmax(y_pred, axis=1)
                     preds.extend(y_pred)
                 elif y_pred.shape[1] == 3:
@@ -400,7 +402,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
                     preds.extend(union_preds)
                 else:
-                    preds.extend(y_pred)
+                    raise ValueError(f"Invalid number of channels in the output: {y_pred.shape[1]}")
 
         logger.info("Done predicting")
 
