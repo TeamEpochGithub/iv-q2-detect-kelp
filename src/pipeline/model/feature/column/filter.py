@@ -57,31 +57,6 @@ class Filter(BaseEstimator, TransformerMixin):
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
         return f"Filter(filters={''.join(total_args)},channels={self.channels})"
 
-    # def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:
-    #     X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
-    #
-    #     # Prepare an empty list to collect the filtered channels
-    #     filtered_channels = []
-    #
-    #     # Apply filters and collect the results
-    #     for image_filter, channel in zip(self.filters, self.channels):
-    #         # Apply the filter
-    #         filter_name = image_filter.func.__name__
-    #         logger.info(f"Applying {filter_name} to channel {channel}")
-    #         filtered_channel = image_filter(X[:, channel])
-    #
-    #         # Ensure dtype is float32
-    #         filtered_channel = filtered_channel.astype('float32')
-    #
-    #         # Add the filtered channel to the list
-    #         filtered_channels.append(filtered_channel[:, None])
-    #
-    #     # Concatenate all filtered channels at once
-    #     if filtered_channels:
-    #         X = dask.array.concatenate([X] + filtered_channels, axis=1)
-    #
-    #     logger.info("Filter transform complete")
-    #     return X
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
 
