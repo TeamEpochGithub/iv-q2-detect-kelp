@@ -30,6 +30,7 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
+from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -105,6 +106,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Early stopping
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
+        # created_fig = False
+        # if not created_fig:
+        #     writer = SummaryWriter('runs/model_visualization')
+        #     dummy_input = torch.randn(1, 13, 256, 256).cuda() 
+        #     writer.add_graph(self.model, dummy_input)
+        #     writer.close()
+        #     created_fig = True
+        
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
