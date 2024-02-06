@@ -77,7 +77,7 @@ feature_pipeline:
               - _target_: hydra.utils.get_method
                 path: skimage.filters.unsharp_mask
               radius: 1
-              amount: 0.51
+              amount: 0.4997
           channels: [7]
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
