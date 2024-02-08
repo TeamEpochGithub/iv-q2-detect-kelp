@@ -90,4 +90,5 @@ repos:
           - coloredlogs
           - kornia
           - einops
+          - torchgeo
         args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]

@@ -431,10 +431,9 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     # Convert the boolean array to an integer array
                     union_preds = union_preds.astype(np.uint8)
 
-                    # preds.extend(union_preds)
                     preds.extend(union_preds)
                 else:
-                    raise ValueError(f"Invalid number of channels in the output of the model: {y_pred.shape[1]}")
+                    raise ValueError(f"Invalid number of channels in the output: {y_pred.shape[1]}")
 
         logger.info("Done predicting")
 

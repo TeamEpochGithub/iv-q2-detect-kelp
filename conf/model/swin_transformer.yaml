@@ -122,7 +122,7 @@ model_loop_pipeline:
       - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
         self_ensemble: True
         model:
-          _target_: src.pipeline.model.architectures.padded_model.PaddedModel
+          _target_: src.pipeline.model.architectures.smp_model.SMPModel
           padding: 1
           activation:
             _target_: torch.nn.Sigmoid
