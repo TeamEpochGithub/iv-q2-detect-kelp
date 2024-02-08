@@ -395,28 +395,22 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                 # forward pass
                 if self.self_ensemble:
                     predictions = []
-                    X_batch_transformed = []
                     for flip in [False, True]:
                         for rotation in range(4):
                             # Transform the batch
-                            X_batch_transformed.append(transform_batch(X_batch.clone(), flip, rotation))
-                    #concatenate all the transformed batches
-                    X_batch_transformed = torch.cat(X_batch_transformed, dim=0)
-                    # Get prediction
-                    y_pred_transformed = self.model(X_batch_transformed)
-                    # split the predictions
-                    y_pred_transformed = torch.split(y_pred_transformed, X_batch.shape[0])
-                    # initialize the reversed predictions as tensor of zeros
-                    y_pred_reversed = torch.zeros(X_batch.shape[0], 1, X_batch.shape[2], X_batch.shape[3]).to(self.device)
-                    # Reverse the transformation on prediction
-                    i = 0
-                    for flip in [False, True]:
-                        for rotation in range(4):
-                            y_pred_reversed += reverse_transform(y_pred_transformed[i], flip, rotation) 
-                            i += 1
+                            X_batch_transformed = transform_batch(X_batch.clone(), flip, rotation)
+                            
+                            # Get prediction
+                            y_pred_transformed = self.model(X_batch_transformed)
+                            
+                            # Reverse the transformation on prediction
+                            y_pred_reversed = reverse_transform(y_pred_transformed, flip, rotation)
+                            
+                            # Collect the predictions
+                            predictions.append(y_pred_reversed)
+
                     # Average the predictions
-                    y_pred_reversed /= 8
-                    y_pred = y_pred_reversed.cpu().numpy()
+                    y_pred = torch.mean(torch.stack(predictions), axis=0).cpu().numpy()
                 else:
                     y_pred = self.model(X_batch).cpu().numpy()
 
