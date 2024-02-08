@@ -393,7 +393,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     continue
 
                 # forward pass
-                if self.self_ensemble:
+                if self.self_ensemble or True:
                     predictions = []
                     for flip in [False, True]:
                         for rotation in range(4):
