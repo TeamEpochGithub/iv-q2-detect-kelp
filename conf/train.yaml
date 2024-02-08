@@ -1,13 +1,13 @@
 defaults:
   - base_train
   - hydra/logging
-  - model: swin_transformer
+  - model: vgg13-unet-bs16-f13-e75
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
 raw_target_path: data/raw/train_kelp
 scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
-test_size: 0.2
+test_size: 0
 cache_size: -1
 allow_multiple_instances: true
