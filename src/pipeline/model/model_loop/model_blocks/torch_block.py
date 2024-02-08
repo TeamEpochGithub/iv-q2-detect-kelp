@@ -30,6 +30,8 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
+from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
+from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
 from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
@@ -66,6 +68,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     best_model_state_dict: Mapping[str, Any] = field(default_factory=dict, init=False, repr=False)
     transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
+    self_ensemble: bool = field(default=False, repr=False)
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -99,7 +102,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # if multiple GPUs are available, distribute the batch size over the GPUs
         if torch.cuda.device_count() > 1:
             logger.info(f"Using {torch.cuda.device_count()} GPUs")
-            self.model = nn.DataParallel(self.model)
+            # self.model = nn.DataParallel(self.model)
 
         self.model.to(self.device)
 
@@ -390,7 +393,32 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     continue
 
                 # forward pass
-                y_pred = self.model(X_batch).cpu().numpy()
+                if self.self_ensemble:
+                    predictions = []
+                    X_batch_transformed = []
+                    for flip in [False, True]:
+                        for rotation in range(4):
+                            # Transform the batch
+                            X_batch_transformed.append(transform_batch(X_batch.clone(), flip, rotation))
+                    #concatenate all the transformed batches
+                    X_batch_transformed = torch.cat(X_batch_transformed, dim=0)
+                    # Get prediction
+                    y_pred_transformed = self.model(X_batch_transformed)
+                    # split the predictions
+                    y_pred_transformed = torch.split(y_pred_transformed, X_batch.shape[0])
+                    # initialize the reversed predictions as tensor of zeros
+                    y_pred_reversed = torch.zeros(X_batch.shape[0], 1, X_batch.shape[2], X_batch.shape[3]).to(self.device)
+                    # Reverse the transformation on prediction
+                    i = 0
+                    for flip in [False, True]:
+                        for rotation in range(4):
+                            y_pred_reversed += reverse_transform(y_pred_transformed[i], flip, rotation) 
+                            i += 1
+                    # Average the predictions
+                    y_pred_reversed /= 8
+                    y_pred = y_pred_reversed.cpu().numpy()
+                else:
+                    y_pred = self.model(X_batch).cpu().numpy()
 
                 if y_pred.shape[1] == 1:
                     preds.extend(y_pred)

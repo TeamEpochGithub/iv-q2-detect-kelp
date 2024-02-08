@@ -316,7 +316,7 @@ class Res_Swin(nn.Module):
         d1 = self.decode1(d2, e0)  # 64,128,128
         d0 = self.decode0(d1)  # 64,256,256
         out = self.conv_last(d0)  # 1,256,256
-        return torch.sigmoid(out)
+        return torch.sigmoid(out).unsqueeze(1)
 
     def custom(self, module):
         def custom_forward(*inputs):

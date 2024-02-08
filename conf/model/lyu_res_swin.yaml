@@ -149,7 +149,7 @@ model_loop_pipeline:
           _target_: src.modules.loss.dice_loss.DiceLoss
           multiply_kelp: False
         epochs: 75
-        batch_size: 32
+        batch_size: 16
         patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations
