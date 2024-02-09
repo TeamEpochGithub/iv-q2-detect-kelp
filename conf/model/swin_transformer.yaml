@@ -135,9 +135,10 @@ model_loop_pipeline:
             use_v2: False
             downsample: "mergingv2"
             feature_size: 48
-            drop_rate: 0.3
-            dropout_path_rate: 0.3
-            attn_drop_rate: 0.3
+            drop_rate: 0.1
+            dropout_path_rate: 0.1
+            attn_drop_rate: 0.1
+            use_checkpoint: True
 
         epochs: 75
         batch_size: 8
@@ -207,4 +208,4 @@ post_processing_pipeline:
       raw_data_path: data/raw/train_satellite
       save_train: True
     - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold: 0.6195710649327196
+      threshold:
