@@ -136,7 +136,7 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.Adam
-          lr: 0.00003
+          lr: 0.00005
         scheduler:
           _target_: functools.partial
           _args_:
@@ -152,7 +152,7 @@ model_loop_pipeline:
           _target_: src.modules.loss.dice_loss.DiceLoss
           multiply_kelp: False
         epochs: 75
-        batch_size: 16
+        batch_size: 32
         patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations

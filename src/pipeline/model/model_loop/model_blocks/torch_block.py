@@ -32,6 +32,7 @@ from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2T
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
 from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
+from src.modules.models.custom_data_parallel import CustomDataParallel
 from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
@@ -102,7 +103,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # if multiple GPUs are available, distribute the batch size over the GPUs
         if torch.cuda.device_count() > 1:
             logger.info(f"Using {torch.cuda.device_count()} GPUs")
-            self.model = nn.DataParallel(self.model)
+            self.model = CustomDataParallel(self.model)
 
         self.model.to(self.device)
 
