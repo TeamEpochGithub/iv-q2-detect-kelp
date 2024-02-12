@@ -8,7 +8,6 @@ from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
-from src.pipeline.caching.tif import CacheTIFBlock
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 

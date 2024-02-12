@@ -73,14 +73,15 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         start_time = time.time()
         logger.info("Saving pretrain data...")
         # Save the pretrain data
-        result = store_raw(self.pretrain_path + '/' + hash(self.prev_hash), X)
+        result = store_raw(self.pretrain_path + "/" + hash(self.prev_hash), X)
         logger.info("Saved pretrain data in %s seconds", time.time() - start_time)
         return result
-    
+
     def set_pretrain_path(self, path: str) -> None:
-        """Set the path for saving pretrain
-        
-        :param path: path to save data"""
+        """Set the path for saving pretrain.
+
+        :param path: path to save data
+        """
         self.pretrain_path = path
 
     def train_split_hash(self, train_indices: list[int]) -> str:

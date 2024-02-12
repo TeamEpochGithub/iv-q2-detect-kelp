@@ -14,13 +14,13 @@ transformations:
 - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
   nan_to_zero: True
   nan_value: -32768
-  
+
 # ToZero
 - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
   range_to_zero: [[6750, 11000], [7000, 12250], [7000, 11750], [6000, 11250], [6750, 12000], [0.1, 1.1], [-1, 5]]  # [SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
   nan_to_zero: True
   nan_value: -32768
-  
+
 # Clip
 - _target_: src.pipeline.model.feature.transformation.clip.Clip
   feature_ranges: [[6250, 12000], [6500, 13250], [6500, 12000], [5750, 11250], [6500, 12000], [0, 1], [0, 5]]  # [SWIR, NIR, RED, GREEN, BLUE, CLOUD, ELEVATION]
@@ -57,7 +57,7 @@ transformations:
               - _target_: hydra.utils.get_method
                 path: skimage.exposure.adjust_log
           channels: [7] # Gamma corrected NIR
-    
+
     # Sobel
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
@@ -89,7 +89,7 @@ transformations:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
- 
+
 
 ```
 
