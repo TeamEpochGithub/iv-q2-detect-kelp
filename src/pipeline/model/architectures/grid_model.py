@@ -35,4 +35,4 @@ class GridModel(nn.Module):
         # Forward pass
         y = self.model(patches).squeeze(axis=1)
         # Reconstruct the image from the patches
-        return reconstruct_from_patches(y, x.shape[0]).unsqueeze(1)
+        return reconstruct_from_patches(y, x.shape[0])
