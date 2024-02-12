@@ -63,7 +63,7 @@ class GBDT(PretrainBlock):
                 self.model = pickle.load(f)  # noqa: S301
                 # Only use the first 14 channels of X and y
                 logger.info(f"Loaded full trained GBDT from given the hash in the config from: {f'tm/{self.saved_at}'}")
-                logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+                logger.warning(f"Using first 13 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
                 return self
 
         if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
