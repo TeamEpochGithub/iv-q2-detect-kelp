@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
+import tqdm
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
@@ -87,7 +88,9 @@ class Filter(BaseEstimator, TransformerMixin):
             # Apply the filter
             filter_name = image_filter.func.__name__  # type: ignore[attr-defined]
             logger.info(f"Applying {filter_name} to channel {channel}")
-            filtered_channel = image_filter(X[:, channel])
+            filtered_channel = np.empty_like(image_filter(X[:, channel]))
+            for image in range(X.shape[0]):
+                filtered_channel[image] = image_filter(X[image, channel])
 
             # Set copy to dtype float32
             filtered_channel = filtered_channel.astype("float32")
