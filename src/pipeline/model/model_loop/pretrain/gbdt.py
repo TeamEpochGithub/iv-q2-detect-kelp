@@ -57,6 +57,15 @@ class GBDT(PretrainBlock):
         """
         if save_pretrain_with_split:
             self.train_split_hash(train_indices=train_indices)
+
+        if self.saved_at is not None:
+            with open(f"tm/{self.saved_at}", "rb") as f:
+                self.model = pickle.load(f)  # noqa: S301
+                # Only use the first 14 channels of X and y
+                logger.info(f"Loaded full trained GBDT from given the hash in the config from: {f'tm/{self.saved_at}'}")
+                logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+                return self
+
         if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
             logger.info(f"GBDT already exists at {f'tm/{self.prev_hash}.gbdt'}")
             return self
@@ -91,15 +100,8 @@ class GBDT(PretrainBlock):
 
         # Fit the catboost model
         # Check if labels are continuous or binary
-        if self.saved_at is not None:
-            with open(f"tm/{self.saved_at}", "rb") as f:
-                self.model = pickle.load(f)  # noqa: S301
 
-                #Only use the first 14 channels of X and y
-                X_test = X_test[:, :14]
-                logger.info(f"Loaded full trained GBDT from given the hash in the config from: {f'tm/{self.saved_at}'}")
-                logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
-        elif self.model_type == "Catboost":
+        if self.model_type == "Catboost":
             logger.info("Fitting catboost model...")
             self.model = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
             self.model.fit(X_train, y_train, eval_set=(X_test, y_test))
@@ -146,10 +148,8 @@ class GBDT(PretrainBlock):
                     logger.info(f"Loaded GBDT from {f'tm/{self.saved_at}'}")
                 else:
                     raise ValueError(f"GBDT does not exist from set saved location./, cannot find {f'tm/{self.prev_hash}.gbdt'}")
-
             elif not Path(f"tm/{self.prev_hash}.gbdt").exists():
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
-
             else:
                 with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
                     self.model = pickle.load(f)  # noqa: S301
