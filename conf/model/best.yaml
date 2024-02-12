@@ -85,7 +85,7 @@ feature_pipeline:
             - _target_: functools.partial
               _args_:
                 - _target_: hydra.utils.get_method
-                  path: dask_image.ndfilters.sobel
+                  path: skimage.filters.sobel
           channels:
             - 7
         cache_block:
