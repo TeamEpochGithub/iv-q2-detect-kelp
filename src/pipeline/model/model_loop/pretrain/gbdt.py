@@ -153,7 +153,7 @@ class GBDT(PretrainBlock):
             else:
                 with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
                     self.model = pickle.load(f)  # noqa: S301
-            logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
+                logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
             self.model = self.trained_model
 
