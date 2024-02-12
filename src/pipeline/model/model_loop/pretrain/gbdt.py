@@ -60,11 +60,10 @@ class GBDT(PretrainBlock):
 
         if self.saved_at is not None:
             with open(f"tm/{self.saved_at}", "rb") as f:
-                self.model = pickle.load(f)  # noqa: S301
                 # Only use the first 14 channels of X and y
                 logger.info(f"Loaded full trained GBDT from given the hash in the config from: {f'tm/{self.saved_at}'}")
-                logger.warning(f"Using first 13 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
-                return self
+                logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+            return self
 
         if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
             logger.info(f"GBDT already exists at {f'tm/{self.prev_hash}.gbdt'}")
@@ -144,7 +143,7 @@ class GBDT(PretrainBlock):
                 if Path(f"tm/{self.saved_at}").exists():
                     with open(f"tm/{self.saved_at}", "rb") as f:
                         self.model = pickle.load(f)
-                    logger.warning(f"Using first 13 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+                    logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
                     logger.info(f"Loaded GBDT from {f'tm/{self.saved_at}'}")
                 else:
                     raise ValueError(f"GBDT does not exist from set saved location./, cannot find {f'tm/{self.prev_hash}.gbdt'}")
@@ -157,8 +156,7 @@ class GBDT(PretrainBlock):
         else:
             self.model = self.trained_model
 
-        X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
-        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32),)
 
     # Predict in parallel with dask map blocks
     def transform_chunk(self, x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
