@@ -33,7 +33,6 @@ from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import 
 from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
 from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
 from src.modules.models.custom_data_parallel import CustomDataParallel
-from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
