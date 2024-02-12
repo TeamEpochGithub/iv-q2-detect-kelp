@@ -212,5 +212,3 @@ plots/images/train
 .lock
 
 notebooks/similarity
-
-external/model_weights

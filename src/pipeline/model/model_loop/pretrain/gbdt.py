@@ -2,7 +2,7 @@
 import pickle
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import catboost
@@ -34,11 +34,17 @@ class GBDT(PretrainBlock):
     max_images: int | None = None
     early_stopping_split: float = 0.2
     model_type: str = "XGBoost"
+    saved_at: str = field(default=None, repr=False, hash=False)
 
     def __post_init__(self) -> None:
         """Initialize the GBDT model."""
         self.trained_model = None
         # Check if type is valid
+
+        # Check if model_type ends with .gbdt
+        if self.saved_at is not None and not self.saved_at.endswith(".gbdt"):
+            raise ValueError(f"Invalid saved_at {self.saved_at}. Please use a .gbdt file")
+
         if self.model_type not in ["Catboost", "XGBoost", "LightGBM"]:
             raise ValueError(f"Invalid model type {self.model_type}. Please choose from ['Catboost', 'XGBoost', 'LightGBM']")
 
@@ -51,6 +57,14 @@ class GBDT(PretrainBlock):
         """
         if save_pretrain_with_split:
             self.train_split_hash(train_indices=train_indices)
+
+        if self.saved_at is not None:
+            with open(f"tm/{self.saved_at}", "rb") as f:
+                # Only use the first 14 channels of X and y
+                logger.info(f"Loaded full trained GBDT from given the hash in the config from: {f'tm/{self.saved_at}'}")
+                logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+            return self
+
         if Path(f"tm/{self.prev_hash}.gbdt").exists() and save_pretrain:
             logger.info(f"GBDT already exists at {f'tm/{self.prev_hash}.gbdt'}")
             return self
@@ -85,6 +99,7 @@ class GBDT(PretrainBlock):
 
         # Fit the catboost model
         # Check if labels are continuous or binary
+
         if self.model_type == "Catboost":
             logger.info("Fitting catboost model...")
             self.model = catboost.CatBoostClassifier(iterations=100, verbose=True, early_stopping_rounds=10)
@@ -123,18 +138,25 @@ class GBDT(PretrainBlock):
 
         # Load the model
         if self.trained_model is None:
-            # Verify that the model exists
-            if not Path(f"tm/{self.prev_hash}.gbdt").exists():
+            # Load model from disk if it exists
+            if self.saved_at is not None:
+                if Path(f"tm/{self.saved_at}").exists():
+                    with open(f"tm/{self.saved_at}", "rb") as f:
+                        self.model = pickle.load(f)
+                    logger.warning(f"Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
+                    logger.info(f"Loaded GBDT from {f'tm/{self.saved_at}'}")
+                else:
+                    raise ValueError(f"GBDT does not exist from set saved location./, cannot find {f'tm/{self.prev_hash}.gbdt'}")
+            elif not Path(f"tm/{self.prev_hash}.gbdt").exists():
                 raise ValueError(f"GBDT does not exist, cannot find {f'tm/{self.prev_hash}.gbdt'}")
-
-            with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
-                self.model = pickle.load(f)  # noqa: S301
-            logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
+            else:
+                with open(f"tm/{self.prev_hash}.gbdt", "rb") as f:
+                    self.model = pickle.load(f)  # noqa: S301
+                logger.info(f"Loaded GBDT from {f'tm/{self.prev_hash}.gbdt'}")
         else:
             self.model = self.trained_model
 
-        X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
-        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32))
+        return X.map_blocks(self.transform_chunk, dtype=np.float32, chunks=(X.chunks[0], (X.chunks[1][0] + 1,), X.chunks[2], X.chunks[3]), meta=np.array((), dtype=np.float32),)
 
     # Predict in parallel with dask map blocks
     def transform_chunk(self, x: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
@@ -146,5 +168,8 @@ class GBDT(PretrainBlock):
         # x has shape (B, C, H, W), transpose and reshape for catboost to (N, C)
         x_ = x.transpose((0, 2, 3, 1)).reshape((-1, x.shape[1]))
         # Predict and reshape back to (N, 1, H, W)
+
+        if self.saved_at is not None:
+            x_ = x_[:, :14]
         pred = self.model.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
         return np.concatenate([x, pred], axis=1)
