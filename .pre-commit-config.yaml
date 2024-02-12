@@ -89,5 +89,5 @@ repos:
           - randomname
           - coloredlogs
           - kornia
-          - torchgeo
+          - einops
         args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]

@@ -1,4 +1,4 @@
-"""Main script for training a model, taking the raw data and output a trained model."""
+"""Train.py is the main script for training the model and will take in the raw data and output a trained model."""
 import copy
 import os
 import warnings
@@ -54,13 +54,15 @@ def run_train_cfg(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig in
     setup_config(cfg)
     output_dir = Path(hydra.core.hydra_config.HydraConfig.get().runtime.output_dir)
 
+    if cfg.wandb.enabled:
+        setup_wandb(cfg, "train", output_dir)
+
     # Preload the pipeline and save it to HTML
     print_section_separator("Setup pipeline")
     model_pipeline = setup_pipeline(cfg, output_dir, is_train=True)
 
     # Lazily read the raw data with dask, and find the shape after processing
     X, y = setup_train_data(cfg.raw_data_path, cfg.raw_target_path)
-
     indices = np.arange(X.shape[0])
 
     # Split indices into train and test
@@ -83,10 +85,6 @@ def run_train_cfg(cfg: DictConfig) -> None:  # TODO(Jeffrey): Use TrainConfig in
             y = target_pipeline.fit_transform(y)
 
     print_section_separator("Fit_transform model pipeline")
-
-    if cfg.wandb.enabled:
-        setup_wandb(cfg, "train", output_dir)
-
     predictions = model_pipeline.fit_transform(X, y, **fit_params)
 
     if len(test_indices) > 0:
