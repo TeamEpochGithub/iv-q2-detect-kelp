@@ -27,13 +27,12 @@ import wandb
 from src.augmentations.transformations import Transformations
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.modules.models.custom_data_parallel import CustomDataParallel
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
-from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
-from src.modules.models.custom_data_parallel import CustomDataParallel
-from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -113,11 +112,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # created_fig = False
         # if not created_fig:
         #     writer = SummaryWriter('runs/model_visualization')
-        #     dummy_input = torch.randn(1, 13, 256, 256).cuda() 
+        #     dummy_input = torch.randn(1, 13, 256, 256).cuda()
         #     writer.add_graph(self.model, dummy_input)
         #     writer.close()
         #     created_fig = True
-        
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
@@ -358,7 +356,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
         logger.info(f"Model loaded from tm/{self.prev_hash}.pt")
 
-    def predict(self, X: da.Array | npt.NDArray[np.float64], cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:
+    def predict(self, X: da.Array | npt.NDArray[np.float64], cache_size: int = -1, *, feature_map: bool = False) -> np.ndarray[Any, Any]:  # noqa: C901
         """Predict on the test data.
 
         :param X: Input features.
@@ -400,13 +398,13 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                         for rotation in range(4):
                             # Transform the batch
                             X_batch_transformed = transform_batch(X_batch.clone(), flip, rotation)
-                            
+
                             # Get prediction
                             y_pred_transformed = self.model(X_batch_transformed)
-                            
+
                             # Reverse the transformation on prediction
                             y_pred_reversed = reverse_transform(y_pred_transformed, flip, rotation)
-                            
+
                             # Collect the predictions
                             predictions.append(y_pred_reversed)
 

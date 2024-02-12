@@ -1,9 +1,10 @@
 import torch
 import torchvision
 from torch import nn
+from torch.utils import checkpoint
 
 from src.modules.models.swin.stage_module import StageModule
-import torch.utils.checkpoint as checkpoint
+
 
 class Conv_3(nn.Module):
     def __init__(self, in_channels, out_channels, kernel, stride, padding, alpha=0.2):
@@ -333,4 +334,5 @@ class Res_Swin(nn.Module):
         def custom_forward(*inputs):
             inputs = module(inputs[0])
             return inputs
+
         return custom_forward

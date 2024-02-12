@@ -8,7 +8,6 @@ from dataclasses import dataclass
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
-import tqdm
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from src.logging_utils.logger import logger
@@ -56,7 +55,7 @@ class Filter(BaseEstimator, TransformerMixin):
         :return: The string representation of the filter.
         """
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
-        #Remove square brackets from self.channels and turn into string
+        # Remove square brackets from self.channels and turn into string
         channels = str(self.channels).replace("[", "(").replace("]", ")")
         return f"Filter(filters={''.join(total_args)},channels={channels})"
 
