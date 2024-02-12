@@ -50,4 +50,4 @@ class PaddedModel(nn.Module):
         if self.activation is not None:
             y = self.activation(y)
 
-        return y
+        return y.unsqueeze(1)

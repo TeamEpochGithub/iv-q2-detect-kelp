@@ -30,6 +30,10 @@ from src.logging_utils.section_separator import print_section_separator
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
+from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
+from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
+from src.modules.models.custom_data_parallel import CustomDataParallel
+from torch.utils.tensorboard import SummaryWriter
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -65,6 +69,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
     best_model_state_dict: Mapping[str, Any] = field(default_factory=dict, init=False, repr=False)
     transformations: Transformations | None = None
     layerwise_lr_decay: float | None = None
+    self_ensemble: bool = field(default=False, repr=False)
 
     def __post_init__(self) -> None:
         """Post init function."""
@@ -98,13 +103,21 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # if multiple GPUs are available, distribute the batch size over the GPUs
         if torch.cuda.device_count() > 1:
             logger.info(f"Using {torch.cuda.device_count()} GPUs")
-            self.model = nn.DataParallel(self.model)
+            self.model = CustomDataParallel(self.model)
 
         self.model.to(self.device)
 
         # Early stopping
         self.last_val_loss = np.inf
         self.lowest_val_loss = np.inf
+        # created_fig = False
+        # if not created_fig:
+        #     writer = SummaryWriter('runs/model_visualization')
+        #     dummy_input = torch.randn(1, 13, 256, 256).cuda() 
+        #     writer.add_graph(self.model, dummy_input)
+        #     writer.close()
+        #     created_fig = True
+        
 
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], test_indices: list[int], cache_size: int = -1, *, save_model: bool = True) -> Self:
         """Train the model & log the train and validation losses to Weights & Biases.
@@ -381,7 +394,26 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     continue
 
                 # forward pass
-                y_pred = self.model(X_batch).cpu().numpy()
+                if self.self_ensemble:
+                    predictions = []
+                    for flip in [False, True]:
+                        for rotation in range(4):
+                            # Transform the batch
+                            X_batch_transformed = transform_batch(X_batch.clone(), flip, rotation)
+                            
+                            # Get prediction
+                            y_pred_transformed = self.model(X_batch_transformed)
+                            
+                            # Reverse the transformation on prediction
+                            y_pred_reversed = reverse_transform(y_pred_transformed, flip, rotation)
+                            
+                            # Collect the predictions
+                            predictions.append(y_pred_reversed)
+
+                    # Average the predictions
+                    y_pred = torch.mean(torch.stack(predictions), axis=0).cpu().numpy()
+                else:
+                    y_pred = self.model(X_batch).cpu().numpy()
 
                 if y_pred.shape[1] == 1:
                     preds.extend(y_pred)

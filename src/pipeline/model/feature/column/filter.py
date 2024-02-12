@@ -5,7 +5,6 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 
-import dask
 import dask.array as da
 import numpy as np
 import numpy.typing as npt
@@ -56,7 +55,9 @@ class Filter(BaseEstimator, TransformerMixin):
         :return: The string representation of the filter.
         """
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
-        return f"Filter(filters={''.join(total_args)},channels={self.channels})"
+        #Remove square brackets from self.channels and turn into string
+        channels = str(self.channels).replace("[", "(").replace("]", ")")
+        return f"Filter(filters={''.join(total_args)},channels={channels})"
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
@@ -65,8 +66,22 @@ class Filter(BaseEstimator, TransformerMixin):
         :param y: UNUSED target variable. Exists for Pipeline compatibility.
         :return: The transformed data.
         """
-        start_time = time.time()
+        X = X.rechunk({0: "auto", 1: -1, 2: -1, 3: -1})
 
+        return X.map_blocks(
+            self.transform_chunk,
+            dtype=np.float32,
+            chunks=(X.chunks[0], (X.chunks[1][0] + len(self.filters),), X.chunks[2], X.chunks[3]),
+            meta=np.array((), dtype=np.float32),
+        )
+
+    def transform_chunk(self, X: npt.NDArray[np.float_]) -> npt.NDArray[np.float_]:
+        """Transform a chunk of data.
+
+        :param X: The data to transform.
+        :return: The transformed data.
+        """
+        start_time = time.time()
         # Loop through all the channels and apply the filter
         for image_filter, channel in zip(self.filters, self.channels, strict=False):
             # Apply the filter
@@ -76,10 +91,8 @@ class Filter(BaseEstimator, TransformerMixin):
 
             # Set copy to dtype float32
             filtered_channel = filtered_channel.astype("float32")
-
             # Concatenate the filtered channel to the end of the array
-            X = dask.array.concatenate([X, filtered_channel[:, None]], axis=1)
-
+            X = np.concatenate([X, filtered_channel[:, None]], axis=1)
         logger.info(f"Filter transform complete in: {time.time() - start_time} seconds")
         return X
 

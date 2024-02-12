@@ -1,5 +1,5 @@
 defaults:
-  - pipeline/default@_here_
+  - /model/pipeline/default@_here_
   - _self_
 
 feature_pipeline:
@@ -77,7 +77,7 @@ feature_pipeline:
           data_path: data/processed/cache
           column: -1
 
-      # Sobel
+#       Sobel
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.filter.Filter
@@ -86,8 +86,7 @@ feature_pipeline:
               _args_:
                 - _target_: hydra.utils.get_method
                   path: dask_image.ndfilters.sobel
-          channels:
-            - 7
+          channels: [ 7 ] #NDVI
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
@@ -120,29 +119,21 @@ model_loop_pipeline:
 
       # Pytorch model
       - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
-        self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
-          activation:
-            _target_: torch.nn.Sigmoid
           model: # from segmentation_models_pytorch import Unet
-            _target_: monai.networks.nets.swin_unetr.SwinUNETR
-            img_size: [352,352]
+            _target_: segmentation_models_pytorch.Unet
+            decoder_attention_type: scse
+            encoder_name: vgg11
             in_channels: 13
-            out_channels: 1
-            spatial_dims: 2
-            use_v2: False
-            downsample: "mergingv2"
-            feature_size: 48
-            drop_rate: 0.1
-            dropout_path_rate: 0.1
-            attn_drop_rate: 0.1
-            use_checkpoint: True
+            classes: 1
+            activation: sigmoid
 
-        epochs: 75
-        batch_size: 8
-        patience: 50
+        epochs: 50
+        batch_size: 32
+        patience: 20
+        layerwise_lr_decay: 0.9
 
         # Optimizer
         optimizer:
@@ -150,8 +141,8 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
-          weight_decay: 1e-08
-          lr: 0.00012
+          lr: 0.001
+          weight_decay: 1e-8
 
         # Scheduler
         scheduler:
@@ -159,7 +150,7 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: timm.scheduler.cosine_lr.CosineLRScheduler
-          t_initial: 75
+          t_initial: 50
           cycle_mul: 1
           cycle_decay: 1
           cycle_limit: 1
@@ -203,9 +194,6 @@ model_loop_pipeline:
                       - 350
 
 post_processing_pipeline:
-  post_processing_steps:
-    - _target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
-      raw_data_path: data/raw/train_satellite
-      save_train: True
-    - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold:
+  post_processing_steps: []
+#    - _target_: src.pipeline.model.post_processing.threshold.Threshold
+#      threshold: 0.5268574552129037

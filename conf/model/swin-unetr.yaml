@@ -120,7 +120,6 @@ model_loop_pipeline:
 
       # Pytorch model
       - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
-        self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
@@ -138,11 +137,10 @@ model_loop_pipeline:
             drop_rate: 0.1
             dropout_path_rate: 0.1
             attn_drop_rate: 0.1
-            use_checkpoint: True
 
         epochs: 75
-        batch_size: 8
-        patience: 50
+        batch_size: 16
+        patience: 20
 
         # Optimizer
         optimizer:
@@ -151,7 +149,7 @@ model_loop_pipeline:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           weight_decay: 1e-08
-          lr: 0.00012
+          lr: 0.00025
 
         # Scheduler
         scheduler:
@@ -208,4 +206,4 @@ post_processing_pipeline:
       raw_data_path: data/raw/train_satellite
       save_train: True
     - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold:
+      threshold: 0.5766565139211011

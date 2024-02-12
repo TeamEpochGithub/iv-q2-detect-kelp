@@ -89,4 +89,5 @@ repos:
           - randomname
           - coloredlogs
           - kornia
+          - einops
         args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]
