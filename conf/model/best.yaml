@@ -123,7 +123,7 @@ model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 5635
+        max_images: 424242
         model_type: XGBoost
         saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
