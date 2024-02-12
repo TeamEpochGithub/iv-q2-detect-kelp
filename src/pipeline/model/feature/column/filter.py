@@ -55,7 +55,9 @@ class Filter(BaseEstimator, TransformerMixin):
         :return: The string representation of the filter.
         """
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
-        return f"Filter(filters={''.join(total_args)},channels={self.channels})"
+        #Remove square brackets from self.channels and turn into string
+        channels = str(self.channels).replace("[", "(").replace("]", ")")
+        return f"Filter(filters={''.join(total_args)},channels={channels})"
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
         """Transform the data.
