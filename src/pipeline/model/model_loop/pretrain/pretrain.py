@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 
 from src.logging_utils.logger import logger
 from src.logging_utils.section_separator import print_section_separator
+from src.pipeline.caching.tif import CacheTIFBlock
 from src.pipeline.model.model_loop.pretrain.pretrain_block import PretrainBlock
 
 
@@ -19,10 +20,17 @@ class PretrainPipeline(Pipeline):
     """
 
     pretrain_steps: list[PretrainBlock]
+    pretrain_path: str | None = None
 
     def __post_init__(self) -> None:
         """Post init function."""
         self.set_hash("")
+
+        # Set processed path
+        if self.pretrain_path:
+            for step in self.pretrain_steps:
+                step.set_pretrain_path(self.pretrain_path)
+
         super().__init__(self._get_steps())
 
     def _get_steps(self) -> list[tuple[str, PretrainBlock]]:
