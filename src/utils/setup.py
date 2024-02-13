@@ -108,6 +108,7 @@ def update_model_cfg_test_size(
 
         if not is_train:
             model_cfg_dict.get("feature_pipeline", {})["processed_path"] = "data/test"
+            model_cfg_dict.get("model_loop_pipeline", {}).get("pretrain_pipeline", {})["pretrain_path"] = "data/test"
     return model_cfg_dict
 
 

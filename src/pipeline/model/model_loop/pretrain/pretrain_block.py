@@ -29,6 +29,7 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
     def __post_init__(self) -> None:
         """Post init function."""
         self.set_hash("")
+        self.pretrain_path = "data/training"
 
     @abstractmethod
     def fit(self, X: da.Array, y: da.Array, train_indices: list[int], *, save_pretrain: bool = True, save_pretrain_with_split: bool = False) -> Self:
@@ -72,9 +73,16 @@ class PretrainBlock(BaseEstimator, TransformerMixin):
         start_time = time.time()
         logger.info("Saving pretrain data...")
         # Save the pretrain data
-        result = store_raw("data/training/" + hash(self.prev_hash), X)
+        result = store_raw(self.pretrain_path + "/" + hash(self.prev_hash), X)
         logger.info("Saved pretrain data in %s seconds", time.time() - start_time)
         return result
+
+    def set_pretrain_path(self, path: str) -> None:
+        """Set the path for saving pretrain.
+
+        :param path: path to save data
+        """
+        self.pretrain_path = path
 
     def train_split_hash(self, train_indices: list[int]) -> str:
         """Split the hash on train split.
