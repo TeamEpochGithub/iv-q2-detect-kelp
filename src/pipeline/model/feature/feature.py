@@ -69,7 +69,7 @@ class FeaturePipeline(Pipeline):
         self.load_from_cache = load_from_cache
 
         # Update the steps in the pipeline after changing the load from cache flag
-        super().__init__(self._get_steps(), memory=self._get_memory())
+        super().__init__(self._get_steps())
 
     def set_hash(self, prev_hash: str) -> str:
         """set_hash function sets the hash for the pipeline.
