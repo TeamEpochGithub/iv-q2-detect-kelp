@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - ensemble: fixed_sobol_2
+  - model: vgg13-unet-bs16-f18-e75
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
