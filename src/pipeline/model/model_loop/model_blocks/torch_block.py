@@ -30,9 +30,10 @@ from src.logging_utils.section_separator import print_section_separator
 from src.modules.models.custom_data_parallel import CustomDataParallel
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
-from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 from src.pipeline.model.model_loop.model_blocks.utils.transfrom_batch import transform_batch
+from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
+from src.modules.models.custom_data_parallel import CustomDataParallel
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self

@@ -55,7 +55,7 @@ class DLEnsemble(EnsembleBase):
 
     def ensemble_init(self) -> None:
         """Ensemble init function."""
-        self.ensemble_hash = hash(self)
+        self.ensemble_hash = hash(str(self))
         self.feature_map_args = {
             "feature_map": True,
         }
