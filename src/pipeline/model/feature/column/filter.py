@@ -55,7 +55,7 @@ class Filter(BaseEstimator, TransformerMixin):
         :return: The string representation of the filter.
         """
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
-        #Remove square brackets from self.channels and turn into string
+        # Remove square brackets from self.channels and turn into string
         channels = str(self.channels).replace("[", "(").replace("]", ")")
         return f"Filter(filters={''.join(total_args)},channels={channels})"
 
@@ -87,7 +87,9 @@ class Filter(BaseEstimator, TransformerMixin):
             # Apply the filter
             filter_name = image_filter.func.__name__  # type: ignore[attr-defined]
             logger.info(f"Applying {filter_name} to channel {channel}")
-            filtered_channel = image_filter(X[:, channel])
+            filtered_channel = np.empty_like(image_filter(X[:, channel]))
+            for image in range(X.shape[0]):
+                filtered_channel[image] = image_filter(X[image, channel])
 
             # Set copy to dtype float32
             filtered_channel = filtered_channel.astype("float32")

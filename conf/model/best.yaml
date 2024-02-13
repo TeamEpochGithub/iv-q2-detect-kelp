@@ -77,23 +77,6 @@ feature_pipeline:
           data_path: data/processed/cache
           column: -1
 
-      # Sobel
-      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
-        column_block:
-          _target_: src.pipeline.model.feature.column.filter.Filter
-          filters:
-            - _target_: functools.partial
-              _args_:
-                - _target_: hydra.utils.get_method
-                  path: skimage.filters.sobel
-          channels:
-            - 7
-        cache_block:
-          _target_: src.pipeline.caching.column.CacheColumnBlock
-          data_path: data/processed/cache
-          column: -1
-
-
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.filter.Filter
@@ -104,7 +87,11 @@ feature_pipeline:
                   path: skimage.filters.unsharp_mask
               radius: 1
               amount: 0.5
-          channels: [ 7 ]
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel
+          channels: [ 7, 7 ]
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
