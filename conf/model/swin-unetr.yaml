@@ -85,7 +85,7 @@ feature_pipeline:
             - _target_: functools.partial
               _args_:
                 - _target_: hydra.utils.get_method
-                  path: dask_image.ndfilters.sobel
+                  path: skimage.filters.sobel
           channels:
             - 7
         cache_block:
@@ -108,6 +108,7 @@ model_loop_pipeline:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
         max_images: 424242
         model_type: XGBoost
+        saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0,1,2,3,4,7,8,9,10,11,12,13,14]
@@ -120,6 +121,7 @@ model_loop_pipeline:
 
       # Pytorch model
       - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+        self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
@@ -206,4 +208,4 @@ post_processing_pipeline:
       raw_data_path: data/raw/train_satellite
       save_train: True
     - _target_: src.pipeline.model.post_processing.threshold.Threshold
-      threshold: 0.5766565139211011
+      threshold: 
