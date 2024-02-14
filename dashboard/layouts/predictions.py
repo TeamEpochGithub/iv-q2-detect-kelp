@@ -55,7 +55,7 @@ def predictions_layout(image_id: str) -> html.Div:
     latest_folder = max(folders, key=os.path.getctime)
 
     # get the preds from the latest folder
-    latest_folder = Path("outputs/2024-01-29/16-09-04")
+    latest_folder = Path("outputs/2024-02-14/10-34-51")
     preds_loc = latest_folder / "preds"
     if not os.path.exists(preds_loc / f"{image_id}_pred.tif"):
         return html.P(f"Predictions for {image_id} not found in {preds_loc}. This image is not in the test split")
