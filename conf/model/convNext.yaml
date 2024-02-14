@@ -101,7 +101,10 @@ model_loop_pipeline:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
           model: # from segmentation_models_pytorch import Unet
-            _target_: src.modules.models.conv_next2.ConvNeXt_U
+            _target_: src.modules.models.custom_timm.CustomTimm
+            model: convnext_small.fb_in22k
+            in_channels: 7
+            pretrained: True
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
           _args_:
@@ -121,9 +124,8 @@ model_loop_pipeline:
           warmup_lr_init: 1e-5
         criterion:
           _target_: src.modules.loss.dice_loss.DiceLoss
-          multiply_kelp: True
         epochs: 100
-        batch_size: 8
+        batch_size: 4
         patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations

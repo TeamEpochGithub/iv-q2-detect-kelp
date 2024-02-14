@@ -42,11 +42,11 @@ class PaddedModel(nn.Module):
         # Remove the padding if necessary
         if self.padding > 0:
             if y.ndim == 2:
-                y = y[self.padding: -self.padding, self.padding: -self.padding]
+                y = y[self.padding : -self.padding, self.padding : -self.padding]
             elif y.ndim == 3:
-                y = y[:, self.padding: -self.padding, self.padding: -self.padding]
+                y = y[:, self.padding : -self.padding, self.padding : -self.padding]
             elif y.ndim == 4:
-                y = y[:, :, self.padding: -self.padding, self.padding: -self.padding]
+                y = y[:, :, self.padding : -self.padding, self.padding : -self.padding]
         if self.activation is not None:
             y = self.activation(y)
 

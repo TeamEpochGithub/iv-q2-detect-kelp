@@ -2,7 +2,7 @@
 import torch
 
 
-def reconstruct_from_patches(patches: torch.Tensor, batch_size: int, patch_size: int = 256, output_size=350) -> torch.Tensor:
+def reconstruct_from_patches(patches: torch.Tensor, batch_size: int, patch_size: int = 256, output_size: int = 350) -> torch.Tensor:
     """Reconstruct an image from patches.
 
     :param patches: Tensor of patches.
