@@ -38,6 +38,45 @@ def to_feature_df(img: npt.NDArray[np.float64 | np.float32 | np.int32], label: n
         img_df["ODWI"] = 0
         img_df["ODVI"] = 0
 
+    # unstable
+    # img_df["EVI"] = 2.5 * (img_df["NIR"] - img_df["R"]) / (img_df["NIR"] + 6 * img_df["R"] - 7.5 * img_df["B"] + 1)
+    # # clip between -10 and 10
+    # img_df["EVI"] = np.clip(img_df["EVI"], -10, 10)
+
+    # not amazing
+    # add more features here for kelp segmentation from landsat satellites
+    # img_df["MDNI"] = (img_df["NIR"] - img_df["SWIR"]) / (img_df["NIR"] + img_df["SWIR"])
+
+    # Floating algea index
+    img_df["FAI1"] = img_df["NIR"] - 0.339*img_df["SWIR"] - 0.2*img_df["R"]
+
+    # bad
+    # nir - (red + (swir-red)*(nir-red)/(swir-red))
+    # img_df["FAI2"] = img_df["NIR"] - (img_df["R"] + (img_df["SWIR"] - img_df["R"])*(img_df["NIR"] - img_df["R"])/(img_df["SWIR"] - img_df["R"]))
+
+    img_df["AVI"] = (img_df["NIR"] - img_df["B"]) / (img_df["NIR"] + img_df["B"])
+
+    # compute 2d fft of AVI, reshaping between pandas and numpy is a bit of a pain
+    img_df["AVI_Fourier"] = np.abs(np.fft.fft2(img_df["AVI"].to_numpy().reshape(350, 350))).flatten()
+    # clip up to 10
+    img_df["AVI_Fourier"] = np.clip(img_df["AVI_Fourier"], 0, 10)
+
+    # apply 2d fft, gaussian blur, then inverse 2d fft
+    img_df["AVI_Fourier_smooth"] = np.abs(np.fft.ifft2(scipy.ndimage.gaussian_filter(np.fft.fft2(img_df["AVI"].to_numpy().reshape(350, 350)), 0))).flatten()
+
+    # apply 2d fft abs twice
+    img_df["AVI_Fourier2"] = np.abs(np.fft.fft2(np.abs(np.fft.fft2(img_df["AVI"].to_numpy().reshape(350, 350))))).flatten()
+
+    # savi: ((nir - red) / (nir + red + 0.5)) * (1 + 0.5)
+    L = 1 * 65535
+    img_df["SAVI"] = ((img_df["NIR"] - img_df["R"]) / (img_df["NIR"] + img_df["R"] + L)) * (1 + L)
+
+    # ndki (nir - green) / (nir + green)
+    img_df["NDKI"] = (img_df["NIR"] - img_df["G"]) / (img_df["NIR"] + img_df["G"])
+
+    # (nir - swir) / (nir + swir)
+    img_df["NDNI"] = (img_df["NIR"] - 0.339*img_df["SWIR"])
+
     # Add the label to the dataframe
     img_df["Label"] = label.flatten()
     return img_df
@@ -118,7 +157,7 @@ def features_layout(image_id: str) -> html.Div:
         make_fig(overlay_pred, "Pred overlay"),
         make_fig(swir_nir_red, "SWIR/NIR/Red"),
     ]
-    figs_feats = [make_fig(img_df[feature].to_numpy().reshape(350, 350), feature) for feature in ["ONIR", "LandCloseness"]]
+    figs_feats = [make_fig(img_df[feature].to_numpy().reshape(350, 350), feature) for feature in ["NDVI", "FAI1", "AVI","AVI_Fourier","AVI_Fourier_smooth","AVI_Fourier2"]]
     figs.extend(figs_feats)
 
     return html.Div(figs, style={"display": "flex"})
