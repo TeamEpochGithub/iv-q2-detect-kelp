@@ -190,7 +190,7 @@ class CustomTimm(nn.Module):
         )
         self.kelp = nn.Conv2d(decoder_dim[-1], 1, kernel_size=1)
         self.stem0 = nn.Sequential(
-            nn.Conv2d(in_channels=7, out_channels=24, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=in_channels, out_channels=24, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(24, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=24, out_channels=24, kernel_size=3, stride=1, padding=1),
