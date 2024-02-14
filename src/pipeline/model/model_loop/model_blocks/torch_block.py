@@ -409,7 +409,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                             predictions.append(y_pred_reversed)
 
                     # Average the predictions
-                    y_pred = torch.mean(torch.stack(predictions), axis=0).cpu().numpy()
+                    y_pred = torch.mean(torch.stack(predictions), dim=0).cpu().numpy()
                 else:
                     y_pred = self.model(X_batch).cpu().numpy()
 

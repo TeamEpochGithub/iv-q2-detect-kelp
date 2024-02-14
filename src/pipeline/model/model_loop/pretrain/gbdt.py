@@ -34,7 +34,7 @@ class GBDT(PretrainBlock):
     max_images: int | None = None
     early_stopping_split: float = 0.2
     model_type: str = "XGBoost"
-    saved_at: str = field(default=None, repr=False, hash=False)
+    saved_at: str | None = field(default=None, repr=False, hash=False)
 
     def __post_init__(self) -> None:
         """Initialize the GBDT model."""
@@ -142,7 +142,7 @@ class GBDT(PretrainBlock):
             if self.saved_at is not None:
                 if Path(f"tm/{self.saved_at}").exists():
                     with open(f"tm/{self.saved_at}", "rb") as f:
-                        self.model = pickle.load(f)
+                        self.model = pickle.load(f)  # noqa: S301
                     logger.warning("Using first 14 channels. Make sure they are not changed or the model will not work. Add features after the 14th one.")
                     logger.info(f"Loaded GBDT from {f'tm/{self.saved_at}'}")
                 else:

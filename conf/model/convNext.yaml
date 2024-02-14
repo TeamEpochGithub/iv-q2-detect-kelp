@@ -102,7 +102,7 @@ model_loop_pipeline:
           padding: 1
           model: # from segmentation_models_pytorch import Unet
             _target_: src.modules.models.custom_timm.CustomTimm
-            model: convnext_small.fb_in22k
+            model: convnext_tiny.in12k
             in_channels: 7
             pretrained: True
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
