@@ -4,6 +4,7 @@ import torch.nn.functional as func
 from timm.models import create_model
 from torch import nn
 
+act = nn.GELU()
 
 class ChannelSqueezeSpatialExcitation(nn.Module):
     """Channel Squeeze and Spatial Excitation block.
@@ -43,7 +44,7 @@ class SpatialSqueezeChannelExcitation(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(out_channels, int(out_channels / 2), kernel_size=1, padding=0),
             nn.BatchNorm2d(int(out_channels / 2)),
-            nn.ReLU(inplace=True),
+            act,
         )
 
         self.conv2 = nn.Sequential(
@@ -88,13 +89,13 @@ class MyDecoderBlock(nn.Module):
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channel + skip_channel, out_channel, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channel),
-            nn.ReLU(inplace=True),
+            act,
         )
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(out_channel, out_channel, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channel),
-            nn.ReLU(inplace=True),
+            act,
         )
         self.spatial_gate = ChannelSqueezeSpatialExcitation(out_channel)
         self.channel_gate = SpatialSqueezeChannelExcitation(out_channel)
@@ -192,18 +193,18 @@ class CustomTimm(nn.Module):
         self.stem0 = nn.Sequential(
             nn.Conv2d(in_channels=in_channels, out_channels=24, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(24, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            nn.ReLU(inplace=True),
+            act,
             nn.Conv2d(in_channels=24, out_channels=24, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(24, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            nn.ReLU(inplace=True),
+            act,
         )
         self.stem1 = nn.Sequential(
             nn.Conv2d(in_channels=24, out_channels=48, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(48, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            nn.ReLU(inplace=True),
+            act,
             nn.Conv2d(in_channels=48, out_channels=48, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(48, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
-            nn.ReLU(inplace=True),
+            act,
         )
 
         self.activation = nn.Sigmoid()
