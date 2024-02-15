@@ -9,7 +9,7 @@ feature_pipeline:
       - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
         nan_to_zero: True
         nan_value: -32768
-
+#      - _target_: src.pipeline.model.feature.transformation.mask_land.MaskLand
   column_pipeline:
     columns:
 
@@ -17,47 +17,57 @@ feature_pipeline:
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
-          a: 1
-          b: 2
+          a: 1 # NIR
+          b: 2 # Red
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # NDWI
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
-          a: 3
-          b: 1
+          a: 3 # Green
+          b: 1 # NIR
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # ONIR
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.offset.Offset
-          band: 1
+          band: 1 # NIR
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # ODVI
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.offset_diff.OffsetDiff
-          a: 1
-          b: 2
+          a: 1 # NIR
+          b: 2 # Red
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # MNDWI
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
-          a: 3
-          b: 0
+          a: 3 # Green
+          b: 0 # SWIR
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # Land Closeness
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.shore.Shore
@@ -66,6 +76,8 @@ feature_pipeline:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
           column: -1
+
+      # Sobel
       - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
         column_block:
           _target_: src.pipeline.model.feature.column.filter.Filter
@@ -73,8 +85,42 @@ feature_pipeline:
             - _target_: functools.partial
               _args_:
                 - _target_: hydra.utils.get_method
-                  path: dask_image.ndfilters.sobel
+                  path: skimage.filters.sobel
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.unsharp_mask
+              amount: 2
+              radius: 2.5
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.modal
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_v
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_h
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.enhance_contrast
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+
           channels:
+            - 7
+            - 7
+            - 7
+            - 7
+            - 7
             - 7
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
@@ -88,33 +134,21 @@ target_pipeline:
       - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
         sigma: 0.5
   column_pipeline:
-    columns: [ ]
+    columns: []
 
 model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        model_type: XGBoost
         max_images: 424242
+        model_type: XGBoost
+        saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns:
-          - 0
-          - 1
-          - 2
-          - 3
-          - 4
-          - 7
-          - 8
-          - 9
-          - 10
-          - 11
-          - 12
-          - 13
-          - 14
-      - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
+        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19]
+      - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
         scaler:
-          _target_: dask_ml.preprocessing.StandardScaler
+          _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
 
   model_blocks_pipeline:
     model_blocks:
@@ -126,10 +160,10 @@ model_loop_pipeline:
           model: # from segmentation_models_pytorch import Unet
             _target_: src.modules.models.swin.res_swin_v2.Res_Swin
             img_size: 352
-            channels: 13
+            channels: 18
             window_size: 11
             head_dim: 48
-            layers: [2,2,2,2]
+            layers: [2,2,24,2]
             use_checkpoint: True
         optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
           _target_: functools.partial
@@ -152,7 +186,7 @@ model_loop_pipeline:
           _target_: src.modules.loss.dice_loss.DiceLoss
           multiply_kelp: False
         epochs: 75
-        batch_size: 32
+        batch_size: 16
         patience: 15
         transformations:
           _target_: src.augmentations.transformations.Transformations
