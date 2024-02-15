@@ -142,7 +142,7 @@ model_loop_pipeline:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
         max_images: 424242
         model_type: XGBoost
-        saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
+        saved_at: 4c17c04e998045f08b29d0caaea400d0.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19]

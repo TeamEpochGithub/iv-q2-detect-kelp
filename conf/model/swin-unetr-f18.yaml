@@ -86,7 +86,41 @@ feature_pipeline:
               _args_:
                 - _target_: hydra.utils.get_method
                   path: skimage.filters.sobel
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.unsharp_mask
+              amount: 2
+              radius: 2.5
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.modal
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_v
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_h
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.enhance_contrast
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+
           channels:
+            - 7
+            - 7
+            - 7
+            - 7
+            - 7
             - 7
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
@@ -108,13 +142,14 @@ model_loop_pipeline:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
         max_images: 424242
         model_type: XGBoost
-        saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
+        saved_at: 4c17c04e998045f08b29d0caaea400d0.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14]
+        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19]
       - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
         scaler:
           _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
+
 
   model_blocks_pipeline:
     model_blocks:
@@ -125,18 +160,24 @@ model_loop_pipeline:
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
+          activation:
+            _target_: torch.nn.Sigmoid
           model: # from segmentation_models_pytorch import Unet
-            _target_: segmentation_models_pytorch.Unet
-            decoder_attention_type: scse
-            encoder_name: vgg13
-            in_channels: 13
-            classes: 1
-            activation: sigmoid
+            _target_: monai.networks.nets.swin_unetr.SwinUNETR
+            img_size: [352,352]
+            in_channels: 18
+            out_channels: 1
+            spatial_dims: 2
+            use_v2: False
+            downsample: "mergingv2"
+            feature_size: 48
+            drop_rate: 0.1
+            dropout_path_rate: 0.1
+            attn_drop_rate: 0.1
 
         epochs: 75
         batch_size: 16
-        patience: 30
-        layerwise_lr_decay: 1
+        patience: 20
 
         # Optimizer
         optimizer:
@@ -145,7 +186,7 @@ model_loop_pipeline:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           weight_decay: 1e-08
-          lr: 0.001
+          lr: 0.00025
 
         # Scheduler
         scheduler:
@@ -197,6 +238,4 @@ model_loop_pipeline:
                       - 350
 
 post_processing_pipeline:
-
-
 

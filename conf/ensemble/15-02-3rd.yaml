@@ -1,0 +1,22 @@
+defaults:
+
+  - /model/vgg13-unet-bs16-f13-e75@models.vgg13-unet-bs16-f13-e75
+  - /model/swin-unetr@models.swin-unetr
+  - /model/vgg13-unet-bs16-f18-e75@models.vgg13-unet-bs16-f18-e75
+  - /model/swin-unetr-f18@models.swin-unetr-f18
+  
+
+
+_target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
+_convert_: 'partial'
+
+weights:
+  - 0.25
+  - 0.25
+  - 0.25
+  - 0.25
+
+
+post_ensemble_steps:
+  - _target_: src.pipeline.model.post_processing.threshold.Threshold
+    threshold: 0.5
