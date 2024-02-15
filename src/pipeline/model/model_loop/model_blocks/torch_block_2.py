@@ -145,9 +145,10 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         # Add distance maps to y
         from scipy.ndimage import distance_transform_edt
         dist_map = distance_transform_edt(~(y.compute().astype(np.int8))) / 700
-        dist_map = da.from_array(dist_map, chunks=dist_map.shape)
+        #dist_map = da.from_array(dist_map, chunks=dist_map.shape)
 
-        y = da.concatenate([y[:, None], dist_map[:, None]], axis=1)
+        y = np.concatenate([y.compute()[:, None], dist_map[:, None]], axis=1)
+        y = da.from_array(y)
 
 
         X_train = X[train_indices]
