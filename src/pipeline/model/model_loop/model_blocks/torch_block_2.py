@@ -147,7 +147,7 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         dist_map = distance_transform_edt(~(y.compute().astype(np.int8))) / 700
         #dist_map = da.from_array(dist_map, chunks=dist_map.shape)
 
-        y = np.concatenate([y.compute()[:, None], dist_map[:, None]], axis=1)
+        y = np.concatenate((y.compute()[:, None], dist_map[:, None]), axis=1)
         y = da.from_array(y)
 
 
