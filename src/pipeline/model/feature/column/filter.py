@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 import dask.array as da
+import joblib
 import numpy as np
 import numpy.typing as npt
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -57,6 +58,9 @@ class Filter(BaseEstimator, TransformerMixin):
         total_args: list[str] = [image_filter_to_str(image_filter) for image_filter in self.filters]
         # Remove square brackets from self.channels and turn into string
         channels = str(self.channels).replace("[", "(").replace("]", ")")
+        # Convert total_args to a string and hash it
+
+        total_args = joblib.hash(str(total_args))
         return f"Filter(filters={''.join(total_args)},channels={channels})"
 
     def transform(self, X: da.Array, y: da.Array | None = None) -> da.Array:  # noqa: ARG002
@@ -87,7 +91,7 @@ class Filter(BaseEstimator, TransformerMixin):
             # Apply the filter
             filter_name = image_filter.func.__name__  # type: ignore[attr-defined]
             logger.info(f"Applying {filter_name} to channel {channel}")
-            filtered_channel = np.empty_like(image_filter(X[:, channel]))
+            filtered_channel = np.empty_like(X[:, channel])
             for image in range(X.shape[0]):
                 filtered_channel[image] = image_filter(X[image, channel])
 
