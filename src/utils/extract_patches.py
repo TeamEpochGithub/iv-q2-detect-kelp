@@ -2,7 +2,7 @@
 import torch
 
 
-def extract_patches(img: torch.Tensor, patch_size=256) -> torch.Tensor:
+def extract_patches(img: torch.Tensor, patch_size: int = 256) -> torch.Tensor:
     """Extract patches from an image."""
     # Initialize a list to store the patches
     patches = []

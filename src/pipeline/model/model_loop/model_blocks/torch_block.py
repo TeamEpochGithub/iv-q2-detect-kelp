@@ -30,10 +30,9 @@ from src.logging_utils.section_separator import print_section_separator
 from src.modules.models.custom_data_parallel import CustomDataParallel
 from src.pipeline.model.model_loop.model_blocks.utils.collate_fn import collate_fn
 from src.pipeline.model.model_loop.model_blocks.utils.dask_dataset import Dask2TorchDataset
+from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
 from src.pipeline.model.model_loop.model_blocks.utils.torch_layerwise_lr import torch_layerwise_lr_groups
 from src.pipeline.model.model_loop.model_blocks.utils.transform_batch import transform_batch
-from src.pipeline.model.model_loop.model_blocks.utils.reverse_transform import reverse_transform
-from src.modules.models.custom_data_parallel import CustomDataParallel
 
 if sys.version_info < (3, 11):
     from typing_extensions import Self
@@ -398,19 +397,19 @@ class TorchBlock(BaseEstimator, TransformerMixin):
                     for flip in [False, True]:
                         for rotation in range(4):
                             # Transform the batch
-                            X_batch_transformed = transform_batch(X_batch.clone(), flip, rotation)
+                            X_batch_transformed = transform_batch(X_batch.clone(), rotation, flip=flip)
 
                             # Get prediction
                             y_pred_transformed = self.model(X_batch_transformed)
 
                             # Reverse the transformation on prediction
-                            y_pred_reversed = reverse_transform(y_pred_transformed, flip, rotation)
+                            y_pred_reversed = reverse_transform(y_pred_transformed, rotation, flip=flip)
 
                             # Collect the predictions
                             predictions.append(y_pred_reversed)
 
                     # Average the predictions
-                    y_pred = torch.mean(torch.stack(predictions), axis=0).cpu().numpy()
+                    y_pred = torch.mean(torch.stack(predictions), dim=0).cpu().numpy()
                 else:
                     y_pred = self.model(X_batch).cpu().numpy()
 
