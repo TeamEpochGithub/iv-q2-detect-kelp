@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - ensemble: 7dwarves-f18-clean-slate-part1
+  - model: vgg13-unet-bs16-fm4-e75
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
