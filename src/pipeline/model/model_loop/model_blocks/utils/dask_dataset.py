@@ -71,7 +71,7 @@ class Dask2TorchDataset(Dataset[Any]):
 
             # If they exist, apply the augmentations in a paralellized way using asyncio
             if self.transforms is not None:
-                if y_arr.shape[1] == 1:
+                if y_arr.shape[1] == 1 or len(y_arr.shape) == 3:
                     x_arr, y_arr = self.transforms.transform(x_arr, y_arr)
                 elif y_arr.shape[1] == 2:
                     dist_map = y_arr[:, 1, np.newaxis]
