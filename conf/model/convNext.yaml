@@ -106,7 +106,7 @@ model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 500
+        max_images: 1000
         model_type: XGBoost
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
@@ -119,7 +119,8 @@ model_loop_pipeline:
     model_blocks:
 
       # Pytorch model
-      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block_2.TorchBlock
+        self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
@@ -130,8 +131,8 @@ model_loop_pipeline:
             pretrained: True
 
         epochs: 75
-        batch_size: 24
-        patience: 20
+        batch_size: 16
+        patience: 15
         layerwise_lr_decay: 0.85
 
         # Optimizer
@@ -157,7 +158,7 @@ model_loop_pipeline:
           warmup_lr_init: 1e-5
 
         criterion:
-          _target_: src.modules.loss.dice_loss.DiceLoss
+          _target_: src.modules.loss.focal_dice_boundary_loss.FocalDiceBoundaryLoss
 
         # Augmentations
         transformations:

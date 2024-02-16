@@ -242,4 +242,5 @@ kornia==0.7.1
 kornia-rs==0.0.8
 xgboost==2.0.3
 lightgbm==4.2.0
+MedPy==0.4.0
 -e ./

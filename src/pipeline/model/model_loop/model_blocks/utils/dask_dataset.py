@@ -71,7 +71,19 @@ class Dask2TorchDataset(Dataset[Any]):
 
             # If they exist, apply the augmentations in a paralellized way using asyncio
             if self.transforms is not None:
-                x_arr, y_arr = self.transforms.transform(x_arr, y_arr)
+                if y_arr.shape[1] == 1:
+                    x_arr, y_arr = self.transforms.transform(x_arr, y_arr)
+                elif y_arr.shape[1] == 2:
+                    dist_map = y_arr[:, 1, np.newaxis]
+
+                    # Concatenate the distance map to the x_arr
+                    x_arr = np.concatenate((x_arr, dist_map), axis=1)
+
+                    x_arr, y_arr = self.transforms.transform(x_arr, y_arr[:, 0])
+                    dist_map = x_arr[:, -1]
+                    x_arr = x_arr[:, :-1]
+                    y_arr = torch.stack((y_arr, dist_map), dim=1)
+
             if isinstance(x_arr, torch.Tensor) and isinstance(y_arr, torch.Tensor):
                 return x_arr, y_arr
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)
