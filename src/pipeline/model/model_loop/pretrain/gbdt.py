@@ -170,6 +170,9 @@ class GBDT(PretrainBlock):
         # Predict and reshape back to (N, 1, H, W)
 
         if self.saved_at is not None:
-            x_ = x_[:, :14]
+            if self.saved_at == '4c17c04e998045f08b29d0caaea400d0.gbdt':
+                x_ = x_[:,:19]
+            else:
+                x_ = x_[:, :14]
         pred = self.model.predict_proba(x_)[:, 1].reshape((x.shape[0], 1, x.shape[2], x.shape[3]))
         return np.concatenate([x, pred], axis=1)
