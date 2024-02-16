@@ -83,7 +83,7 @@ class Dask2TorchDataset(Dataset[Any]):
                     dist_map = x_arr[:, -1]
                     x_arr = x_arr[:, :-1]
                     y_arr = torch.stack((y_arr, dist_map), dim=1)
-                
+
             if isinstance(x_arr, torch.Tensor) and isinstance(y_arr, torch.Tensor):
                 return x_arr, y_arr
             return torch.from_numpy(x_arr), torch.from_numpy(y_arr)

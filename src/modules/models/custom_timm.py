@@ -6,6 +6,7 @@ from torch import nn
 
 act = nn.GELU()
 
+
 class ChannelSqueezeSpatialExcitation(nn.Module):
     """Channel Squeeze and Spatial Excitation block.
 
