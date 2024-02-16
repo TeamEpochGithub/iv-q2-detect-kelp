@@ -15,6 +15,7 @@ import numpy.typing as npt
 import torch
 from annotated_types import Gt, Interval
 from joblib import hash
+from scipy.ndimage import distance_transform_edt
 from sklearn.base import BaseEstimator, TransformerMixin
 from torch import Tensor, nn
 from torch.nn import Parameter
@@ -143,8 +144,6 @@ class TorchBlock(BaseEstimator, TransformerMixin):
         test_indices.sort()
 
         # Add distance maps to y
-        from scipy.ndimage import distance_transform_edt
-
         dist_map = distance_transform_edt(~(y.compute().astype(np.int8))) / 700
         # dist_map = da.from_array(dist_map, chunks=dist_map.shape)
 
