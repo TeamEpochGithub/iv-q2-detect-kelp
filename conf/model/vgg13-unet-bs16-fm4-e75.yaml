@@ -163,7 +163,7 @@ model_loop_pipeline:
             _target_: segmentation_models_pytorch.Unet
             decoder_attention_type: scse
             encoder_name: vgg13
-            in_channels: 13
+            in_channels: 6
             classes: 1
             activation: sigmoid
 
