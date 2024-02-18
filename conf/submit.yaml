@@ -1,7 +1,7 @@
 defaults:
   - base_submit
   - hydra/logging
-  - ensemble: 15-02-1st
+  - ensemble: 17-02-2nd
 
 raw_data_path: data/raw/test_satellite
 raw_target_path: data/raw/train_kelp

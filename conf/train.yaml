@@ -1,7 +1,7 @@
 defaults:
   - base_train
   - hydra/logging
-  - model: vgg13-unet-bs16-f13-e75
+  - model: vgg13-unet-bs16-f13-e75-fdb
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
