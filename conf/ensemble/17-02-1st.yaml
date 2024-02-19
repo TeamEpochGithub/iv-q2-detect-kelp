@@ -1,0 +1,22 @@
+defaults:
+  - /model/vgg13-unet-bs16-fm4-e75@models.vgg13-unet-bs16-fm4-e75
+  - /model/vgg13-unet-bs16-fm1-e75@models.vgg13-unet-bs16-fm1-e75
+  - /model/vgg13-unet-bs16-fm2-e75@models.vgg13-unet-bs16-fm2-e75
+  - /model/vgg13-unet-bs16-fm3-e75@models.vgg13-unet-bs16-fm3-e75
+  
+  
+
+
+_target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
+_convert_: 'partial'
+
+weights:
+  - 0.25
+  - 0.25
+  - 0.25
+  - 0.25
+
+
+post_ensemble_steps:
+  - _target_: src.pipeline.model.post_processing.threshold.Threshold
+    threshold: 0.5
