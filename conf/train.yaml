@@ -6,13 +6,13 @@ defaults:
 #  - model: vgg13-unet-bs16-fm4-e75 # DONE
 #  - model: vgg13-unet-bs16-fm2-e75 # DONE
 #  - model: vgg13-unet-bs16-f18-e75-fdb # DONE
-#  - model: vgg13-unet-bs16-f18-e75-fdb # running on hugo's PC
+#  - model: vgg13-unet-bs16-f18-e75 # running on hugo's PC
 #  - model: swin-unetr-f18 # training on Tolga's PC
-#  - model: swin-unetr-f18-fdb # Not trained
+  - model: swin-unetr-f18-fdb # Training on Jasper's PC
 #  - model: swin-unetr-f13-fdb # Not trained
 #  - model: vgg13-unet-bs16-f13-e75-fdb # Not Trained
 #  - model: ConvNext full GBDT
-  - model: vgg13-unet-bs16-f18-e75-fdb
+#  - model: vgg13-unet-bs16-f18-e75-fdb2
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
