@@ -22,6 +22,8 @@ class Lock:
     def __init__(self) -> None:
         """Initialize the lock."""
         self.acquired = False
+        if "CUDA_VISIBLE_DEVICES" in os.environ:
+            self.lock_file = f".lock_{os.environ['CUDA_VISIBLE_DEVICES'].replace(',', '_')}"
 
     def __enter__(self) -> Self:
         """Create the lock file."""
@@ -48,7 +50,7 @@ class Lock:
         :param exc_tb: Exception traceback
         :return: False, always.
         """
-        if self.acquired:
+        if self.acquired and os.path.exists(self.lock_file):
             logger.info("Releasing lock...")
             os.remove(self.lock_file)
             logger.info("Lock released")

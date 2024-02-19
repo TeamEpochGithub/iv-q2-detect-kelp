@@ -209,6 +209,6 @@ plots/images/train
 !conf/
 
 # ignore Lock file used
-.lock
+.lock*
 
 notebooks/similarity

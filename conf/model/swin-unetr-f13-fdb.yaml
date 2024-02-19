@@ -86,8 +86,10 @@ feature_pipeline:
               _args_:
                 - _target_: hydra.utils.get_method
                   path: skimage.filters.sobel
+
           channels:
             - 7
+
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
           data_path: data/processed/cache
@@ -106,14 +108,16 @@ model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 1000
+        max_images: 424242
         model_type: XGBoost
+        saved_at: dc13cd8a596e0b3e59c4e58c95a0cb7f.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
         columns: [0,1,2,3,4,7,8,9,10,11,12,13,14]
       - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
         scaler:
           _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
+
 
   model_blocks_pipeline:
     model_blocks:
@@ -124,16 +128,24 @@ model_loop_pipeline:
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
+          activation:
+            _target_: torch.nn.Sigmoid
           model: # from segmentation_models_pytorch import Unet
-            _target_: src.modules.models.custom_timm.CustomTimm
-            model: convnext_tiny.in12k
+            _target_: monai.networks.nets.swin_unetr.SwinUNETR
+            img_size: [352,352]
             in_channels: 13
-            pretrained: True
+            out_channels: 1
+            spatial_dims: 2
+            use_v2: False
+            downsample: "mergingv2"
+            feature_size: 48
+            drop_rate: 0.1
+            dropout_path_rate: 0.1
+            attn_drop_rate: 0.1
 
         epochs: 75
         batch_size: 16
-        patience: 15
-        layerwise_lr_decay: 0.85
+        patience: 20
 
         # Optimizer
         optimizer:
@@ -142,7 +154,7 @@ model_loop_pipeline:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           weight_decay: 1e-08
-          lr: 0.002
+          lr: 0.00025
 
         # Scheduler
         scheduler:
@@ -194,3 +206,4 @@ model_loop_pipeline:
                       - 350
 
 post_processing_pipeline:
+
