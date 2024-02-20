@@ -1,7 +1,7 @@
 defaults:
   - base_submit
   - hydra/logging
-  - ensemble: 20-02-1st.yaml
+  - ensemble: 20-02-3rd.yaml
 
 raw_data_path: data/raw/test_satellite
 raw_target_path: data/raw/train_kelp
