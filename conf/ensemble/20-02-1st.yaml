@@ -11,14 +11,6 @@ defaults:
   - /model/vgg13-unet-bs16-fm4-e75@models.vgg13-unet-bs16-fm4-e75
   - /model/vgg13-unet-bs16-fm2-e75@models.vgg13-unet-bs16-fm2-e75
   
-  
-  
-  
-  
-  
-  
-  
-
 _target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
 _convert_: 'partial'
 
