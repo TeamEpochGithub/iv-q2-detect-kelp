@@ -177,7 +177,7 @@ model_loop_pipeline:
 
         epochs: 75
         batch_size: 16
-        patience: 32
+        patience: 20
 
         # Optimizer
         optimizer:
