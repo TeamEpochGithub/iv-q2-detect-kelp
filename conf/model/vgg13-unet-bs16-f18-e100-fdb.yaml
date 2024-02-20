@@ -150,34 +150,27 @@ model_loop_pipeline:
         scaler:
           _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
 
-
   model_blocks_pipeline:
     model_blocks:
 
       # Pytorch model
-      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block_2.TorchBlock
         self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
           padding: 1
-          activation:
-            _target_: torch.nn.Sigmoid
           model: # from segmentation_models_pytorch import Unet
-            _target_: monai.networks.nets.swin_unetr.SwinUNETR
-            img_size: [352,352]
+            _target_: segmentation_models_pytorch.Unet
+            decoder_attention_type: scse
+            encoder_name: vgg13
             in_channels: 18
-            out_channels: 1
-            spatial_dims: 2
-            use_v2: False
-            downsample: "mergingv2"
-            feature_size: 48
-            drop_rate: 0.1
-            dropout_path_rate: 0.1
-            attn_drop_rate: 0.1
+            classes: 1
+            activation: sigmoid
 
-        epochs: 75
+        epochs: 100
         batch_size: 16
-        patience: 32
+        patience: 30
+        layerwise_lr_decay: 1
 
         # Optimizer
         optimizer:
@@ -186,7 +179,7 @@ model_loop_pipeline:
             - _target_: hydra.utils.get_class
               path: torch.optim.AdamW
           weight_decay: 1e-08
-          lr: 0.00025
+          lr: 0.001
 
         # Scheduler
         scheduler:
@@ -194,7 +187,7 @@ model_loop_pipeline:
           _args_:
             - _target_: hydra.utils.get_class
               path: timm.scheduler.cosine_lr.CosineLRScheduler
-          t_initial: 75
+          t_initial: 100
           cycle_mul: 1
           cycle_decay: 1
           cycle_limit: 1
@@ -202,7 +195,7 @@ model_loop_pipeline:
           warmup_lr_init: 1e-5
 
         criterion:
-          _target_: src.modules.loss.dice_loss.DiceLoss
+          _target_: src.modules.loss.focal_dice_boundary_loss.FocalDiceBoundaryLoss
 
         # Augmentations
         transformations:

@@ -21,7 +21,7 @@ raw_data_path: data/raw/train_satellite
 raw_target_path: data/raw/train_kelp
 scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
-test_size: 0.2
+test_size: 0
 cache_size: -1
 allow_multiple_instances: false
 
@@ -32,4 +32,4 @@ model:
       - _target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
         raw_data_path: data/raw/train_satellite
       - _target_: src.pipeline.model.post_processing.threshold.Threshold
-        threshold: 0.5
+        threshold:
