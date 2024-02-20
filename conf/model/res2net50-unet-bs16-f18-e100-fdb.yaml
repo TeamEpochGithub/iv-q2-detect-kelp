@@ -153,7 +153,7 @@ model_loop_pipeline:
     model_blocks:
 
       # Pytorch model
-      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block_2.TorchBlock
         self_ensemble: True
         model:
           _target_: src.pipeline.model.architectures.padded_model.PaddedModel
