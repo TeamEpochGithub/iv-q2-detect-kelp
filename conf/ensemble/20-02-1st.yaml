@@ -8,9 +8,9 @@ defaults:
   - /model/swin-unetr@models.swin-unetr
   - /model/vgg13-unet-bs16-f13-e75@models.vgg13-unet-bs16-f13-e75
   - /model/res2net50-unet-bs16-f13-e75@models.res2net50-unet-bs16-f13-e75
+  - /model/vgg13-unet-bs16-fm4-e75@models.vgg13-unet-bs16-fm4-e75
+  - /model/vgg13-unet-bs16-fm2-e75@models.vgg13-unet-bs16-fm2-e75
   
-
-  - /model/swin-unetr-f13-fdb@models.swin-unetr-f13-fdb
   
   
   
@@ -23,14 +23,16 @@ _target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
 _convert_: 'partial'
 
 weights:
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
-  - 1
+  - 3.0
+  - 2.5
+  - 0.5
+  - 1.5
+  - 0.5
+  - 1.5
+  - 1.0
+  - 1.0
+  - 1.0
+  - 0.5
   
 
 
