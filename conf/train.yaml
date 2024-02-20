@@ -8,13 +8,11 @@ defaults:
 #  - model: vgg13-unet-bs16-f18-e75-fdb # DONE
 #  - model: vgg13-unet-bs16-f18-e75 # running on hugo's PC
 #  - model: swin-unetr-f18 # training on Tolga's PC
-#  - model: swin-unetr-f18-fdb # Training on Jasper's PC
-#  - model: swin-unetr-f13-fdb # Queued on Hugo's PC
-#  - model: vgg13-unet-bs16-f13-e75-fdb # Queued on Emiel GPU 0
-#  - model: ConvNext full GBDT # Will be queued on Ariel's PC
-#  - model: vgg13-unet-bs16-f18-e75-fdb2 # training on Emiel
-#  - model: resnet14d-unet-bs16-f13-e75 # Queued on Emiel GPU 1
-  - model: res2net50-unet-bs16-f13-e75 # Queued on Emiel GPU 0
+  - model: res2net50-unet-bs16-f18-e100 # Training on Jasper's PC
+#  - model: swin-unetr-f13-fdb # Not trained
+#  - model: vgg13-unet-bs16-f13-e75-fdb # Not Trained
+#  - model: ConvNext full GBDT
+#  - model: vgg13-unet-bs16-f18-e75-fdb2
   - wandb: train
 
 raw_data_path: data/raw/train_satellite
