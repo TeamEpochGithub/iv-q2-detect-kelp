@@ -7,7 +7,7 @@ from src.modules.loss.dice_loss import DiceLoss
 from src.modules.loss.focal_loss import FocalLoss
 
 
-class FocalDice2BoundaryLoss(nn.Module):
+class FocalDice5BoundaryLoss(nn.Module):
     """Focal loss + Dice loss + Boundary loss. Used for training the model."""
 
     def __init__(self) -> None:

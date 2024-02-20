@@ -202,7 +202,7 @@ model_loop_pipeline:
           warmup_lr_init: 1e-5
 
         criterion:
-          _target_: src.modules.loss.focal_dice_5boundary_loss.FocalDiceBoundaryLoss
+          _target_: src.modules.loss.focal_dice_5boundary_loss.FocalDice5BoundaryLoss
 
         # Augmentations
         transformations:
