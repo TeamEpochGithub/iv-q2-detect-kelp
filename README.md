@@ -2,6 +2,8 @@
 
 This is Team Epoch's solution to the [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/) competition.
 
+A [technical report](Detect_Kelp___Technical_Report.pdf) is included in this repository.
+
 ## Getting started
 
 Install the required packages using:
