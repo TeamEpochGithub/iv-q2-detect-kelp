@@ -1,0 +1,38 @@
+defaults:
+  - /model/convNextf18@models.convNextf18
+  - /model/convNextf18-e100@models.convNextf18-e100
+
+  # Spreading the weight of this model across the train 0.2 and train full version
+  - /model/vgg13-unet-bs16-f18-e100-fdb@models.vgg13-unet-bs16-f18-e100-fdb
+  - /model/vgg13-unet-bs16-f18-e100-fdb-PATIENCE@models.vgg13-unet-bs16-f18-e100-fdb-PATIENCE
+
+  - /model/swin-unetr-f18-fdb@models.swin-unetr-f18-fdb
+  - /model/vgg13-unet-bs16-f13-e100-fdb2@models.vgg13-unet-bs16-f13-e100-fdb2
+  - /model/res2net50-unet-bs16-f13-e100-fdb@models.res2net50-unet-bs16-f13-e100-fdb
+  
+_target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
+_convert_: 'partial'
+weights:
+  - 0.5
+  - 0.5
+  - 0.5
+  - 0.5
+  - 1
+  - 1
+  - 1
+
+post_ensemble_steps:
+  - _target_: src.pipeline.model.post_processing.threshold.Threshold
+    threshold: 0.5
+
+
+
+
+
+
+
+
+
+
+
+

@@ -86,7 +86,41 @@ feature_pipeline:
               _args_:
                 - _target_: hydra.utils.get_method
                   path: skimage.filters.sobel
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.unsharp_mask
+              amount: 2
+              radius: 2.5
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.modal
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_v
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.sobel_h
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: skimage.filters.rank.enhance_contrast
+              footprint:
+                _target_: skimage.morphology.disk
+                radius: 3
+
           channels:
+            - 7
+            - 7
+            - 7
+            - 7
+            - 7
             - 7
         cache_block:
           _target_: src.pipeline.caching.column.CacheColumnBlock
@@ -106,11 +140,12 @@ model_loop_pipeline:
   pretrain_pipeline:
     pretrain_steps:
       - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
-        max_images: 1000
+        max_images: 424242
         model_type: XGBoost
+        saved_at: 4c17c04e998045f08b29d0caaea400d0.gbdt #Train full GBDT, DO NOT CHANGE
         early_stopping_split: 0.2
       - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
-        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14]
+        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19]
       - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
         scaler:
           _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
@@ -127,13 +162,13 @@ model_loop_pipeline:
           model: # from segmentation_models_pytorch import Unet
             _target_: src.modules.models.custom_timm.CustomTimm
             model: convnext_tiny.in12k
-            in_channels: 13
+            in_channels: 18
             pretrained: True
 
         epochs: 75
         batch_size: 16
         patience: 15
-        layerwise_lr_decay: 0.85
+        layerwise_lr_decay: 1
 
         # Optimizer
         optimizer:
@@ -194,3 +229,5 @@ model_loop_pipeline:
                       - 350
 
 post_processing_pipeline:
+  post_processing_steps:
+  - _target_: src.pipeline.model.post_processing.threshold.Threshold
