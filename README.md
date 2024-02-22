@@ -26,6 +26,12 @@ To run the pre-commit hooks locally, do:
 pre-commit run --all-files
 ```
 
+## GBDT
+Due to long training times, we reused trained models for the GBDT. To train these, set `test_size` to zero, and remove the `saved_at` from a model config.
+Once it is saved, it is possible to set `saved-at` to the filename of the saved model, and use this for any runs regardless of test size. 
+
+```shell
+
 ## Documentation
 
 Documentation is generated using [Sphinx](https://www.sphinx-doc.org/en/master/).
