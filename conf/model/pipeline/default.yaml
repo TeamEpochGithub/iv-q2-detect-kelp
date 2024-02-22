@@ -1,0 +1,32 @@
+_target_: src.pipeline.model.model.ModelPipeline
+_convert_: partial
+
+feature_pipeline:
+  _target_: src.pipeline.model.feature.feature.FeaturePipeline
+
+  transformation_pipeline:
+    _target_: src.pipeline.model.feature.transformation.transformation.TransformationPipeline
+
+  column_pipeline:
+    _target_: src.pipeline.model.feature.column.column.ColumnPipeline
+
+
+target_pipeline:
+  _target_: src.pipeline.model.feature.feature.FeaturePipeline
+
+  transformation_pipeline:
+    _target_: src.pipeline.model.feature.transformation.transformation.TransformationPipeline
+
+  column_pipeline:
+    _target_: src.pipeline.model.feature.column.column.ColumnPipeline
+
+model_loop_pipeline:
+  _target_: src.pipeline.model.model_loop.model_loop.ModelLoopPipeline
+  pretrain_pipeline:
+    _target_: src.pipeline.model.model_loop.pretrain.pretrain.PretrainPipeline
+  model_blocks_pipeline:
+    _target_: src.pipeline.model.model_loop.model_blocks.model_blocks.ModelBlocksPipeline
+
+
+post_processing_pipeline:
+  _target_: src.pipeline.model.post_processing.post_processing.PostProcessingPipeline

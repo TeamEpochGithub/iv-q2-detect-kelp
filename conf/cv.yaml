@@ -1,0 +1,17 @@
+defaults:
+  - base_cv
+  - hydra/logging
+  - model: best
+  - wandb: train
+
+raw_data_path: data/raw/train_satellite
+raw_target_path: data/raw/train_kelp
+metadata_path: data/processed/metadata.csv
+scorer:
+  _target_: src.scoring.dice_coefficient.DiceCoefficient
+cache_size: -1
+splitter:
+  _target_: src.cv_splitter.kelp_forest_segmentation_stratified_k_fold.KelpForestSegmentationStratifiedKFold
+  metadata_path: ${metadata_path}
+  n_splits: 3
+allow_multiple_instances: True

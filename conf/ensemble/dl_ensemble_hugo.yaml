@@ -1,0 +1,33 @@
+defaults:
+  - /model/hugo1@models.hugo1
+  - /model/hugo2@models.hugo2
+
+_target_: src.pipeline.ensemble.dl_ensemble.DLEnsemble
+_convert_: 'partial'
+
+optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: torch.optim.AdamW
+  lr: 0.0005
+scheduler:
+  _target_: functools.partial
+  _args_:
+    - _target_: hydra.utils.get_class
+      path: timm.scheduler.cosine_lr.CosineLRScheduler
+  t_initial: 60
+  cycle_mul: 1
+  cycle_decay: 1
+  cycle_limit: 1
+  warmup_t: 5
+  warmup_lr_init: 1e-5
+criterion:
+  _target_: src.modules.loss.dice_loss.DiceLoss
+  multiply_kelp: True
+epochs: 100
+batch_size: 16
+patience: 10
+output_channels: 1
+
+post_ensemble_steps:

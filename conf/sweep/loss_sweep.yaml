@@ -1,0 +1,21 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args_no_hyphens}
+method: bayes
+project: detect-kelp
+program: sweep.py
+name: loss_sweep_1000
+metric:
+  name: sweep_score
+  goal: maximize
+parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.criterion._target_:
+    values:
+      - src.modules.loss.dice_loss.DiceLoss
+      - src.modules.loss.shrinkage_loss.ShrinkageLoss
+      - src.modules.loss.jaccard_loss.JaccardLoss
+      - src.modules.loss.focal_tversky_loss.FocalTverskyLoss
+  model.target_pipeline.transformation_pipeline.transformations.0.sigma:
+    values: [0, 0.5, 1, 1.5, 2]

@@ -1,0 +1,24 @@
+defaults:
+  - /model/a@models.a
+  - /model/vgg13-unet-bs16-f18-e100-fdb@models.vgg13-unet-bs16-f18-e100-fdb
+  - /model/swin-unetr-f18-fdb@models.swin-unetr-f18-fdb
+  - /model/vgg13-unet-bs16-f13-e75-fdb@models.vgg13-unet-bs16-f13-e75-fdb
+  - /model/res2net50-unet-bs16-f13-e75@models.res2net50-unet-bs16-f13-e75
+  - /model/convNextf18@models.convNextf18
+  
+_target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
+_convert_: 'partial'
+weights:
+  - 1
+  - 3.0
+  - 3.0
+  - 1
+  - 1
+  - 1
+  
+
+
+
+post_ensemble_steps:
+  - _target_: src.pipeline.model.post_processing.threshold.Threshold
+    threshold: 0.5

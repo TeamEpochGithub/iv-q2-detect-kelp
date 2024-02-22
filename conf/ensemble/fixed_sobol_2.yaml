@@ -1,0 +1,14 @@
+defaults:
+  - /model/swin-unetr@models.swin-unetr
+  - /model/vgg13-unet-bs16-f13-e75@models.vgg13-unet-bs16-f13-e75
+
+_target_: src.pipeline.ensemble.weighted_ensemble.WeightedEnsemble
+_convert_: 'partial'
+
+weights:
+  - 0.5
+  - 0.5
+post_ensemble_steps:
+  post_processing_steps:
+    - _target_: src.pipeline.model.post_processing.threshold.Threshold
+      threshold:

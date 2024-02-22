@@ -1,0 +1,200 @@
+defaults:
+  - pipeline/default@_here_
+  - _self_
+
+feature_pipeline:
+  processed_path: data/processed
+  transformation_pipeline:
+    transformations:
+      - _target_: src.pipeline.model.feature.transformation.set_outside_range.SetOutsideRange
+        nan_to_zero: True
+        nan_value: -32768
+#      - _target_: src.pipeline.model.feature.transformation.mask_land.MaskLand
+  column_pipeline:
+    columns:
+
+      # NDVI
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
+          a: 1 # NIR
+          b: 2 # Red
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # NDWI
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
+          a: 3 # Green
+          b: 1 # NIR
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # ONIR
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.offset.Offset
+          band: 1 # NIR
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # ODVI
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.offset_diff.OffsetDiff
+          a: 1 # NIR
+          b: 2 # Red
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # MNDWI
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.norm_diff.NormDiff
+          a: 3 # Green
+          b: 0 # SWIR
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # Land Closeness
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.shore.Shore
+          mode: closeness
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+      # Sobel
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.filter.Filter
+          filters:
+            - _target_: functools.partial
+              _args_:
+                - _target_: hydra.utils.get_method
+                  path: dask_image.ndfilters.sobel
+          channels:
+            - 7
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+target_pipeline:
+  processed_path: data/processed/target
+  transformation_pipeline:
+    transformations:
+      - _target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur
+        sigma: 0.5
+  column_pipeline:
+    columns: []
+
+model_loop_pipeline:
+  pretrain_pipeline:
+    pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.gbdt.GBDT
+        max_images: 424242
+        model_type: XGBoost
+        early_stopping_split: 0.2
+      - _target_: src.pipeline.model.model_loop.pretrain.column_selection.ColumnSelection
+        columns: [0,1,2,3,4,7,8,9,10,11,12,13,14]
+      - _target_: src.pipeline.model.model_loop.pretrain.custom_scaler_block.CustomScalerBlock
+        scaler:
+          _target_: src.pipeline.model.model_loop.pretrain.utils.custom_scaler.CustomStandardScaler
+
+  model_blocks_pipeline:
+    model_blocks:
+
+      # Pytorch model
+      - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+        model:
+          _target_: src.pipeline.model.architectures.padded_model.PaddedModel
+          padding: 1
+          model: # from segmentation_models_pytorch import Unet
+            _target_: segmentation_models_pytorch.Linknet
+            encoder_name: vgg13
+            in_channels: 13
+            classes: 1
+            activation: sigmoid
+
+        epochs: 75
+        batch_size: 16
+        patience: 20
+        layerwise_lr_decay: 1
+
+        # Optimizer
+        optimizer:
+          _target_: functools.partial
+          _args_:
+            - _target_: hydra.utils.get_class
+              path: torch.optim.AdamW
+          weight_decay: 1e-08
+          lr: 0.001
+
+        # Scheduler
+        scheduler:
+          _target_: functools.partial
+          _args_:
+            - _target_: hydra.utils.get_class
+              path: timm.scheduler.cosine_lr.CosineLRScheduler
+          t_initial: 75
+          cycle_mul: 1
+          cycle_decay: 1
+          cycle_limit: 1
+          warmup_t: 5
+          warmup_lr_init: 1e-5
+
+        criterion:
+          _target_: src.modules.loss.dice_loss.DiceLoss
+
+        # Augmentations
+        transformations:
+          _target_: src.augmentations.transformations.Transformations
+          alb:
+            _target_: albumentations.Compose
+            _args_:
+              - _target_: albumentations.RandomRotate90
+                p: 1
+          korn:
+            _target_: kornia.augmentation.AugmentationSequential
+            _args_:
+              - _target_: kornia.augmentation.RandomHorizontalFlip
+                p: 0.5
+              - _target_: kornia.augmentation.RandomVerticalFlip
+                p: 0.5
+
+              # Randomly apply one of the following mix augmentations
+              - _target_: kornia.augmentation.AugmentationSequential
+                random_apply: 1
+                _args_:
+                  - _target_: kornia.augmentation.RandomMosaic
+                    p: 0.2
+                    output_size:
+                      - 350
+                      - 350
+                  - _target_: kornia.augmentation.RandomCutMixV2
+                    p: 0.2
+                  - _target_: kornia.augmentation.Resize # acts as a no-op
+                    p: 0.6
+                    size:
+                      - 350
+                      - 350
+
+post_processing_pipeline:
+  post_processing_steps: []
+#    - _target_: src.pipeline.model.post_processing.threshold.Threshold
+##      threshold: 0.6100786602418532 # for clean dataset
+#      threshold: 0.18193699489412643

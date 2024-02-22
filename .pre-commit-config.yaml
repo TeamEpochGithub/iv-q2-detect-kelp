@@ -1,0 +1,93 @@
+exclude: ^(external/|venv/|.venv/|tests/|notebooks/|scripts/|src/modules/models/swin/)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-ast
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix, --no-sort-keys]
+      - id: check-symlinks
+      - id: check-toml
+      - id: check-xml
+      - id: check-yaml
+      - id: mixed-line-ending
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.15
+    hooks:
+      - id: validate-pyproject
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.10.0
+    hooks:
+      - id: python-check-blanket-noqa
+      - id: python-check-blanket-type-ignore
+      - id: python-check-mock-methods
+      - id: python-no-log-warn
+      - id: python-use-type-annotations
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.15
+    hooks:
+      - id: pymarkdown
+        args:
+          - -d
+          - md013
+          - scan
+  - repo: https://github.com/sphinx-contrib/sphinx-lint
+    rev: v0.9.1
+    hooks:
+      - id: sphinx-lint
+        args: [ --enable=default-role ]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.9
+    hooks:
+      - id: ruff
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - numpy
+          - scikit-learn
+          - scikit-image
+          - scipy
+          - tqdm
+          - polars
+          - imagecodecs
+          - Pillow
+          - opencv-python
+          - tifffile
+          - seaborn
+          - matplotlib
+          - plotly
+          - torch
+          - torchaudio
+          - torchvision
+          - torch-summary
+          - open-clip-torch
+          - dash
+          - dash-bootstrap-components
+          - dash-bootstrap-templates
+          - rasterio
+          - dask
+          - dask-glm
+          - dask_image
+          - dask-ml
+          - distributed
+          - fsspec
+          - segmentation-models-pytorch
+          - catboost
+          - albumentations
+          - typing_extensions
+          - annotated-types
+          - pandas-stubs
+          - traitlets
+          - hydra-core
+          - wandb
+          - randomname
+          - coloredlogs
+          - kornia
+          - einops
+        args: [ --disallow-any-generics, --disallow-untyped-defs, --disable-error-code=import-untyped]

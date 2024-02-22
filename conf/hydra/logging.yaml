@@ -1,0 +1,4 @@
+job_logging:
+  formatters:
+    simple:
+      format: "%(asctime)s | %(levelname)s | %(name)s | %(filename)s:%(lineno)d | %(message)s"

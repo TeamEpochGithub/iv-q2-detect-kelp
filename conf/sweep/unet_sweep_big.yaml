@@ -1,0 +1,50 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args_no_hyphens}
+method: bayes
+project: detect-kelp
+program: sweep.py
+name: unet_sweep_small_1500
+metric:
+  name: sweep_score
+  goal: maximize
+parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.model.model.encoder_name:
+    values: [resnet18, resnet34, efficientnet-b0, mobilenet_v2, vgg11, vgg13]
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.model.model.activation:
+    values: [sigmoid, clamp]
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.optimizer._args_.0.path:
+    values: [torch.optim.Adam, torch.optim.AdamW]
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.optimizer.lr:
+    distribution: log_uniform_values
+    max: 0.1
+    min: 1e-7
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.criterion._target_:
+    values:
+      - src.modules.loss.dice_loss.DiceLoss
+      - torch.nn.BCELoss
+      - src.modules.loss.dice_bce_loss.DiceBCELoss
+      - src.modules.loss.shrinkage_loss.ShrinkageLoss
+      - src.modules.loss.jaccard_loss.JaccardLoss
+      - src.modules.loss.tversky_loss.TverskyLoss
+      - src.modules.loss.focal_loss.FocalLoss
+      - src.modules.loss.focal_tversky_loss.FocalTverskyLoss
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.transformations.korn._args_.0.p:
+    min: 0.0
+    max: 0.5
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.transformations.korn._args_.1.p:
+      min: 0.0
+      max: 0.5
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.transformations.korn._args_.2.p:
+      min: 0.0
+      max: 0.5
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.transformations.korn._args_.3.p:
+      min: 0.0
+      max: 0.5
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.transformations.korn._args_.4.p:
+      min: 0.0
+      max: 0.5
+  model.model_loop_pipeline.model_blocks_pipeline.model_blocks.0.batch_size:
+    values: [36, 48, 64, 128, 256]

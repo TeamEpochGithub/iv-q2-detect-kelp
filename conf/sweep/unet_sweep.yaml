@@ -1,0 +1,54 @@
+command:
+  - ${env}
+  - venv/Scripts/python.exe
+  - ${program}
+  - ${args}
+method: bayes
+project: detect-kelp
+program: sweep.py
+name: unet_sweep_1
+metric:
+  name: Score
+  goal: maximize
+parameters: # Will use the model file in cv.yaml and override the values there with the values specified in this sweep file
+  model:
+    parameters:
+      target_pipeline:
+        parameters:
+          transformation_pipeline:
+            parameters:
+              transformations:
+                values:
+                  - [{_target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur, sigma: 0}]
+                  - [{_target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur, sigma: 1}]
+                  - [{_target_: src.pipeline.model.feature.transformation.gaussian_blur.GaussianBlur, sigma: 2}]
+      model_loop_pipeline:
+        parameters:
+          model_blocks_pipeline:
+            parameters:
+              model_blocks:
+                parameters:
+                  unet_model:
+                    parameters:
+                      model:
+                        parameters:
+                          model:
+                            parameters:
+                              encoder_name:
+                                values: [resnet18, resnet34, efficientnet-b0, efficientnet-b3, mobilenet_v2, vgg11]
+                              in_channels:
+                                value: 6
+                              activation:
+                                values: [sigmoid, softmax, relu]
+                      optimizer:
+                        parameters:
+                          lr:
+                            max: -5
+                            min: -10
+                            distribution: log_uniform
+                      criterion:
+                        parameters:
+                          _target_:
+                            values: [src.modules.loss.dice_loss.DiceLoss, torch.nn.BCELoss, src.modules.loss.bce_dice_loss.BCEDiceLoss, src.modules.loss.shrinkage_loss.ShrinkageLoss, src.modules.loss.jaccard_loss.JaccardLoss, src.modules.loss.lovasz_hinge_loss.LovaszHingeLoss]
+                      batch_size:
+                        values: [8, 16, 24]

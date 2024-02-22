@@ -1,0 +1,61 @@
+defaults:
+  - pipeline/default@_here_
+  - _self_
+
+feature_pipeline:
+  processed_path: data/processed
+  transformation_pipeline:
+    transformations:
+
+      # Divider
+      - _target_: src.pipeline.model.feature.transformation.divider.Divider
+        divider: 2
+
+  column_pipeline:
+    columns:
+
+      # BandCopy
+      - _target_: src.pipeline.model.feature.column.column_block.ColumnBlockPipeline
+        column_block:
+          _target_: src.pipeline.model.feature.column.band_copy.BandCopy
+          band: 1
+        cache_block:
+          _target_: src.pipeline.caching.column.CacheColumnBlock
+          data_path: data/processed/cache
+          column: -1
+
+target_pipeline:
+
+model_loop_pipeline:
+  pretrain_pipeline:
+    pretrain_steps:
+      - _target_: src.pipeline.model.model_loop.pretrain.scaler_block.ScalerBlock
+        scaler:
+          _target_: dask_ml.preprocessing.StandardScaler
+
+  model_blocks_pipeline:
+    model_blocks:
+
+        # Pytorch model
+        - _target_: src.pipeline.model.model_loop.model_blocks.torch_block.TorchBlock
+          model:
+            _target_: torch.nn.Conv2d
+            in_channels: 8
+            out_channels: 1
+            kernel_size: 3
+            padding: 1
+          optimizer: # Partially instantiate optimizer, so model parameters can be linked at runtime
+            _target_: functools.partial
+            _args_:
+              - _target_: hydra.utils.get_class
+                path: torch.optim.Adam
+            lr: 0.001
+          scheduler: None
+          criterion:
+            _target_: src.modules.loss.dice_loss.DiceLoss
+          epochs: 2
+          batch_size: 16
+          patience: 10
+
+post_processing_pipeline:
+  -_target_: src.pipeline.model.post_processing.visualize_preds_block.VisualizationBlock
