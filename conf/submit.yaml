@@ -1,7 +1,7 @@
 defaults:
   - base_submit
   - hydra/logging
-  - ensemble: 20-02-2nd
+  - model: vgg13-unet-bs16-f18-e100-fdb
 
 raw_data_path: data/raw/test_satellite
 raw_target_path: data/raw/train_kelp

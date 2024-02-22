@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 import dask.array as da
+import kornia
 import numpy as np
 import numpy.typing as npt
 import torch
@@ -393,9 +394,14 @@ class TorchBlock(BaseEstimator, TransformerMixin):
 
                 # forward pass
                 if self.self_ensemble:
+                    contrast = kornia.augmentation.RandomContrast(contrast=(0.5, 1.5), p=0.25, clip_output=False)
+
                     predictions = []
                     for flip in [False, True]:
                         for rotation in range(4):
+                            #Apply kornia contrast enhancement on the batch
+                            X_batch = contrast(X_batch.clone())
+
                             # Transform the batch
                             X_batch_transformed = transform_batch(X_batch.clone(), rotation, flip=flip)
 

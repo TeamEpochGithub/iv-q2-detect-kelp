@@ -6,11 +6,11 @@ defaults:
 #  - model: vgg13-unet-bs16-fm4-e75 # DONE
 #  - model: vgg13-unet-bs16-fm2-e75 # DONE
 #  - model: vgg13-unet-bs16-f18-e75-fdb # DONE
-#  - model: vgg13-unet-bs16-f18-e75 # running on hugo's PC
+#  - model: vgg13-unet-bs16-f13-e75 # running on hugo's PC
 #  - model: swin-unetr-f18 # training on Tolga's PC
-  - model:  vgg13-unet-bs16-f13-e100-fdb2 # Training on Jasper's PC
+#  - ensemble: 20-02-2nd  # Training on Jasper's PC
 #  - model: swin-unetr-f13-fdb # Not trained
-#  - model: vgg13-unet-bs16-f13-e75-fdb # Not Trained
+  - model: vgg13-unet-bs16-f13-e100-fdb2 # Not Trained
 #  - model: ConvNext full GBDT
 #  - model: vgg13-unet-bs16-f18-e75-fdb2
   - wandb: train
@@ -19,7 +19,7 @@ raw_data_path: data/raw/train_satellite
 raw_target_path: data/raw/train_kelp
 scorer:
   _target_: src.scoring.dice_coefficient.DiceCoefficient
-test_size: 0
+test_size: 0.2
 cache_size: -1
 allow_multiple_instances: false
 
