@@ -17,8 +17,8 @@ class CustomStandardScaler(BaseEstimator):
 
     def fit(self, X: da.Array, y: da.Array | None = None) -> Self:  # noqa: ARG002
         """Fit the scaler."""
-        self.mean_per_channel = X.mean(axis=(0, 2, 3))
-        self.std_per_channel = X.std(axis=(0, 2, 3))
+        self.mean_per_channel = X.mean(axis=(0, 2, 3)).compute()
+        self.std_per_channel = X.std(axis=(0, 2, 3)).compute()
         return self
 
     def transform(self, X: da.Array) -> da.Array:

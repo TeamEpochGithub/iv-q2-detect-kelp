@@ -70,6 +70,8 @@ contains the model configuration to train with additional training parameters su
 The model selected in the `conf/train.yaml` can be found in the `conf/model` folder where a whole model configuration is stored (from preprocessing to postprocessing).
 When training is finished, the model is saved in the `tm` directory with a hash that depends on the specific pre-processing, pretraining steps + the model configurations.
 
+    - Command line arguments
+    - CUDA_VISIBLE_DEVICES: The GPU to use for training. If not specified it uses DataParallel to train on multiple GPUs.  If you have multiple GPUs, you can specify which one to use.
 - `submit.py`: This file does inference on the test data from the competition given trained model or an ensemble of trained models. 
 It reads a configuration file from `conf/submit.yaml` which contains the model/ensemble configuration to use for inference.
 Model configs can be found in the `conf/model` folder and ensemble configs in the `conf/ensemble` folder. The `conf/ensemble`
