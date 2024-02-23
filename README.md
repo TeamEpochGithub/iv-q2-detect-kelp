@@ -1,16 +1,46 @@
 # Kelp Wanted: Segmenting Kelp Forests
 
-This is Team Epoch's solution to the [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/) competition.
+This is Team Epoch's solution to
+the [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/)
+competition.
 
 A [technical report](Detect_Kelp___Technical_Report.pdf) is included in this repository.
 
 ## Getting started
 
-Install the required packages using:
+This section contains the steps that need to be taken to get started with our project and fully reproduce our best
+submission on the private leaderboard. The project was developed on Windows 10/11 OS on Python 3.10.13.
+
+### 1. Clone the repository
+
+Make sure to clone the repository with your favourite git client or using the following command:
 
 ```shell
-pip install -e . --find-links https://download.pytorch.org/whl/torch_stable.html
+https://github.com/TeamEpochGithub/iv-q2-detect-kelp.git
 ```
+
+### 2. Install Python 3.10.13
+
+You can install the required python version here: [Python 3.10.13](https://github.com/adang1345/PythonWindows/blob/master/3.10.13/python-3.10.13-amd64-full.exe)
+
+
+### 3. Install the required packages
+
+Install the required packages (on a virtual environment is recommended) using the following command:
+A .venv would take around 7GB of disk space.
+
+```shell
+pip install -r requirements.txt
+```
+
+### 4. Setup the competition data
+
+The data of the competition can be downloaded here: [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/data/)
+
+
+### 4. Run submit.py
+
+
 
 ## Quality Checks
 
@@ -27,8 +57,11 @@ pre-commit run --all-files
 ```
 
 ## GBDT
-Due to long training times, we reused trained models for the GBDT. To train these, set `test_size` to zero, and remove the `saved_at` from a model config.
-Once it is saved, it is possible to set `saved-at` to the filename of the saved model, and use this for any runs regardless of test size. 
+
+Due to long training times, we reused trained models for the GBDT. To train these, set `test_size` to zero, and remove
+the `saved_at` from a model config.
+Once it is saved, it is possible to set `saved-at` to the filename of the saved model, and use this for any runs
+regardless of test size.
 
 ```shell
 
