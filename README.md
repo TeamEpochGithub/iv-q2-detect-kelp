@@ -27,7 +27,7 @@ machine with less RAM using all the test data that was provided by DrivenData.
 
 Make sure to clone the repository with your favourite git client or using the following command:
 
-```shell
+```
 https://github.com/TeamEpochGithub/iv-q2-detect-kelp.git
 ```
 
@@ -50,7 +50,7 @@ The data of the competition can be downloaded here: [Kelp Wanted: Segmenting Kel
 Unzip all the files into the `data/raw` directory.
 The structure should look like this:
 
-```shell
+```
 data/
     ├── processed/ # Cache directory for processed data. 
     ├── raw/ # @TODO Competition data must be PLACED HERE
@@ -89,7 +89,7 @@ If you get an error of that the path was not found of a model. Please ensure tha
 If you don't have the trained models, you can train them 1 by 1 using `train.py` and the `conf/train.yaml` file.
 
 `submit.py` will output a `submission.zip` in the root of the project directory. This file can be uploaded to the competition page.
-```shell
+
 
 ## Quality Checks
 
@@ -112,7 +112,7 @@ the `saved_at` from a model config.
 Once it is saved, it is possible to set `saved-at` to the filename of the saved model, and use this for any runs
 regardless of test size.
 
-```shell
+
 
 ## Documentation
 
