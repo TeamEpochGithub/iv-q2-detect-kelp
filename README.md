@@ -36,7 +36,18 @@ pip install -r requirements.txt
 ### 4. Setup the competition data
 
 The data of the competition can be downloaded here: [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/data/)
+Unzip all the files into the `data` directory.
+The structure should look like this:
 
+```shell
+data/
+    ├── test_images/
+    ├── train_images/
+    ├── train_masks/
+    ├── sample_submission.csv
+    ├── train.csv
+    ├── test.csv
+```
 
 ### 4. Run submit.py
 
