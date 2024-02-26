@@ -88,7 +88,7 @@ For reproducing our best submission, run `submit.py`. This will load the already
 run the inference on the test data from the competition. `submit.yaml` in configured to what whe think is our best and our
 most robust solution:
 ![img.png](images/best_submission.png)
-
+`conf/ensemble/21-02-1st.yaml` contains a mixed ensemble of models trained on different feature sets, including UNets with VGG encoders, SwinTransformers and a ConvNext model.
 
 
 If you get an error of that the path was not found of a model. Please ensure that you have the correct trained model in the `tm` directory.
