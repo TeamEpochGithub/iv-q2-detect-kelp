@@ -85,12 +85,16 @@ In this way, we ensure that we load the correct saved model automatically when r
 ### 7. Run submit.py
 
 For reproducing our best submission, run `submit.py`. This will load the already configured `submit.yaml` file and
-run the inference on the test data from the competition. 
+run the inference on the test data from the competition. `submit.yaml` in configured to what whe think is our best and our
+most robust solution:
+![img.png](images/best_submission.png)
+
+
 
 If you get an error of that the path was not found of a model. Please ensure that you have the correct trained model in the `tm` directory.
 If you don't have the trained models, you can train them 1 by 1 using `train.py` and the `conf/train.yaml` file.
 
-`submit.py` will output a `submission.zip` in the root of the project directory. This file can be uploaded to the competition page.
+`submit.py` will output a `submission.zip` in the root of the project directory. This file can be uploaded to the competition page. 
 
 
 ## Quality Checks
