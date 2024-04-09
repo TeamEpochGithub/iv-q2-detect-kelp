@@ -1,6 +1,6 @@
-# Kelp Wanted: Segmenting Kelp Forests
+# Kelp Wanted: Segmenting Kelp Forests - 1st place solution
 
-This is Team Epoch's solution to
+This is Team Epoch's 1st place solution to
 the [Kelp Wanted: Segmenting Kelp Forests](https://www.drivendata.org/competitions/255/kelp-forest-segmentation/)
 competition.
 
